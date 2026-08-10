@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'business-map/fixes/avatar-36-new.b64'
+      - '.github/workflows/replace-business-map-avatar-36.yml'
 permissions:
   contents: write
 jobs:
