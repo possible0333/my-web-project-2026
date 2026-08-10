@@ -1,0 +1,9 @@
+/* Business Map v1 reset refinements */
+#png{display:none!important}
+.v1-image-save{background:#172033!important;color:#fff!important}
+.v1-memo-list{grid-area:m;display:flex;flex-direction:column;gap:3px;margin-top:1px}
+.v1-memo-line{background:#fff3a8;border:1px solid #eadb74;border-radius:7px;padding:4px 7px;font-size:9px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:23px}
+.card{grid-template-areas:"a h" "a p" "m m"!important}
+.card:has(.v1-memo-list){min-height:166px!important}
+.v12-compact .card:has(.v1-memo-list){min-height:160px!important}
+@media(max-width:720px){.section>.title>div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.v1-image-save{order:-1}}
