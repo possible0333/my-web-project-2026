@@ -1,0 +1,35 @@
+name: Enable Business Map v1 save system
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v1-save-system.yml'
+permissions:
+  contents: write
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Business Map v1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          css='<link rel="stylesheet" href="enhance-v1-save-system.css?v=1">'
+          js='<script src="enhance-v1-save-system.js?v=1"></script>'
+          if css not in s:
+              s=s.replace('</head>',css+'</head>')
+          if js not in s:
+              s=s.replace('</body>',js+'</body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Enable Business Map v1 autosave and save slots'
+            git push
+          fi
