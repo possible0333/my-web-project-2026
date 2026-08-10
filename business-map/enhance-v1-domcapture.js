@@ -59,7 +59,6 @@
     const topActions=doc.querySelector('.top>div:last-child');
     if(topActions) topActions.style.display='none';
 
-    // 上部情報は残しつつ、保存画像では高さを大幅に圧縮する。
     const self=doc.querySelector('#self');
     if(self){
       self.style.marginTop='6px';
@@ -106,7 +105,6 @@
       x.style.padding='4px 8px';x.style.fontSize='9px';x.style.borderRadius='12px';
     });
 
-    // ネットワークマップを保存画像の主役にする。
     const section=doc.querySelector('.section');
     if(section){
       section.style.marginTop='10px';
@@ -218,3 +216,4 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindWithRetries,{once:true});
   else bindWithRetries();
 })();
+// map-main capture layout v2
