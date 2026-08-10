@@ -3,7 +3,7 @@ name: Publish exact Business Map avatars
 on:
   push:
     paths:
-      - 'business-map/avatar-bundle.b64'
+      - 'business-map/exact-packs/**'
       - '.github/workflows/publish-exact-avatars.yml'
   workflow_dispatch:
 
@@ -16,43 +16,55 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract exact avatars and patch app
+      - name: Decode approved 36 avatars and patch app
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p business-map/icons
-          base64 -d business-map/avatar-bundle.b64 > /tmp/exact-icons.zip
-          unzip -o /tmp/exact-icons.zip -d business-map/icons
-          test "$(find business-map/icons -maxdepth 1 -name 'avatar-*.webp' | wc -l)" -eq 36
 
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          import base64, json, re
+
+          packs = sorted(Path('business-map/exact-packs').glob('pack-*.json'))
+          items = {}
+          for pack in packs:
+              data = json.loads(pack.read_text(encoding='utf-8'))
+              for item in data:
+                  items[item['name']] = item['data']
+
+          expected = [f'avatar-{i:02d}.webp' for i in range(1, 37)]
+          missing = [name for name in expected if name not in items]
+          extra = [name for name in items if name not in expected]
+          if missing or extra:
+              raise SystemExit(f'avatar validation failed: missing={missing}, extra={extra}')
+
+          out = Path('business-map/icons')
+          for name in expected:
+              raw = base64.b64decode(items[name], validate=True)
+              if not raw.startswith(b'RIFF') or b'WEBP' not in raw[:16]:
+                  raise SystemExit(f'invalid webp: {name}')
+              (out / name).write_bytes(raw)
 
           p = Path('business-map/index.html')
           s = p.read_text(encoding='utf-8')
-
-          # Use the approved 36 icons as individual WebP files. No sprites/SVG redraws.
-          s = s.replace('.svg?v=${ICON_VERSION}', '.webp?v=${ICON_VERSION}')
-          s = s.replace('.png?v=${ICON_VERSION}', '.webp?v=${ICON_VERSION}')
-          s = s.replace('icons/avatar-01.svg', 'icons/avatar-01.webp')
-          s = s.replace('icons/avatar-36.svg', 'icons/avatar-36.webp')
-          s = s.replace('icons/avatar-01.png', 'icons/avatar-01.webp')
-          s = s.replace('icons/avatar-36.png', 'icons/avatar-36.webp')
-          s = re.sub(r'const ICON_VERSION\s*=\s*"[^"]+";', 'const ICON_VERSION = "20260810-exact36-v1";', s, count=1)
-
-          # Visible version marker for cache/debug confirmation.
-          s = s.replace('v10.2 exact icons', 'v10.3 exact icons')
-          s = s.replace('v10.1 exact icons', 'v10.3 exact icons')
-          s = s.replace('v10.0 external icons', 'v10.3 exact icons')
-          s = s.replace('v9.0 external icons', 'v10.3 exact icons')
-          for old in ('>v10.2<', '>v10.1<', '>v10.0<', '>v9.0<'):
-              s = s.replace(old, '>v10.3<')
-
+          s = re.sub(
+              r"const ICON_VERSION='[^']*',A=Array\.from\(\{length:36\},\(_,i\)=>`icons/avatar-\$\{String\(i\+1\)\.padStart\(2,'0'\)\}\.svg\?v=\$\{ICON_VERSION\}`\)",
+              "const ICON_VERSION='20260810-exact36-final',A=Array.from({length:36},(_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.webp?v=${ICON_VERSION}`)",
+              s,
+              count=1,
+          )
+          s = s.replace('<title>Business Map v10</title>', '<title>Business Map v11</title>')
+          s = s.replace('Business Map <span class="ver">v10</span>', 'Business Map <span class="ver">v11</span>')
           p.write_text(s, encoding='utf-8')
+
+          final = p.read_text(encoding='utf-8')
+          if '.webp?v=${ICON_VERSION}' not in final or '.svg?v=${ICON_VERSION}' in final:
+              raise SystemExit('index.html avatar reference patch failed')
+          print('decoded avatars:', len(expected))
           PY
 
-          grep -q '.webp?v=${ICON_VERSION}' business-map/index.html
+          test "$(find business-map/icons -maxdepth 1 -name 'avatar-*.webp' | wc -l)" -eq 36
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
