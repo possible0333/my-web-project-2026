@@ -1,0 +1,67 @@
+name: Fix five Business Map avatars
+
+on:
+  push:
+    paths:
+      - 'business-map/fixes/**'
+      - '.github/workflows/fix-business-map-five-avatars.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode and verify corrected avatars
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, re
+
+          expected = {
+              15: '418b320cf416a561ba81549cbf6ccdd8f676ea842ffd396e8091ae7fe0119f7b',
+              17: 'bad661bf2c5261aca1d27f2e61267c3823d09a028deb4f52e078f0a12445a8bf',
+              20: 'c5ad6d1011ebcdcbb906f8414448635bf691a0bc17421be9233143701b2d3595',
+              24: 'cf2e944cb1bd49e0b5ea58dc6f0e0c1f82d26602e54b6508b0ce95ca77bce4e1',
+              36: '99010daeac33ded40c5f4e3a8f8774c8d8f9bc2bf1812007e3e31ae7852ed3f5',
+          }
+
+          out = Path('business-map/icons')
+          out.mkdir(parents=True, exist_ok=True)
+          for num, sha in expected.items():
+              src = Path(f'business-map/fixes/avatar-{num:02d}.b64')
+              raw = base64.b64decode(''.join(src.read_text().split()), validate=True)
+              actual = hashlib.sha256(raw).hexdigest()
+              if actual != sha:
+                  raise SystemExit(f'checksum mismatch avatar-{num:02d}: {actual}')
+              if not raw.startswith(b'RIFF') or b'WEBP' not in raw[:16]:
+                  raise SystemExit(f'invalid WebP avatar-{num:02d}')
+              (out / f'avatar-{num:02d}.webp').write_bytes(raw)
+              print(f'avatar-{num:02d}: OK {len(raw)} bytes')
+
+          p = Path('business-map/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(r"const ICON_VERSION='[^']*'", "const ICON_VERSION='20260810-fixedfive-v1'", s, count=1)
+          s = s.replace('<title>Business Map v11</title>', '<title>Business Map v11.1</title>')
+          s = s.replace('Business Map <span class="ver">v11</span>', 'Business Map <span class="ver">v11.1</span>')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add business-map/index.html \
+            business-map/icons/avatar-15.webp \
+            business-map/icons/avatar-17.webp \
+            business-map/icons/avatar-20.webp \
+            business-map/icons/avatar-24.webp \
+            business-map/icons/avatar-36.webp
+          if ! git diff --cached --quiet; then
+            git commit -m "Fix Business Map avatars 15 17 20 24 36"
+            git push
+          fi
