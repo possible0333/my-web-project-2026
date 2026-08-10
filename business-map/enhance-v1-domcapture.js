@@ -34,6 +34,127 @@
     return document.querySelector('.app');
   }
 
+  function applyCaptureLayout(doc,targetWidth){
+    doc.querySelectorAll('.modal.open').forEach(x=>x.classList.remove('open'));
+    doc.querySelectorAll('#ex,#im,#png,#v1ImageSave,#v1SaveOpen,.v1-save-panel,.v1-savebar,.v1-savebar .btn,#add,#editSelf').forEach(x=>x.style.display='none');
+
+    const app=doc.querySelector('.app');
+    if(app){
+      app.style.maxWidth='none';
+      app.style.width=targetWidth+'px';
+      app.style.padding='18px 20px 28px';
+      app.style.background='#f4f7fb';
+    }
+
+    const top=doc.querySelector('.top');
+    if(top){
+      top.style.display='flex';
+      top.style.alignItems='center';
+      top.style.justifyContent='space-between';
+      top.style.margin='0 0 8px';
+      top.style.minHeight='32px';
+    }
+    const brand=doc.querySelector('.brand');
+    if(brand){brand.style.fontSize='20px';brand.style.lineHeight='1.1';}
+    const topActions=doc.querySelector('.top>div:last-child');
+    if(topActions) topActions.style.display='none';
+
+    // 上部情報は残しつつ、保存画像では高さを大幅に圧縮する。
+    const self=doc.querySelector('#self');
+    if(self){
+      self.style.marginTop='6px';
+      self.style.borderRadius='14px';
+      self.style.padding='9px 12px';
+      self.style.gridTemplateColumns='52px minmax(0,1fr)';
+      self.style.gap='9px';
+      self.style.minHeight='0';
+    }
+    doc.querySelectorAll('#self img').forEach(x=>{
+      x.style.width='48px';x.style.height='48px';x.style.borderWidth='2px';
+    });
+    doc.querySelectorAll('#self h2').forEach(x=>{x.style.fontSize='17px';x.style.lineHeight='1.1';});
+    doc.querySelectorAll('#self .kpis').forEach(x=>{
+      x.style.marginTop='5px';x.style.gap='5px';x.style.gridTemplateColumns='repeat(3,minmax(0,1fr))';
+    });
+    doc.querySelectorAll('#self .box').forEach(x=>{x.style.padding='5px 7px';x.style.borderRadius='8px';});
+    doc.querySelectorAll('#self .big').forEach(x=>{x.style.fontSize='14px';x.style.lineHeight='1.15';});
+    doc.querySelectorAll('#self .small').forEach(x=>{x.style.fontSize='9px';});
+
+    const stats=doc.querySelector('#stats');
+    if(stats){
+      stats.style.marginTop='6px';
+      stats.style.gap='5px';
+      stats.style.gridTemplateColumns='repeat(4,minmax(0,1fr))';
+    }
+    const ranks=doc.querySelector('#ranks');
+    if(ranks){
+      ranks.style.marginTop='5px';
+      ranks.style.gap='5px';
+      ranks.style.gridTemplateColumns='repeat(5,minmax(0,1fr))';
+    }
+    doc.querySelectorAll('#stats .box,#ranks .box').forEach(x=>{x.style.padding='6px 8px';x.style.borderRadius='8px';});
+    doc.querySelectorAll('#stats .big,#ranks .big').forEach(x=>{x.style.fontSize='13px';x.style.lineHeight='1.15';});
+    doc.querySelectorAll('#stats .small,#ranks .small').forEach(x=>{x.style.fontSize='9px';});
+
+    const types=doc.querySelector('#types');
+    if(types){
+      types.style.marginTop='5px';
+      types.style.gap='5px';
+      types.style.flexWrap='nowrap';
+    }
+    doc.querySelectorAll('#types .chip').forEach(x=>{
+      x.style.padding='4px 8px';x.style.fontSize='9px';x.style.borderRadius='12px';
+    });
+
+    // ネットワークマップを保存画像の主役にする。
+    const section=doc.querySelector('.section');
+    if(section){
+      section.style.marginTop='10px';
+      section.style.background='#fff';
+      section.style.borderRadius='16px';
+      section.style.padding='12px';
+      section.style.boxShadow='0 5px 18px #0001';
+    }
+    const title=section?.querySelector('.title');
+    if(title){
+      title.style.margin='0 0 4px';
+      title.style.minHeight='30px';
+    }
+    const h3=title?.querySelector('h3');
+    if(h3){
+      h3.style.margin='0';
+      h3.style.fontSize='19px';
+      h3.style.fontWeight='900';
+    }
+
+    const w=doc.querySelector('.wrap');
+    const t=doc.querySelector('.tree');
+    if(w){
+      w.style.overflow='visible';
+      w.style.maxWidth='none';
+      w.style.padding='8px 4px 4px';
+      w.style.width=(Math.max(t?.scrollWidth||0,w.scrollWidth)+12)+'px';
+      w.style.height='auto';
+      w.style.borderRadius='10px';
+      w.style.background='#fff';
+    }
+    if(t){
+      const tw=t.scrollWidth;
+      t.style.minWidth='0';
+      t.style.width=tw+'px';
+      t.style.transform='none';
+      t.style.zoom='1';
+    }
+    doc.querySelectorAll('.level').forEach(x=>{
+      x.style.paddingTop='24px';
+      x.style.paddingBottom='14px';
+      x.style.gap='12px';
+    });
+
+    const footer=doc.querySelector('footer');
+    if(footer) footer.style.display='none';
+  }
+
   async function domCapture(){
     const root=captureTarget();
     if(!root){alert('保存対象が見つかりませんでした');return;}
@@ -45,11 +166,11 @@
       const wrap=root.querySelector('.wrap');
       const tree=root.querySelector('.tree');
       const mapWidth=Math.max(tree?.scrollWidth||0,wrap?.scrollWidth||0);
-      const targetWidth=Math.max(root.scrollWidth,mapWidth+40,900);
+      const targetWidth=Math.max(mapWidth+56,960);
       const scale=Math.max(2,Math.min(3,window.devicePixelRatio||2));
 
       const canvas=await html2canvas(root,{
-        backgroundColor:getComputedStyle(document.body).backgroundColor||'#f4f7fb',
+        backgroundColor:'#f4f7fb',
         scale,
         useCORS:true,
         allowTaint:false,
@@ -58,34 +179,7 @@
         windowWidth:targetWidth,
         scrollX:0,
         scrollY:-window.scrollY,
-        onclone:(doc)=>{
-          doc.querySelectorAll('.modal.open').forEach(x=>x.classList.remove('open'));
-          const app=doc.querySelector('.app');
-          if(app){
-            app.style.maxWidth='none';
-            app.style.width=targetWidth+'px';
-            app.style.paddingBottom='28px';
-          }
-          const w=doc.querySelector('.wrap');
-          const t=doc.querySelector('.tree');
-          if(w){
-            w.style.overflow='visible';
-            w.style.maxWidth='none';
-            w.style.width=(Math.max(t?.scrollWidth||0,w.scrollWidth)+20)+'px';
-            w.style.height='auto';
-          }
-          if(t){
-            const tw=t.scrollWidth;
-            t.style.minWidth='0';
-            t.style.width=tw+'px';
-            t.style.transform='none';
-          }
-          doc.querySelectorAll('#ex,#im,#png,#v1ImageSave,#v1SaveOpen,.v1-save-panel,.v1-savebar .btn,#add,#editSelf').forEach(x=>x.style.display='none');
-          const topActions=doc.querySelector('.top>div:last-child');
-          if(topActions && !topActions.textContent.trim()) topActions.style.display='none';
-          const footer=doc.querySelector('footer');
-          if(footer) footer.style.display='none';
-        }
+        onclone:(doc)=>applyCaptureLayout(doc,targetWidth)
       });
 
       const dataUrl=canvas.toDataURL('image/png');
