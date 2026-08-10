@@ -1,0 +1,34 @@
+name: Enable Business Map v1 DOM capture
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v1-domcapture.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable DOM capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="enhance-v1-domcapture.js?v=1"></script>'
+          if tag not in s:
+              s=s.replace('</body>', tag+'</body>')
+          s=s.replace('>PNG保存</button>', '>画像保存</button>')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add business-map/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Enable Business Map v1 DOM image capture"
+            git push
+          fi
