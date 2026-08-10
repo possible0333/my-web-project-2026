@@ -1,5 +1,5 @@
 (function(){
-  const VERSION='v1.04';
+  const VERSION='v1.05';
   let busy=false;
 
   function isMobile(){
