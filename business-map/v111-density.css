@@ -1,0 +1,53 @@
+/* Business Map v1.11: adaptive density for wide front lines */
+#treeRows.v109-tree-root>.v109-node>.v109-children{flex-wrap:nowrap!important;white-space:nowrap!important;align-items:flex-start!important}
+#treeRows.v109-tree-root .v109-node{flex:0 0 auto!important}
+#treeRows.v109-tree-root .v109-children{flex-wrap:nowrap!important}
+
+/* 5-6 fronts */
+#treeRows.v111-density-2 .member-card{width:196px!important;min-height:138px!important;grid-template-columns:64px 1fr!important;gap:6px!important;padding:8px 8px 8px 0!important}
+#treeRows.v111-density-2 .card-left{padding-left:7px!important}
+#treeRows.v111-density-2 .card-avatar{width:44px!important;height:44px!important}
+#treeRows.v111-density-2 .card-name{font-size:13px!important}
+#treeRows.v111-density-2 .meta-list{font-size:8px!important}
+#treeRows.v111-density-2 .type-badge,#treeRows.v111-density-2 .status-stamp{font-size:8px!important}
+#treeRows.v111-density-2 .pv-box{font-size:10px!important;padding:5px 6px!important}
+#treeRows.v111-density-2 .memo-item{font-size:9px!important;min-height:19px!important;padding:3px 5px!important}
+#treeRows.v111-density-2 .v109-children{gap:10px!important;padding-top:26px!important}
+
+/* 7-8 fronts */
+#treeRows.v111-density-3 .member-card{width:172px!important;min-height:130px!important;grid-template-columns:56px 1fr!important;gap:5px!important;padding:7px 7px 7px 0!important;border-radius:15px!important}
+#treeRows.v111-density-3 .card-left{padding-left:6px!important;gap:4px!important}
+#treeRows.v111-density-3 .card-avatar{width:39px!important;height:39px!important}
+#treeRows.v111-density-3 .card-name{font-size:12px!important}
+#treeRows.v111-density-3 .meta-list{font-size:7.5px!important;gap:1px!important}
+#treeRows.v111-density-3 .type-badge{font-size:7.5px!important;padding:2px 5px!important}
+#treeRows.v111-density-3 .status-stamp{font-size:7.5px!important;padding:3px 6px!important;max-width:86px!important}
+#treeRows.v111-density-3 .card-main{padding-right:22px!important}
+#treeRows.v111-density-3 .pv-box{font-size:9px!important;padding:5px!important;line-height:1.22!important}
+#treeRows.v111-density-3 .memo-list{margin-top:4px!important;gap:2px!important}
+#treeRows.v111-density-3 .memo-item{font-size:8px!important;min-height:17px!important;padding:2px 4px!important}
+#treeRows.v111-density-3 .v109-children{gap:8px!important;padding-top:24px!important}
+
+/* 9+ fronts: designed so 10 direct fronts stay on one row */
+#treeRows.v111-density-4 .member-card{width:148px!important;min-height:120px!important;grid-template-columns:48px 1fr!important;gap:4px!important;padding:6px 6px 6px 0!important;border-radius:14px!important}
+#treeRows.v111-density-4 .card-left{padding-left:5px!important;gap:3px!important}
+#treeRows.v111-density-4 .card-avatar{width:34px!important;height:34px!important;border-width:1px!important}
+#treeRows.v111-density-4 .card-name{font-size:11px!important;line-height:1.12!important}
+#treeRows.v111-density-4 .meta-list{font-size:6.7px!important;gap:1px!important;line-height:1.12!important}
+#treeRows.v111-density-4 .type-badge{font-size:6.7px!important;padding:2px 4px!important;margin-top:2px!important}
+#treeRows.v111-density-4 .status-stamp{font-size:6.7px!important;padding:3px 5px!important;max-width:74px!important;right:5px!important;top:5px!important}
+#treeRows.v111-density-4 .card-main{padding-right:18px!important}
+#treeRows.v111-density-4 .pv-box{font-size:8px!important;padding:4px!important;line-height:1.18!important;margin-top:4px!important;border-radius:9px!important}
+#treeRows.v111-density-4 .memo-list{margin-top:3px!important;gap:2px!important}
+#treeRows.v111-density-4 .memo-item{font-size:7px!important;min-height:15px!important;padding:2px 3px!important;border-radius:7px!important}
+#treeRows.v111-density-4 .v109-children{gap:6px!important;padding-top:21px!important;margin-top:5px!important}
+#treeRows.v111-density-4 .v109-node{padding:0 3px!important}
+
+/* keep the direct-front row strictly horizontal */
+#treeRows.v109-tree-root>.v109-node>.v109-children>.v109-node{flex:0 0 auto!important}
+
+@media(max-width:720px){
+  #treeRows.v111-density-2 .member-card{width:184px!important}
+  #treeRows.v111-density-3 .member-card{width:162px!important}
+  #treeRows.v111-density-4 .member-card{width:140px!important}
+}
