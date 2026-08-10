@@ -1,0 +1,1 @@
+Business Map avatars are being replaced with the exact 36 portraits supplied by the user. Do not regenerate or substitute characters.
