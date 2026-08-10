@@ -19,24 +19,24 @@
     const sel=document.createElement('select');sel.id='v14RankFilter';sel.className='v14-rank-filter';
     sel.innerHTML='<option value="all">全見込みを表示</option><option value="S">Sのみ</option><option value="A">A以上</option><option value="B">B以上</option><option value="C">C以上</option>';
     const branch=el('v12Branch');if(branch&&branch.nextSibling)tools.insertBefore(sel,branch.nextSibling);else tools.prepend(sel);
-    sel.addEventListener('change',e=>{rankFilter=e.target.value;applyRankFilter();setTimeout(()=>window.dispatchEvent(new Event('resize')),0)});
-    if(branch)branch.addEventListener('change',()=>setTimeout(applyRankFilter,0));
+    sel.addEventListener('change',e=>{rankFilter=e.target.value;applyFilters();setTimeout(()=>window.dispatchEvent(new Event('resize')),0)});
+    if(branch)branch.addEventListener('change',()=>setTimeout(applyFilters,0));
   }
 
-  function applyRankFilter(){
+  function branchAllowedIds(){
+    const b=el('v12Branch')?.value||'all';
+    if(b==='all')return null;
+    const root=get(b);return root?new Set(['self',root.id,...desc(root.id).map(x=>x.id)]):null;
+  }
+
+  function applyFilters(){
     const tree=el('tree');if(!tree)return;
-    const threshold=rankFilter==='all'?0:RR[rankFilter]||0;
+    const threshold=rankFilter==='all'?0:RR[rankFilter]||0,allowed=branchAllowedIds();
     tree.querySelectorAll('.card[data-id]').forEach(c=>{
       const p=get(c.dataset.id);if(!p)return;
-      if(p.id==='self')return;
-      const branchHidden=c.style.display==='none'&&rankFilter==='all';
-      const ok=rankFilter==='all'||(RR[p.rank]||0)>=threshold;
-      if(rankFilter==='all'){
-        if(c.dataset.v14Hidden==='1'){c.style.display='';c.dataset.v14Hidden='0'}
-      }else{
-        if(!ok){if(c.style.display!=='none'){c.style.display='none';c.dataset.v14Hidden='1'}}
-        else if(c.dataset.v14Hidden==='1'){c.style.display='';c.dataset.v14Hidden='0'}
-      }
+      const branchOk=!allowed||allowed.has(p.id);
+      const rankOk=p.id==='self'||rankFilter==='all'||(RR[p.rank]||0)>=threshold;
+      c.style.display=branchOk&&rankOk?'':'none';
     });
     tree.querySelectorAll('.level').forEach(row=>{
       const cards=[...row.querySelectorAll('.card[data-id]')];
@@ -58,12 +58,12 @@
     }
   }
 
-  function afterRender(){ensureRetailOption();ensureRankFilter();renderTypes();applyRankFilter();}
+  function afterRender(){ensureRetailOption();ensureRankFilter();renderTypes();applyFilters();}
   if(typeof render==='function'){
     const oldRender=render;render=function(){oldRender();afterRender()}
   }
   if(typeof open==='function'){
     const oldOpen=open;open=function(id=null){ensureRetailOption();oldOpen(id);ensureRetailOption();if(id&&id!=='self'){const p=get(id);if(p?.type==='RETAIL')el('ft').value='RETAIL'}}
   }
-  ensureRetailOption();ensureRankFilter();renderTypes();applyRankFilter();
+  ensureRetailOption();ensureRankFilter();renderTypes();applyFilters();
 })();
