@@ -1,0 +1,31 @@
+/* Business Map v1.09: sponsor-tree layout, compact cards, polished export */
+#treeRows.v109-tree-root{display:inline-flex!important;justify-content:center!important;align-items:flex-start!important;min-width:max-content!important;position:relative!important;width:auto!important;height:auto!important;padding:10px 14px 30px!important}
+#treeRows.v109-tree-root .level{display:none!important}
+.v109-node{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 6px;z-index:1}
+.v109-children{display:flex;align-items:flex-start;justify-content:center;gap:14px;flex-wrap:nowrap;position:relative;padding-top:30px;margin-top:7px;min-width:max-content}
+.v109-self-label{font-size:11px;font-weight:900;color:#64748b;background:#eef2f7;border-radius:999px;padding:5px 10px;margin-bottom:9px}
+#treeRows.v109-tree-root .member-card{position:relative!important;left:auto!important;top:auto!important;margin:0!important;width:220px!important;min-height:148px!important;grid-template-columns:72px 1fr!important;gap:8px!important;padding:9px 9px 9px 0!important}
+#treeRows.v109-tree-root .card-left{padding-left:8px!important;gap:5px!important}
+#treeRows.v109-tree-root .card-avatar{width:50px!important;height:50px!important}
+#treeRows.v109-tree-root .card-name{font-size:14px!important}
+#treeRows.v109-tree-root .meta-list{font-size:9px!important;gap:2px!important}
+#treeRows.v109-tree-root .type-badge{padding:3px 6px!important;font-size:9px!important}
+#treeRows.v109-tree-root .status-stamp{padding:4px 8px!important;font-size:9px!important;max-width:104px!important}
+#treeRows.v109-tree-root .pv-box{padding:6px 7px!important;font-size:11px!important;line-height:1.3!important}
+#treeRows.v109-tree-root .memo-list{gap:3px!important;margin-top:5px!important}
+#treeRows.v109-tree-root .memo-item{font-size:10px!important;line-height:1.2!important;min-height:21px!important;padding:3px 6px!important}
+#treeLines{z-index:0!important}
+.v109-export-surface{background:#fff;border-radius:20px;border:1px solid #dbe4f0;padding:10px}
+.v109-export-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:7px}
+.v109-export-title{font-size:23px;font-weight:900;color:#0f2748}
+.v109-export-date{font-size:10px;color:#64748b;margin-top:2px}
+.v109-export-pills{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.v109-export-pill{background:#f6f9fd;border:1px solid #dbe4f0;border-radius:999px;padding:4px 7px;font-size:9px;color:#475569;white-space:nowrap}
+.v109-export-pill b{font-size:11px;color:#172033}
+.v109-export-map{position:relative;background:#fff;border:1px solid #e5edf6;border-radius:16px;padding:8px;overflow:hidden}
+.v109-export-map #mapCanvasArea{padding-top:8px!important;min-width:0!important}
+@media(max-width:720px){
+  #treeRows.v109-tree-root .member-card{width:205px!important;grid-template-columns:66px 1fr!important}
+  #treeRows.v109-tree-root .card-avatar{width:46px!important;height:46px!important}
+  .v109-children{gap:10px;padding-top:26px}
+}
