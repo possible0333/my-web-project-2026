@@ -1,1 +1,101 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Business Map v1.02</title><style>*{box-sizing:border-box}body{margin:0;background:#f4f7fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic",sans-serif;color:#172033}.app{max-width:1100px;margin:auto;padding:12px 10px 90px}.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.brand{font-size:22px;font-weight:900}.ver{font-size:11px;color:#3478f6}.btn{border:0;border-radius:11px;padding:9px 11px;font-weight:800;background:#fff;box-shadow:0 5px 18px #0001;cursor:pointer}.primary{background:#3478f6;color:#fff}.dark{background:#172033;color:#fff}.danger{color:#ef4444}.small{font-size:11px;color:#697386}.self{margin-top:10px;background:linear-gradient(135deg,#15233c,#274c87);color:#fff;border-radius:20px;padding:14px;display:grid;grid-template-columns:76px 1fr;gap:12px}.self img,.av{width:70px;height:70px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid #fff}.self h2{margin:0}.kpis,.stats,.ranks{display:grid;gap:8px;margin-top:10px}.kpis{grid-template-columns:repeat(3,1fr)}.stats,.ranks{grid-template-columns:repeat(4,1fr)}.box{background:#fff;border-radius:12px;padding:10px;box-shadow:0 5px 18px #0001}.self .box{background:#ffffff18;box-shadow:none}.self .small{color:#ffffffaa}.big{font-size:18px;font-weight:900}.types{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.chip{background:#fff;border-radius:20px;padding:7px 10px;font-size:12px;font-weight:800}.section{margin-top:14px}.title{display:flex;justify-content:space-between;align-items:center;gap:8px}.wrap{overflow:auto;background:#fff;border-radius:16px;padding:10px}.tree{min-width:720px}.level{display:flex;justify-content:center;gap:12px;padding:28px 6px 18px;position:relative}.label{position:absolute;left:4px;top:2px;font-size:11px;font-weight:900;background:#eef2f7;padding:4px 7px;border-radius:20px}.card{width:238px;min-height:112px;border:1px solid #dbe3ef;border-radius:15px;padding:9px 34px 9px 9px;display:grid;grid-template-columns:58px 1fr;grid-template-areas:"a h" "a p" "m m";gap:5px 9px;position:relative;box-shadow:0 4px 14px #0001;background:#fff;cursor:pointer}.card .av{grid-area:a;width:58px;height:58px}.head{grid-area:h}.nm{font-weight:900}.meta{font-size:10px;color:#697386}.pv{grid-area:p;background:#f7f9fc;border-radius:8px;padding:5px 6px;font-size:10px;line-height:1.45}.rk{position:absolute;right:6px;top:6px;background:#172033;color:#fff;border-radius:20px;padding:3px 6px;font-size:10px;font-weight:900}.memo{grid-area:m;background:#fff3a8;border:1px solid #eadb74;border-radius:7px;padding:5px 7px;font-size:9px;line-height:1.3;max-height:31px;overflow:hidden}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;z-index:20}.modal.open{display:flex}.sheet{background:#fff;width:min(760px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.f{display:flex;flex-direction:column;gap:4px}.f.full{grid-column:1/-1}.f input,.f select,.f textarea{padding:10px;border:1px solid #dbe3ef;border-radius:10px}.avs{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.opt{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;border:3px solid transparent;background:#fff;cursor:pointer}.opt.sel{border-color:#3478f6}.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}.preview{max-width:100%;height:auto;border-radius:12px;background:#fff}@media(max-width:720px){.stats,.ranks{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.avs{grid-template-columns:repeat(4,1fr)}.tree{min-width:640px}.top{flex-direction:column}}</style><link rel="stylesheet" href="enhance-v12.css?v=20260810-v12"><link rel="stylesheet" href="enhance-v13.css?v=13"><link rel="stylesheet" href="enhance-v14.css?v=14"><link rel="stylesheet" href="enhance-v1-reset.css?v=1"><link rel="stylesheet" href="enhance-v1-save-buttons.css?v=1"><link rel="stylesheet" href="enhance-v1-save-system.css?v=1"></head><body><div class="app"><div class="top"><div><div class="brand">Business Map <span class="ver">v1.02</span></div><div class="small">PV・ネットワーク・Group PV管理</div></div><div><button class="btn" id="ex">JSON保存</button> <button class="btn" id="im">JSON読込</button> <button class="btn dark" id="png">画像保存</button></div></div><div class="self" id="self"></div><div class="stats" id="stats"></div><div class="ranks" id="ranks"></div><div class="types" id="types"></div><div class="section"><div class="title"><h3>ネットワークマップ</h3><div><button class="btn primary" id="add">＋ メンバー追加</button> <button class="btn" id="editSelf">自分を編集</button></div></div><div class="wrap"><div class="tree" id="tree"></div></div></div></div><input id="fi" type="file" accept="application/json" hidden><div class="modal" id="modal"><div class="sheet"><div class="title"><h3 id="mt">編集</h3><button class="btn" id="close">閉じる</button></div><div class="grid"><div class="f"><label>名前</label><input id="fn"></div><div class="f"><label>区分</label><select id="ft"><option value="ABO">ABO</option><option value="CUSTOMER">カスタマー</option><option value="PROSPECT">プロスペ</option><option value="RETAIL">小売</option></select></div><div class="f"><label>親メンバー</label><select id="fp"></select></div><div class="f"><label>ランク</label><select id="fr"><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div><div class="f"><label>目標PV</label><input id="fg" type="number"></div><div class="f"><label>実績PV</label><input id="fa" type="number"></div><div class="f full"><label>メモ</label><textarea id="fm"></textarea></div><div class="f full"><label>顔アイコン</label><div class="avs" id="avs"></div></div></div><div class="acts"><button class="btn danger" id="del">削除</button><button class="btn primary" id="save">保存</button></div></div></div><div class="modal" id="pm"><div class="sheet"><div class="title"><div><h3>Business Map画像</h3><div class="small">スマホは画像を長押し、PCは右クリックで保存できます</div></div><button class="btn" id="pc">閉じる</button></div><div style="text-align:center;background:#eef2f7;padding:10px;border-radius:12px"><img id="pi" class="preview"></div><div class="acts"><button class="btn primary" id="dl">画像を保存</button></div></div></div><script>const ICON_VERSION='20260810-funnybatch-v3',A=Array.from({length:36},(_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.webp?v=${ICON_VERSION}`),K='business_map_v10',R={S:5,A:4,B:3,C:2,D:1};let S={self:{id:'self',name:'自分',type:'ABO',parentId:null,target:30000,actual:0,rank:'A',memo:'',avatar:0},members:[]},E=null,SA=0,PIMG='';const $=id=>document.getElementById(id),F=n=>(+n||0).toLocaleString('ja-JP'),PC=(a,b)=>b?Math.round(a/b*100):0,L=t=>t==='ABO'?'ABO':t==='CUSTOMER'?'カスタマー':t==='RETAIL'?'小売':'プロスペ',esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));async function preload(){let r=await Promise.all(A.map(src=>new Promise(ok=>{let i=new Image;i.onload=()=>ok(true);i.onerror=()=>ok(false);i.src=src})));if(r.some(x=>!x))throw Error('36個のアイコンの一部を読み込めませんでした')}function load(){try{let x=JSON.parse(localStorage.getItem(K)||localStorage.getItem('business_map_v8')||localStorage.getItem('business_map_v5'));if(x?.self&&Array.isArray(x.members))S=x}catch(e){}}function persist(){localStorage.setItem(K,JSON.stringify(S))}const all=()=>[S.self,...S.members],get=id=>id==='self'?S.self:S.members.find(x=>x.id===id),kids=id=>S.members.filter(x=>x.parentId===id),desc=id=>{let o=[];(function w(i){kids(i).forEach(x=>{o.push(x);w(x.id)})})(id);return o},gp=p=>{let x=[p,...desc(p.id)];return{t:x.reduce((s,v)=>s+(+v.target||0),0),a:x.reduce((s,v)=>s+(+v.actual||0),0)}},depth=id=>{if(id==='self')return 0;let d=0,c=get(id),g=0;while(c&&c.parentId&&g++<30){d++;c=get(c.parentId)}return d},tier=d=>['自分','フロント','セカンド','サード','フォース','フィフス'][d]||d+'階層目';function card(p){let g=p.type==='ABO'?gp(p):null,a=A[(p.avatar||0)%36];return`<div class="card" data-id="${p.id}"><span class="rk">${p.rank}</span><img class="av" src="${a}"><div class="head"><div class="nm">${esc(p.name)}</div><div class="meta">${L(p.type)}</div></div><div class="pv"><b>個人PV</b><br>目標 ${F(p.target)} / 実績 ${F(p.actual)}${g?`<br><b>Group PV</b><br>目標 ${F(g.t)} / 実績 ${F(g.a)}`:''}</div>${p.memo?`<div class="memo">📝 ${esc(p.memo)}</div>`:''}</div>`}function render(){persist();let s=S.self,a=all(),t=a.reduce((z,x)=>z+(+x.target||0),0),u=a.reduce((z,x)=>z+(+x.actual||0),0);$('self').innerHTML=`<img src="${A[(s.avatar||0)%36]}"><div><div style="display:flex;justify-content:space-between"><h2>${esc(s.name)}</h2><b>${s.rank}</b></div><div class="kpis"><div class="box"><div class="small">目標PV</div><div class="big">${F(s.target)}</div></div><div class="box"><div class="small">実績PV</div><div class="big">${F(s.actual)}</div></div><div class="box"><div class="small">進捗率</div><div class="big">${PC(s.actual,s.target)}%</div></div></div></div>`;$('stats').innerHTML=[['チーム目標PV',F(t)],['チーム実績PV',F(u)],['達成率',PC(u,t)+'%'],['登録人数',a.length+'人']].map(x=>`<div class="box"><div class="small">${x[0]}</div><div class="big">${x[1]}</div></div>`).join('');let sum=r=>a.filter(x=>R[x.rank]>=R[r]).reduce((z,x)=>z+(+x.actual||0),0),so=a.filter(x=>x.rank==='S').reduce((z,x)=>z+(+x.actual||0),0);$('ranks').innerHTML=[['Sのみ',so],['A以上',sum('A')],['B以上',sum('B')],['C以上',sum('C')]].map(x=>`<div class="box"><div class="small">${x[0]}</div><div class="big">${F(x[1])} PV</div></div>`).join('');let c={ABO:0,CUSTOMER:0,PROSPECT:0};a.forEach(x=>c[x.type]=(c[x.type]||0)+1);$('types').innerHTML=`<span class="chip">ABO ${c.ABO}人</span><span class="chip">カスタマー ${c.CUSTOMER}人</span><span class="chip">プロスペ ${c.PROSPECT}人</span>`;let m=Math.max(0,...S.members.map(x=>depth(x.id))),h='';for(let d=0;d<=m;d++){let ar=d?S.members.filter(x=>depth(x.id)===d):[S.self];if(ar.length)h+=`<div class="level"><div class="label">${tier(d)}</div>${ar.map(card).join('')}</div>`}$('tree').innerHTML=h;$('tree').querySelectorAll('.card').forEach(x=>x.onclick=()=>open(x.dataset.id))}function open(id=null){E=id;let me=id==='self',p=id?get(id):{name:'',type:'ABO',parentId:'self',target:0,actual:0,rank:'C',memo:'',avatar:0};SA=(p.avatar||0)%36;$('mt').textContent=me?'自分を編集':id?'メンバー編集':'メンバー追加';fn.value=p.name;ft.value=me?'ABO':p.type;ft.disabled=me;fr.value=p.rank;fg.value=p.target;fa.value=p.actual;fm.value=p.memo||'';fp.innerHTML=all().filter(x=>x.id!==id).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');fp.value=p.parentId||'self';fp.disabled=me;$('del').style.display=!id||me?'none':'inline-block';pick();modal.classList.add('open')}function pick(){avs.innerHTML=A.map((x,i)=>`<img class="opt ${i===SA?'sel':''}" src="${x}" data-i="${i}">`).join('');avs.querySelectorAll('.opt').forEach(x=>x.onclick=()=>{SA=+x.dataset.i;pick()})}function saveNow(){let d={name:fn.value.trim()||'名称未設定',type:ft.value,parentId:fp.value||'self',target:+fg.value||0,actual:+fa.value||0,rank:fr.value,memo:fm.value.trim(),avatar:SA};if(E==='self')Object.assign(S.self,d,{id:'self',type:'ABO',parentId:null});else if(E){let p=get(E);Object.assign(p,d);if(desc(E).some(x=>x.id===p.parentId))p.parentId='self'}else S.members.push({id:'m_'+Math.random().toString(36).slice(2,9),...d});modal.classList.remove('open');render()}function delNow(){if(!E||E==='self')return;let f=get(E)?.parentId||'self';S.members.forEach(x=>{if(x.parentId===E)x.parentId=f});S.members=S.members.filter(x=>x.id!==E);modal.classList.remove('open');render()}function exp(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='business_map_backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}function imp(file){let r=new FileReader;r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.self||!Array.isArray(x.members))throw 0;S=x;render();alert('読み込みました')}catch(e){alert('JSONファイルを読み込めませんでした')}};r.readAsText(file)}const img=src=>new Promise((r,j)=>{let i=new Image;i.onload=()=>r(i);i.onerror=j;i.src=src});async function makePNG(){let people=all(),rows=[],md=Math.max(0,...S.members.map(x=>depth(x.id)));for(let d=0;d<=md;d++)rows.push(d?S.members.filter(x=>depth(x.id)===d):[S.self]);let cw=238,ch=118,gx=24,gy=58,mg=42,hh=150,max=Math.max(1,...rows.map(r=>r.length)),w=Math.max(900,mg*2+max*cw+(max-1)*gx),h=hh+rows.length*(ch+gy)+40,c=document.createElement('canvas');c.width=w*2;c.height=h*2;let x=c.getContext('2d');x.scale(2,2);x.fillStyle='#f4f7fb';x.fillRect(0,0,w,h);x.fillStyle='#172033';x.font='bold 28px sans-serif';x.fillText('Business Map',mg,38);let t=people.reduce((z,v)=>z+(+v.target||0),0),a=people.reduce((z,v)=>z+(+v.actual||0),0);x.font='15px sans-serif';x.fillText(`チーム 目標 ${F(t)} / 実績 ${F(a)} / 達成率 ${PC(a,t)}%`,mg,68);let pos={},y=hh;for(let d=0;d<rows.length;d++){let ar=rows[d],tw=ar.length*cw+(ar.length-1)*gx,xx=(w-tw)/2;x.fillStyle='#697386';x.font='bold 11px sans-serif';x.fillText(tier(d),12,y+14);for(let p of ar){pos[p.id]={x:xx,y,cx:xx+cw/2};xx+=cw+gx}y+=ch+gy}x.strokeStyle='#c7d2e1';x.lineWidth=2;S.members.forEach(p=>{let q=pos[p.parentId],r=pos[p.id];if(!q||!r)return;let ay=q.y+ch,by=r.y,m=(ay+by)/2;x.beginPath();x.moveTo(q.cx,ay);x.lineTo(q.cx,m);x.lineTo(r.cx,m);x.lineTo(r.cx,by);x.stroke()});let cache={};for(let p of people)cache[p.avatar]=cache[p.avatar]||await img(A[(p.avatar||0)%36]);for(let p of people){let z=pos[p.id];if(!z)continue;x.fillStyle='#fff';x.beginPath();x.roundRect(z.x,z.y,cw,ch,14);x.fill();x.strokeStyle='#dbe3ef';x.stroke();x.save();x.beginPath();x.arc(z.x+38,z.y+38,28,0,Math.PI*2);x.clip();x.drawImage(cache[p.avatar],z.x+10,z.y+10,56,56);x.restore();x.fillStyle='#172033';x.font='bold 13px sans-serif';x.fillText(p.name,z.x+76,z.y+27);x.font='10px sans-serif';x.fillStyle='#697386';x.fillText(L(p.type)+' / '+p.rank,z.x+76,z.y+43);x.fillStyle='#172033';x.fillText(`個人 目標 ${F(p.target)} / 実績 ${F(p.actual)}`,z.x+76,z.y+65);if(p.type==='ABO'){let g=gp(p);x.fillText(`Group 目標 ${F(g.t)} / 実績 ${F(g.a)}`,z.x+76,z.y+82)}if(p.memo){x.fillStyle='#fff3a8';x.fillRect(z.x+10,z.y+82,58,25);x.fillStyle='#5f531f';x.font='8px sans-serif';x.fillText('📝 '+p.memo.slice(0,9)+(p.memo.length>9?'…':''),z.x+14,z.y+98)}}PIMG=c.toDataURL('image/png');pi.src=PIMG;pm.classList.add('open')}save.onclick=saveNow;del.onclick=delNow;add.onclick=()=>open();editSelf.onclick=()=>open('self');close.onclick=()=>modal.classList.remove('open');ex.onclick=exp;im.onclick=()=>fi.click();fi.onchange=e=>{if(e.target.files[0])imp(e.target.files[0]);e.target.value=''};png.onclick=makePNG;pc.onclick=()=>pm.classList.remove('open');dl.onclick=()=>{if(!PIMG)return;let a=document.createElement('a');a.href=PIMG;a.download='business_map.png';a.click()};modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open')};pm.onclick=e=>{if(e.target===pm)pm.classList.remove('open')};preload().then(()=>{load();render()}).catch(e=>{document.body.innerHTML=`<div style="padding:24px;color:#b91c1c;font-family:sans-serif"><b>アイコン読み込みエラー</b><br>${esc(e.message)}</div>`});</script><script src="enhance-v12.js?v=20260810-v12"></script><script src="enhance-v13.js?v=13"></script><script src="enhance-v14.js?v=14"></script><script src="enhance-v1-reset.js?v=1"></script><script src="enhance-v1-save-buttons.js?v=1"></script><script src="enhance-v1-save-system.js?v=1"></script><script src="enhance-v1-domcapture.js?v=mapmain2"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Business Map v1.03</title>
+<link rel="stylesheet" href="v103-style.css?v=1.03">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div class="brand">Business Map <small>v1.03</small></div>
+      <div class="sub">PV・ネットワーク・Group PV管理</div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="jsonExportBtn">JSON保存</button>
+      <button class="btn" id="jsonImportBtn">JSON読込</button>
+      <button class="btn dark" id="saveImageBtn">画像保存</button>
+    </div>
+  </div>
+
+  <section class="self-card" id="selfCard"></section>
+  <section class="summary-grid" id="statusSummary"></section>
+  <section class="type-row" id="typeSummary"></section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>ネットワークマップ</h2>
+      <div class="controls">
+        <select class="select" id="statusFilter" style="width:auto;min-width:160px"></select>
+        <select class="select" id="typeFilter" style="width:auto;min-width:140px"></select>
+        <button class="btn primary" id="addBtn">＋ メンバー追加</button>
+        <button class="btn" id="editSelfBtn">自分を編集</button>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <div class="legend" id="legend"></div>
+      <div class="map-canvas" id="mapCanvasArea">
+        <svg class="tree-lines" id="treeLines"></svg>
+        <div id="treeRows"></div>
+      </div>
+    </div>
+    <div class="footer-note">自動保存先：このブラウザのlocalStorage（電源を落としても通常は消えません）</div>
+  </section>
+</div>
+
+<input id="fileInput" type="file" accept="application/json" hidden>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title" id="modalTitle">メンバー編集</div>
+      <button class="btn ghost close-action">閉じる</button>
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="right">
+        <button class="btn danger" id="deleteBtnTop">削除</button>
+        <button class="btn primary save-action">保存</button>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:10px">
+      <div class="field"><label>名前</label><input class="text-input" id="fName"></div>
+      <div class="field"><label>区分</label><select class="select" id="fType"></select></div>
+      <div class="field" id="sponsorField"><label>スポンサー</label><select class="select" id="fSponsor"></select></div>
+      <div class="field"><label>目標個人PV</label><input class="number-input" id="fTarget" type="number" min="0" step="1000"></div>
+      <div class="field"><label>実績PV</label><input class="number-input" id="fActual" type="number" min="0" step="1000"></div>
+      <div class="field"><label>ステータス</label><select class="select" id="fStatus"></select></div>
+      <div class="field full hidden" id="customStatusWrap"><label>自由入力ステータス</label><input class="text-input" id="fCustomStatus" placeholder="例：保留 / 検討中 / 旅行中 など"></div>
+      <div class="field"><label>年齢</label><input class="text-input" id="fAge" placeholder="例：26歳"></div>
+      <div class="field"><label>職業</label><input class="text-input" id="fJob" placeholder="例：看護師"></div>
+      <div class="field"><label>趣味</label><input class="text-input" id="fHobby" placeholder="例：カフェ巡り"></div>
+      <div class="field"><label>etc</label><input class="text-input" id="fEtc" placeholder="例：猫好き / 夜勤多め"></div>
+      <div class="field full"><label>メモ1</label><input class="text-input" id="fMemo1" placeholder="短いメモを入力"></div>
+      <div class="field full"><label>メモ2</label><input class="text-input" id="fMemo2" placeholder="短いメモを入力"></div>
+      <div class="field full"><label>メモ3</label><input class="text-input" id="fMemo3" placeholder="短いメモを入力"></div>
+      <div class="field full">
+        <label>顔アイコン</label>
+        <div class="avatars" id="avatarPicker"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost close-action">閉じる</button>
+      <div class="right">
+        <button class="btn danger" id="deleteBtnBottom">削除</button>
+        <button class="btn primary save-action">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="export-root" id="exportRoot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="v103-app-1.js?v=1.03"></script>
+<script src="v103-app-2.js?v=1.03"></script>
+</body>
+</html>
