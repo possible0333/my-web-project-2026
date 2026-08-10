@@ -1,0 +1,36 @@
+name: Enable Business Map v14
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v14.yml'
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Patch Business Map v14
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<title>Business Map v13</title>','<title>Business Map v14</title>')
+          s=s.replace('<span class="ver">v13</span>','<span class="ver">v14</span>')
+          s=s.replace("target:180000,actual:0,rank:'A'","target:30000,actual:0,rank:'A'",1)
+          s=s.replace('<option value="PROSPECT">プロスペ</option></select>','<option value="PROSPECT">プロスペ</option><option value="RETAIL">小売</option></select>',1)
+          s=s.replace("L=t=>t==='ABO'?'ABO':t==='CUSTOMER'?'カスタマー':'プロスペ'","L=t=>t==='ABO'?'ABO':t==='CUSTOMER'?'カスタマー':t==='RETAIL'?'小売':'プロスペ'",1)
+          if 'enhance-v14.css' not in s:
+              s=s.replace('</head>','<link rel="stylesheet" href="enhance-v14.css?v=14"></head>')
+          if 'enhance-v14.js' not in s:
+              s=s.replace('</body>','<script src="enhance-v14.js?v=14"></script></body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          git diff --cached --quiet || git commit -m 'Enable Business Map v14 filters and retail type'
+          git push origin master
