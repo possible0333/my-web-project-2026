@@ -1,0 +1,32 @@
+/* Business Map v1.05: hierarchy-safe layout + zoom */
+.map-wrap{position:relative}
+#mapCanvasArea{transform-origin:top left;position:relative}
+#treeRows{position:relative;min-height:300px}
+#treeRows .member-card{position:absolute;margin:0}
+.v105-level-label{position:absolute;left:6px;z-index:4;background:#edf2f7;color:#475569;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900;white-space:nowrap;pointer-events:none}
+.v105-zoom-controls{display:inline-flex;align-items:center;gap:5px;background:#eef3fb;border:1px solid #d7e2f4;border-radius:14px;padding:4px}
+.v105-zoom-controls .btn{box-shadow:none;padding:7px 10px;min-width:38px;border-radius:10px}
+.v105-zoom-value{font-size:11px;font-weight:900;color:#475569;min-width:44px;text-align:center}
+.v105-fit-btn{min-width:54px!important}
+@media(max-width:720px){
+  .section-head{align-items:flex-start}
+  .controls{width:100%;gap:6px}
+  .v105-zoom-controls{order:-1}
+  .v105-zoom-controls .btn{min-height:42px;padding:8px 11px}
+  .v105-zoom-value{font-size:12px}
+}
+/* v1.05 compact export: map first */
+.export-root{width:1480px!important;padding:16px!important}
+.v105-export-surface{background:#fff;border-radius:22px;border:1px solid #dbe4f0;padding:12px}
+.v105-export-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:8px}
+.v105-export-title{font-size:25px;font-weight:900;color:#0f2748}
+.v105-export-date{font-size:11px;color:#64748b}
+.v105-export-map{position:relative;background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:10px;overflow:hidden}
+.v105-export-info{position:absolute;right:14px;top:14px;z-index:20;width:345px;background:rgba(255,255,255,.96);border:1px solid #dbe4f0;border-radius:14px;padding:9px 10px;box-shadow:0 7px 18px rgba(15,23,42,.08)}
+.v105-export-info-title{font-size:11px;font-weight:900;color:#0f2748;margin-bottom:5px}
+.v105-export-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.v105-export-pill{background:#f6f9fd;border-radius:9px;padding:5px 6px}
+.v105-export-pill .l{font-size:8px;color:#64748b;font-weight:700}
+.v105-export-pill .v{font-size:11px;color:#172033;font-weight:900;margin-top:1px}
+.v105-export-statuses{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.v105-export-status{border:1px solid #e3eaf3;border-radius:999px;padding:3px 6px;background:#fff;font-size:8px;font-weight:800;color:#475569}
