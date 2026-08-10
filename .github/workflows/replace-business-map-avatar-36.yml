@@ -1,0 +1,41 @@
+name: Replace Business Map avatar 36
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'business-map/fixes/avatar-36-new.b64'
+permissions:
+  contents: write
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace avatar 36 and bump icon cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d business-map/fixes/avatar-36-new.b64 > business-map/icons/avatar-36.webp
+          ACTUAL=$(sha256sum business-map/icons/avatar-36.webp | awk '{print $1}')
+          EXPECTED='3b8ebe1fa0d78d0ee44d151467d866dfcc743de6fcb49c678207968341ce897b'
+          test "$ACTUAL" = "$EXPECTED"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          old="const ICON_VERSION='20260810-fixedfive-v1'"
+          new="const ICON_VERSION='20260810-funny36-v2'"
+          if old in s:
+              s=s.replace(old,new)
+          elif new not in s:
+              import re
+              s=re.sub(r"const ICON_VERSION='[^']+'",new,s,count=1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/icons/avatar-36.webp business-map/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Replace Business Map avatar 36'
+            git push
+          fi
