@@ -1,0 +1,27 @@
+/* Business Map v1.07: restore stable v1.02-like row layout, zoom only */
+.v107-zoom-controls{display:inline-flex;align-items:center;gap:5px;background:#eef3fb;border:1px solid #d7e2f4;border-radius:14px;padding:4px}
+.v107-zoom-controls .btn{box-shadow:none;padding:7px 10px;min-width:38px;border-radius:10px}
+.v107-zoom-value{font-size:11px;font-weight:900;color:#475569;min-width:44px;text-align:center}
+#mapCanvasArea{transform-origin:top left}
+#treeRows{position:relative!important;height:auto!important;width:auto!important}
+#treeRows .member-card{position:relative!important;left:auto!important;top:auto!important;margin:0!important}
+#treeRows .level{display:flex!important;justify-content:center!important;align-items:flex-start!important;gap:16px!important;flex-wrap:wrap!important;position:relative!important;min-height:160px!important;padding:30px 8px 24px!important}
+#treeRows .level-label{position:absolute!important;left:4px!important;top:4px!important}
+.v105-level-label,.v106-level-label{display:none!important}
+@media(max-width:720px){
+  .controls{gap:6px}
+  .v107-zoom-controls{order:-1}
+  .v107-zoom-controls .btn{min-height:42px;padding:8px 11px}
+  .v107-zoom-value{font-size:12px}
+}
+/* compact map-first export */
+.v107-export-surface{background:#fff;border-radius:22px;border:1px solid #dbe4f0;padding:12px}
+.v107-export-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:8px}
+.v107-export-title{font-size:24px;font-weight:900;color:#0f2748}
+.v107-export-date{font-size:11px;color:#64748b}
+.v107-export-map{position:relative;background:#fff;border:1px solid #e5edf6;border-radius:18px;padding:10px;overflow:hidden}
+.v107-export-info{position:absolute;right:14px;top:14px;z-index:10;width:330px;background:rgba(255,255,255,.96);border:1px solid #dbe4f0;border-radius:14px;padding:9px 10px;box-shadow:0 7px 18px rgba(15,23,42,.08)}
+.v107-export-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.v107-export-pill{background:#f6f9fd;border-radius:9px;padding:5px 6px}
+.v107-export-pill .l{font-size:8px;color:#64748b;font-weight:700}.v107-export-pill .v{font-size:11px;color:#172033;font-weight:900;margin-top:1px}
+.v107-export-statuses{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.v107-export-status{border:1px solid #e3eaf3;border-radius:999px;padding:3px 6px;background:#fff;font-size:8px;font-weight:800;color:#475569}
