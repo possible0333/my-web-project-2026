@@ -1,0 +1,38 @@
+name: Set Business Map v1.02
+on:
+  push:
+    paths:
+      - '.github/workflows/set-business-map-v1-02.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Update Business Map version and capture cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<title>Business Map v1.01</title>','<title>Business Map v1.02</title>')
+          s=s.replace('<span class="ver">v1.01</span>','<span class="ver">v1.02</span>')
+          s=s.replace('enhance-v1-domcapture.js?v=20260810-mapmain3','enhance-v1-domcapture.js?v=20260810-v102')
+          s=s.replace('enhance-v1-domcapture.js?v=20260810-mapmain2','enhance-v1-domcapture.js?v=20260810-v102')
+          s=s.replace('enhance-v1-domcapture.js?v=20260810-mapmain','enhance-v1-domcapture.js?v=20260810-v102')
+          s=s.replace('enhance-v1-domcapture.js?v=1','enhance-v1-domcapture.js?v=20260810-v102')
+          if 'enhance-v1-domcapture.js?v=' not in s and 'enhance-v1-domcapture.js' in s:
+              s=s.replace('enhance-v1-domcapture.js','enhance-v1-domcapture.js?v=20260810-v102')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          git diff --cached --quiet || git commit -m 'Set Business Map version v1.02'
+          git push origin master
