@@ -1,0 +1,12 @@
+/* Business Map v1.06: stable hierarchy layout */
+.map-wrap{position:relative}
+#mapCanvasArea{position:relative;transform-origin:top left}
+#treeRows{position:relative;min-height:320px}
+#treeRows>.member-card{position:absolute!important;margin:0!important}
+#treeRows>.level{display:none!important}
+.v106-level-label{position:absolute;left:6px;z-index:5;background:#edf2f7;color:#475569;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900;white-space:nowrap;pointer-events:none}
+.v106-zoom-controls{display:inline-flex;align-items:center;gap:5px;background:#eef3fb;border:1px solid #d7e2f4;border-radius:14px;padding:4px}
+.v106-zoom-controls .btn{box-shadow:none;padding:7px 10px;min-width:38px;border-radius:10px}
+.v106-zoom-value{font-size:11px;font-weight:900;color:#475569;min-width:44px;text-align:center}
+.v106-fit-btn{min-width:54px!important}
+@media(max-width:720px){.v106-zoom-controls .btn{min-height:42px;padding:8px 11px}.v106-zoom-value{font-size:12px}}
