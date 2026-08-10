@@ -1,0 +1,32 @@
+name: Set Business Map v1.01
+on:
+  push:
+    paths:
+      - '.github/workflows/set-business-map-v1-01.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set visible version to v1.01
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<title>Business Map v1</title>','<title>Business Map v1.01</title>',1)
+          s=s.replace('<span class="ver">v1</span>','<span class="ver">v1.01</span>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Set Business Map version v1.01'
+            git push
+          fi
