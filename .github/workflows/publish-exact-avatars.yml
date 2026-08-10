@@ -41,19 +41,29 @@ jobs:
 
           out = Path('business-map/icons')
           for name in expected:
-              raw = base64.b64decode(items[name], validate=True)
-              if not raw.startswith(b'RIFF') or b'WEBP' not in raw[:16]:
-                  raise SystemExit(f'invalid webp: {name}')
+              s = ''.join(str(items[name]).split())
+              # Some connector writes appended valid-base64 text after the final padding.
+              # Keep only the first padded Base64 payload, then validate the decoded WebP.
+              if '=' in s:
+                  core = s.split('=', 1)[0]
+                  s = core + '=' * ((4 - len(core) % 4) % 4)
+              try:
+                  raw = base64.b64decode(s, validate=True)
+              except Exception as e:
+                  raise SystemExit(f'base64 decode failed: {name}: {e}')
+              if len(raw) < 1000 or not raw.startswith(b'RIFF') or b'WEBP' not in raw[:16]:
+                  raise SystemExit(f'invalid webp: {name}, bytes={len(raw)}')
               (out / name).write_bytes(raw)
+              print(name, len(raw))
 
           p = Path('business-map/index.html')
           s = p.read_text(encoding='utf-8')
-          s = re.sub(
-              r"const ICON_VERSION='[^']*',A=Array\.from\(\{length:36\},\(_,i\)=>`icons/avatar-\$\{String\(i\+1\)\.padStart\(2,'0'\)\}\.svg\?v=\$\{ICON_VERSION\}`\)",
-              "const ICON_VERSION='20260810-exact36-final',A=Array.from({length:36},(_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.webp?v=${ICON_VERSION}`)",
-              s,
-              count=1,
-          )
+          old = "const ICON_VERSION='20260810f',A=Array.from({length:36},(_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.svg?v=${ICON_VERSION}`)"
+          new = "const ICON_VERSION='20260810-exact36-final2',A=Array.from({length:36},(_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.webp?v=${ICON_VERSION}`)"
+          if old in s:
+              s = s.replace(old, new, 1)
+          else:
+              s = re.sub(r"const ICON_VERSION='[^']*',A=Array\.from\(\{length:36\},\(_,i\)=>`icons/avatar-\$\{String\(i\+1\)\.padStart\(2,'0'\)\}\.(?:svg|png|webp)\?v=\$\{ICON_VERSION\}`\)", new, s, count=1)
           s = s.replace('<title>Business Map v10</title>', '<title>Business Map v11</title>')
           s = s.replace('Business Map <span class="ver">v10</span>', 'Business Map <span class="ver">v11</span>')
           p.write_text(s, encoding='utf-8')
@@ -61,7 +71,7 @@ jobs:
           final = p.read_text(encoding='utf-8')
           if '.webp?v=${ICON_VERSION}' not in final or '.svg?v=${ICON_VERSION}' in final:
               raise SystemExit('index.html avatar reference patch failed')
-          print('decoded avatars:', len(expected))
+          print('decoded avatars: 36/36')
           PY
 
           test "$(find business-map/icons -maxdepth 1 -name 'avatar-*.webp' | wc -l)" -eq 36
