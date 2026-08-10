@@ -1,0 +1,35 @@
+name: Enable Business Map v1 reset
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v1-reset.yml'
+permissions:
+  contents: write
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Patch Business Map to v1
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<title>Business Map v14</title>','<title>Business Map v1</title>')
+          s=s.replace('Business Map <span class="ver">v14</span>','Business Map <span class="ver">v1</span>')
+          if 'enhance-v1-reset.css' not in s:
+              s=s.replace('</head>','<link rel="stylesheet" href="enhance-v1-reset.css?v=1"></head>')
+          if 'enhance-v1-reset.js' not in s:
+              s=s.replace('</body>','<script src="enhance-v1-reset.js?v=1"></script></body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit v1 reset
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          git diff --cached --quiet || git commit -m 'Reset Business Map display version to v1'
+          git push origin master
