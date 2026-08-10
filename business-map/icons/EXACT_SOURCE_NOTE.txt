@@ -1,0 +1,1 @@
+Exact avatar source is the 36-icon image supplied by the user in chat on 2026-08-10. Current task: replace all avatar artwork with crops from that exact image; do not redraw or substitute characters.
