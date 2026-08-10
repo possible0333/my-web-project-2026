@@ -1,0 +1,18 @@
+/* Business Map v13 compact summary */
+#stats{display:none!important}
+.self .v13-team-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:7px}
+.self .v13-team-kpi{background:#ffffff12;border:1px solid #ffffff18;border-radius:9px;padding:6px 7px;min-width:0}
+.self .v13-team-kpi .v13-kpi-label{font-size:9px;color:#ffffffb8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.self .v13-team-kpi .v13-kpi-value{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.v13-prospect-head{display:flex;align-items:center;justify-content:space-between;margin:8px 1px 4px;gap:8px}
+.v13-prospect-head strong{font-size:11px;color:#475467}
+.v13-prospect-head span{font-size:9px;color:#98a2b3}
+#ranks.v13-prospects{display:flex!important;gap:6px!important;overflow-x:auto;padding:1px 1px 4px;margin-top:0!important;scrollbar-width:thin}
+#ranks.v13-prospects .v13-prospect-card{flex:1 0 112px;min-width:112px;background:#fff;border-radius:10px;padding:7px 8px;border-top:4px solid var(--rank-color,#64748b);box-shadow:0 3px 12px #0000000d}
+.v13-prospect-code{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;font-weight:900;color:#172033}
+.v13-prospect-count{font-size:15px;font-weight:900;color:var(--rank-color,#64748b)}
+.v13-prospect-desc{font-size:9px;color:#667085;margin-top:2px;white-space:nowrap}
+.v13-prospect-card[data-rank="S"]{--rank-color:#c98b11}.v13-prospect-card[data-rank="A"]{--rank-color:#7c3aed}.v13-prospect-card[data-rank="B"]{--rank-color:#0f8c8c}.v13-prospect-card[data-rank="C"]{--rank-color:#64748b}.v13-prospect-card[data-rank="D"]{--rank-color:#d95050}
+.types{margin-top:5px!important;gap:5px!important}.types .chip{padding:5px 8px!important;font-size:10px!important;box-shadow:none!important;border:1px solid #e8edf4}
+.section{margin-top:9px!important}.section>.title h3{margin:8px 0;font-size:17px}
+@media(max-width:720px){.self .v13-team-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.self .v13-team-kpi{padding:5px 6px}.self .v13-team-kpi .v13-kpi-value{font-size:12px}#ranks.v13-prospects .v13-prospect-card{flex-basis:104px;min-width:104px;padding:6px 7px}.v13-prospect-desc{font-size:8px}.v13-prospect-head{margin-top:6px}}
