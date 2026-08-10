@@ -1,0 +1,36 @@
+name: Enable Business Map v12
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v12.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Business Map index
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<title>Business Map v11.1</title>','<title>Business Map v12</title>')
+          s=s.replace('Business Map <span class="ver">v11.1</span>','Business Map <span class="ver">v12</span>')
+          css='<link rel="stylesheet" href="enhance-v12.css?v=20260810-v12">'
+          js='<script src="enhance-v12.js?v=20260810-v12"></script>'
+          if css not in s:
+              s=s.replace('</head>',css+'</head>',1)
+          if js not in s:
+              s=s.replace('</body>',js+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add business-map/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Enable Business Map v12 UI enhancements"
+            git push
+          fi
