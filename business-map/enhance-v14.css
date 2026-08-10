@@ -1,0 +1,5 @@
+/* Business Map v14 enhancements */
+.v14-rank-filter{padding:8px 10px;border:1px solid #dbe3ef;border-radius:10px;background:#fff;font-weight:800;max-width:180px}
+.v14-retail-chip{background:#db2777!important;color:#fff!important}
+.card[data-type="RETAIL"]{--type-color:#db2777!important}
+@media(max-width:720px){.v14-rank-filter{max-width:155px}}
