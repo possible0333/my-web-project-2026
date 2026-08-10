@@ -1,5 +1,5 @@
 (function(){
-  const VERSION='v1.05';
+  const VERSION='v1.06';
   let busy=false;
 
   function isMobile(){
@@ -85,6 +85,7 @@
     try{
       if(typeof window.html2canvas!=='function') throw new Error('画像保存ライブラリが読み込めませんでした');
       if(document.fonts && document.fonts.ready) await document.fonts.ready;
+      if(typeof window.v106RenderStable==='function') window.v106RenderStable();
       if(typeof window.drawLines==='function') window.drawLines();
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
       if(typeof window.buildExportSurface!=='function') throw new Error('保存画像の作成処理が見つかりませんでした');
