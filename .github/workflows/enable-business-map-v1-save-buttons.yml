@@ -1,0 +1,33 @@
+name: Enable Business Map v1 save buttons
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-business-map-v1-save-buttons.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('business-map/index.html')
+          s=p.read_text()
+          css='<link rel="stylesheet" href="enhance-v1-save-buttons.css?v=1">'
+          js='<script src="enhance-v1-save-buttons.js?v=1"></script>'
+          if css not in s:
+              s=s.replace('</head>',css+'</head>')
+          if js not in s:
+              s=s.replace('</body>',js+'</body>')
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add business-map/index.html
+          git diff --cached --quiet || git commit -m 'Improve Business Map v1 save buttons'
+          git push
