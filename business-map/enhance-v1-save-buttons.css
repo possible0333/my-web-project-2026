@@ -1,0 +1,7 @@
+/* Larger save controls for Business Map v1 */
+.v1-top-save-wrap{margin:10px 0 12px}
+.v1-save-large{min-height:48px!important;padding:13px 22px!important;font-size:16px!important;font-weight:900!important;border-radius:12px!important}
+#v1TopSave{width:100%;box-shadow:0 6px 18px #3478f633!important}
+#modal .acts{align-items:center}
+#modal #save.v1-bottom-save{min-width:150px;min-height:50px;padding:14px 28px!important;font-size:16px!important}
+@media(max-width:720px){#modal .acts{display:grid;grid-template-columns:1fr auto;gap:8px}#modal #save.v1-bottom-save{width:100%;min-width:0;grid-column:1/-1;order:-1}.v1-top-save-wrap{position:sticky;top:-16px;z-index:3;background:#fff;padding-top:8px;margin-top:4px}}
