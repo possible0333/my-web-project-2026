@@ -1,0 +1,11 @@
+/* Business Map v1 autosave + manual save slots */
+.v1-autosave-status{margin-top:3px;font-size:10px;color:#64748b;font-weight:700}
+.v1-save-manager-btn{background:#0f766e!important;color:#fff!important}
+.v1-save-sheet{max-width:560px}
+.v1-save-slots{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.v1-save-slot{border:1px solid #dbe3ef;border-radius:14px;padding:12px;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v1-save-slot.used{background:#f0fdf4;border-color:#bbf7d0}
+.v1-save-slot-info{display:flex;flex-direction:column;gap:3px;min-width:90px}.v1-save-slot-info strong{font-size:15px}.v1-save-slot-info span{font-size:11px;color:#64748b}
+.v1-save-slot-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.v1-save-slot-actions .btn{padding:9px 11px}.v1-save-slot-actions .btn:disabled{opacity:.4;cursor:not-allowed}
+.v1-save-note{margin-top:14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 10px;font-size:10px;line-height:1.45;color:#9a3412}
+@media(max-width:720px){.v1-save-manager-btn{padding:9px 10px!important}.v1-save-slot{align-items:flex-start;flex-direction:column}.v1-save-slot-actions{width:100%}.v1-save-slot-actions .btn{flex:1;min-width:82px}}
