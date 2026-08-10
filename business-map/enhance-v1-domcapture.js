@@ -21,7 +21,8 @@
     return Promise.all(imgs.map(img=>{
       if(img.complete && img.naturalWidth>0) return Promise.resolve();
       return new Promise(res=>{
-        const done=()=>res();
+        let doneCalled=false;
+        const done=()=>{if(doneCalled)return;doneCalled=true;res();};
         img.addEventListener('load',done,{once:true});
         img.addEventListener('error',done,{once:true});
         setTimeout(done,2500);
@@ -79,7 +80,6 @@
             t.style.width=tw+'px';
             t.style.transform='none';
           }
-          // 保存用画像では操作ボタンだけ非表示。情報カードやフィルター、マップのデザインはそのまま残す。
           doc.querySelectorAll('#ex,#im,#png,#v1ImageSave,#v1SaveOpen,.v1-save-panel,.v1-savebar .btn,#add,#editSelf').forEach(x=>x.style.display='none');
           const topActions=doc.querySelector('.top>div:last-child');
           if(topActions && !topActions.textContent.trim()) topActions.style.display='none';
@@ -103,14 +103,24 @@
 
   function bind(){
     const png=document.getElementById('png');
-    if(png){png.onclick=domCapture;png.textContent='画像保存';}
+    if(png){
+      png.onclick=domCapture;
+      if(png.textContent!=='画像保存') png.textContent='画像保存';
+    }
     const visible=document.getElementById('v1ImageSave');
-    if(visible){visible.onclick=domCapture;visible.textContent='画像保存';}
+    if(visible){
+      visible.onclick=domCapture;
+      if(visible.textContent!=='画像保存') visible.textContent='画像保存';
+    }
   }
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,0));
-  else setTimeout(bind,0);
-  // render拡張でボタンが再生成されるケースにも対応
-  const mo=new MutationObserver(()=>bind());
-  mo.observe(document.body,{childList:true,subtree:true});
+  function bindWithRetries(){
+    bind();
+    setTimeout(bind,300);
+    setTimeout(bind,1000);
+    setTimeout(bind,2500);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindWithRetries,{once:true});
+  else bindWithRetries();
 })();
