@@ -1,0 +1,103 @@
+/* Business Map v1.19: deadline / next action */
+.v119-action-priority{
+  border:2px solid #f3c56b;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fffaf0 0%,#fffdf8 100%);
+  padding:12px 13px!important;
+  box-shadow:0 6px 16px rgba(146,93,16,.06);
+}
+.v119-action-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:9px;
+}
+.v119-action-head label{
+  margin:0!important;
+  color:#7c4a03;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.v119-action-badge{
+  border-radius:999px;
+  padding:3px 8px;
+  background:#f59e0b;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.v119-action-inputs{
+  display:grid;
+  grid-template-columns:minmax(150px,.75fr) minmax(220px,1.6fr);
+  gap:9px;
+}
+.v119-mini-field label{
+  display:block;
+  margin:0 0 5px!important;
+  color:#8a5a13;
+  font-size:10px!important;
+  font-weight:900!important;
+}
+.v119-action-priority .text-input,
+.v119-action-priority input[type="date"]{
+  width:100%;
+  min-height:44px;
+  border:1px solid #e3c27e;
+  border-radius:10px;
+  background:#fff;
+  padding:9px 11px;
+  color:#1f2937;
+  font:inherit;
+  font-weight:800;
+  box-sizing:border-box;
+}
+.v119-action-priority .text-input:focus,
+.v119-action-priority input[type="date"]:focus{
+  outline:2px solid rgba(245,158,11,.25);
+  border-color:#f59e0b;
+}
+.v119-action-helper{
+  margin-top:7px;
+  color:#9a6b22;
+  font-size:10px;
+  font-weight:700;
+}
+
+.v119-card-action{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:4px 8px;
+  margin:7px 0 8px;
+  padding:7px 8px;
+  border:1px solid #f0d39a;
+  border-left:4px solid #f59e0b;
+  border-radius:9px;
+  background:#fffaf0;
+  line-height:1.25;
+}
+.v119-card-action .v119-k{
+  color:#9a6200;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.v119-card-action .v119-v{
+  min-width:0;
+  color:#3f321c;
+  font-size:10px;
+  font-weight:900;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v119-card-action .v119-deadline{
+  color:#c2410c;
+}
+
+@media(max-width:720px){
+  .v119-action-inputs{grid-template-columns:1fr}
+  .v119-action-priority{padding:10px!important}
+  .v119-card-action{gap:3px 6px;padding:6px 7px}
+}
