@@ -1,0 +1,77 @@
+/* Business Map v1.18: filter mode keeps depth rows and hides relationship lines */
+.v118-filter-mode{
+  padding-top:10px!important;
+}
+.v118-filter-mode .tree-lines{
+  display:none!important;
+}
+.v118-filter-root{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+  min-width:0;
+}
+.v118-filter-level{
+  width:100%;
+  padding:10px 12px 12px;
+  border:1px solid #dfe7f2;
+  border-radius:14px;
+  background:#f8fbff;
+}
+.v118-filter-level.is-empty{
+  background:#fbfcfe;
+  border-style:dashed;
+}
+.v118-filter-level-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:9px;
+  color:#334155;
+  font-size:12px;
+  font-weight:900;
+}
+.v118-filter-level-head span{
+  padding:4px 9px;
+  border-radius:999px;
+  background:#e8f1ff;
+  color:#245ea8;
+}
+.v118-filter-level-head b{
+  color:#64748b;
+  font-size:10px;
+}
+.v118-filter-cards{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  gap:10px;
+}
+.v118-filter-cards .member-card{
+  margin:0!important;
+  flex:0 0 auto;
+}
+.v118-filter-none{
+  padding:10px 2px;
+  color:#94a3b8;
+  font-size:11px;
+  font-weight:700;
+}
+.v118-filter-empty{
+  margin:18px 4px;
+  padding:18px;
+  border:1px dashed #cbd5e1;
+  border-radius:14px;
+  background:#f8fafc;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+@media(max-width:720px){
+  .v118-filter-root{gap:10px}
+  .v118-filter-level{padding:8px 9px 10px;border-radius:12px}
+  .v118-filter-cards{gap:8px}
+  .v118-filter-level-head{margin-bottom:7px}
+}
