@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Business Map v1.15</title>
+<title>Business Map v1.16</title>
 <link rel="stylesheet" href="v103-style.css?v=1.03">
 <link rel="stylesheet" href="v104-image-save.css?v=1.04">
 <link rel="stylesheet" href="v107-stable.css?v=1.07">
 <link rel="stylesheet" href="v109-polish.css?v=1.09">
 <link rel="stylesheet" href="v111-density.css?v=1.11">
 <link rel="stylesheet" href="v114-card-readability.css?v=1.14">
-<link rel="stylesheet" href="v115-next-month.css?v=1.15">
+<link rel="stylesheet" href="v116-status-workflow.css?v=1.16">
 </head>
 <body>
 <div class="app">
   <div class="topbar">
     <div>
-      <div class="brand">Business Map <small>v1.15</small></div>
+      <div class="brand">Business Map <small>v1.16</small></div>
       <div class="sub">PV・ネットワーク・GrPV管理</div>
     </div>
     <div class="top-actions">
@@ -68,12 +68,19 @@
     </div>
 
     <div class="form-grid" style="margin-top:10px">
+      <div class="field full v116-status-priority">
+        <div class="v116-status-head">
+          <label for="fStatus">ステータス</label>
+          <span class="v116-status-important">最重要</span>
+        </div>
+        <select class="select" id="fStatus"></select>
+        <div class="v116-status-helper">「来月以降」を選ぶと、この人は通常マップから外れ、右上の「来月以降」枠へ自動で移動します。</div>
+      </div>
       <div class="field"><label>名前</label><input class="text-input" id="fName"></div>
       <div class="field"><label>区分</label><select class="select" id="fType"></select></div>
       <div class="field" id="sponsorField"><label>スポンサー</label><select class="select" id="fSponsor"></select></div>
       <div class="field"><label>目標個人PV</label><input class="number-input" id="fTarget" type="number" min="0" step="1000"></div>
       <div class="field"><label>実績PV</label><input class="number-input" id="fActual" type="number" min="0" step="1000"></div>
-      <div class="field"><label>ステータス</label><select class="select" id="fStatus"></select></div>
       <div class="field full hidden" id="customStatusWrap"><label>自由入力ステータス</label><input class="text-input" id="fCustomStatus" placeholder="例：保留 / 検討中 / 旅行中 など"></div>
       <div class="field"><label>年齢</label><input class="text-input" id="fAge" placeholder="例：26歳"></div>
       <div class="field"><label>職業</label><input class="text-input" id="fJob" placeholder="例：看護師"></div>
@@ -113,6 +120,6 @@
 <script src="v112-dom-capture.js?v=1.14"></script>
 <script src="v113-lines.js?v=1.13"></script>
 <script src="v114-card-readability.js?v=1.14"></script>
-<script src="v115-next-month.js?v=1.15"></script>
+<script src="v116-status-workflow.js?v=1.16"></script>
 </body>
 </html>
