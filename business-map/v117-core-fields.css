@@ -1,0 +1,70 @@
+/* Business Map v1.17: emphasize frequently edited core fields */
+.v117-core-field{
+  position:relative;
+  border:2px solid #c9dcff;
+  border-radius:16px;
+  padding:12px;
+  background:linear-gradient(180deg,#f7faff 0%,#eef5ff 100%);
+  box-shadow:0 6px 16px rgba(52,120,246,.08);
+}
+.v117-core-field>label,
+.v117-core-head label{
+  font-size:13px!important;
+  font-weight:900!important;
+  color:#173b73!important;
+}
+.v117-core-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.v117-core-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  padding:3px 8px;
+  background:#3478f6;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+.v117-core-field .text-input,
+.v117-core-field .number-input{
+  min-height:48px;
+  border:2px solid #a9c8ff!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  font-size:17px!important;
+  font-weight:900!important;
+  color:#172033!important;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.03);
+}
+.v117-core-field .text-input:focus,
+.v117-core-field .number-input:focus{
+  outline:none;
+  border-color:#3478f6!important;
+  box-shadow:0 0 0 4px rgba(52,120,246,.13)!important;
+}
+.v117-name-priority{grid-column:1/-1}
+.v117-name-priority .text-input{font-size:19px!important}
+.v117-pv-priority .number-input{font-variant-numeric:tabular-nums}
+.v117-pv-helper{
+  margin-top:2px;
+  font-size:10px;
+  line-height:1.35;
+  color:#61718a;
+  font-weight:700;
+}
+@media(max-width:980px){
+  .v117-name-priority{grid-column:auto}
+}
+@media(max-width:720px){
+  .v117-core-field{padding:10px;border-radius:14px}
+  .v117-core-field .text-input,
+  .v117-core-field .number-input{min-height:46px;font-size:16px!important}
+  .v117-name-priority .text-input{font-size:18px!important}
+}
