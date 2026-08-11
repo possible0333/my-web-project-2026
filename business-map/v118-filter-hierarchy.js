@@ -20,6 +20,18 @@
     });
   }
 
+  function memberDepth(id){
+    let person=getPerson(id);
+    let depth=0;
+    let guard=0;
+    while(person && person.id!=='self' && guard<40){
+      depth++;
+      person=getPerson(person.parentId || 'self');
+      guard++;
+    }
+    return Math.max(1,depth);
+  }
+
   function bindCardClicks(root){
     root.querySelectorAll('.member-card').forEach(el=>{
       el.onclick=()=>openModal(el.dataset.id);
@@ -49,10 +61,10 @@
       return;
     }
 
-    const maxDepth=Math.max(1,...people.map(p=>Math.max(1,depthOf(p.id))));
+    const maxDepth=Math.max(1,...people.map(p=>memberDepth(p.id)));
     let html='';
     for(let depth=1; depth<=maxDepth; depth++){
-      const group=people.filter(p=>Math.max(1,depthOf(p.id))===depth);
+      const group=people.filter(p=>memberDepth(p.id)===depth);
       html+=`
         <section class="v118-filter-level ${group.length?'':'is-empty'}" data-depth="${depth}">
           <div class="v118-filter-level-head">
