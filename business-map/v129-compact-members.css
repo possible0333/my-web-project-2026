@@ -1,0 +1,51 @@
+/* Business Map v1.29: compact normal member cards without changing self card */
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content){
+  padding:7px!important;
+  height:auto!important;
+  min-height:0!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v120-card-head{
+  margin-bottom:4px!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v119-card-action{
+  gap:2px!important;
+  margin:3px 0 5px!important;
+  padding:5px 7px!important;
+  line-height:1.12!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v120-action-row{
+  min-height:0!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v114-pv{
+  gap:2px!important;
+  padding-top:5px!important;
+  padding-bottom:5px!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .memo-list{
+  margin-top:3px!important;
+  gap:2px!important;
+}
+#treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .memo-item{
+  padding:2px 5px!important;
+  line-height:1.14!important;
+  -webkit-line-clamp:1!important;
+}
+
+/* Density modes: keep the same widths, only reduce vertical rhythm. */
+#treeRows.v127-tree-root.v111-density-2 .member-card.v120-card:not(.v128-self-card-content),
+#treeRows.v127-tree-root.v111-density-3 .member-card.v120-card:not(.v128-self-card-content),
+#treeRows.v127-tree-root.v111-density-4 .member-card.v120-card:not(.v128-self-card-content){
+  padding-top:6px!important;
+  padding-bottom:6px!important;
+}
+#treeRows.v127-tree-root.v111-density-3 .member-card.v120-card:not(.v128-self-card-content) .v119-card-action,
+#treeRows.v127-tree-root.v111-density-4 .member-card.v120-card:not(.v128-self-card-content) .v119-card-action{
+  padding:4px 6px!important;
+  margin:3px 0 4px!important;
+}
+
+@media(max-width:720px){
+  #treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content){padding:6px!important}
+  #treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v120-card-head{margin-bottom:3px!important}
+  #treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v119-card-action{padding:4px 6px!important;margin:3px 0 4px!important}
+}
