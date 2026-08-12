@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.32';
+  const APP_VERSION='v1.33';
 
   function setText(el,text){ if(el && el.textContent!==text) el.textContent=text; }
 
@@ -47,13 +47,13 @@
   function patchRender(name){
     let fn;
     try{ fn=window[name]; }catch(e){ return; }
-    if(typeof fn!=='function' || fn.__v132) return;
+    if(typeof fn!=='function' || fn.__v133) return;
     const wrapped=function(){
       const result=fn.apply(this,arguments);
       requestAnimationFrame(()=>relabel(document));
       return result;
     };
-    wrapped.__v132=true;
+    wrapped.__v133=true;
     window[name]=wrapped;
     try{ globalThis[name]=wrapped; }catch(e){}
   }
@@ -67,10 +67,9 @@
     requestAnimationFrame(()=>relabel(document));
     setTimeout(()=>relabel(document),150);
 
-    // Late DOM updates from older patch layers are normalized too.
     const observer=new MutationObserver(()=>relabel(document));
     observer.observe(document.body,{childList:true,subtree:true});
-    window.v132Relabel=relabel;
+    window.v133Relabel=relabel;
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true});
