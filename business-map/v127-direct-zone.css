@@ -1,0 +1,220 @@
+/* Business Map v1.27: direct customer/retail zone + emphasized self card */
+#treeRows.v127-tree-root{
+  display:inline-flex!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  min-width:max-content!important;
+  padding-top:6px!important;
+}
+.v127-network{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:max-content;
+}
+.v127-direct-zone{
+  min-width:360px;
+  max-width:min(980px,calc(100vw - 56px));
+  margin:0 auto 22px;
+  padding:10px 12px 12px;
+  border:1px solid #dce6f3;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fbfdff 0%,#f6f9fd 100%);
+  box-shadow:0 5px 14px rgba(31,41,55,.05);
+  position:relative;
+  z-index:2;
+}
+.v127-direct-head{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin-bottom:8px;
+  color:#52647d;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.v127-direct-head span{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.v127-direct-head b{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:25px;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#eaf1fb;
+  color:#315f9c;
+  font-size:9px;
+}
+.v127-direct-cards{
+  display:flex;
+  justify-content:center;
+  align-items:stretch;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.v127-mini-card{
+  position:relative;
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:7px;
+  align-items:center;
+  width:170px;
+  min-height:64px;
+  padding:7px 8px;
+  border:1px solid #dfe7f1;
+  border-left:4px solid #94a3b8;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 3px 9px rgba(31,41,55,.05);
+  cursor:pointer;
+  overflow:hidden;
+}
+.v127-mini-card[data-type="カスタマー"]{border-left-color:#16a34a}
+.v127-mini-card[data-type="小売"]{border-left-color:#ec4899}
+.v127-mini-avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #eef2f7;
+  background:#fff;
+}
+.v127-mini-main{min-width:0}
+.v127-mini-name{
+  padding-right:3px;
+  color:#22334d;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:900;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v127-mini-meta{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+  margin-top:3px;
+  color:#64748b;
+  font-size:8px;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.v127-mini-type{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  padding:2px 5px;
+  border-radius:999px;
+  color:#fff;
+  font-size:7px;
+  font-weight:900;
+}
+.v127-mini-card[data-type="カスタマー"] .v127-mini-type{background:#16a34a}
+.v127-mini-card[data-type="小売"] .v127-mini-type{background:#ec4899}
+.v127-mini-pv{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#53657d;
+  font-weight:800;
+}
+.v127-mini-action{
+  margin-top:3px;
+  color:#52647d;
+  font-size:7.5px;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v127-mini-action.is-urgent{color:#c2410c;font-weight:900}
+.v127-mini-status{
+  position:absolute;
+  top:5px;
+  right:5px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  box-shadow:0 0 0 2px #fff;
+}
+
+/* The map's root/self card is the visual anchor. */
+#treeRows .v127-self-map-card{
+  width:244px!important;
+  min-height:158px!important;
+  border:2px solid #3478f6!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,#ffffff 0%,#f3f8ff 100%)!important;
+  box-shadow:0 10px 26px rgba(52,120,246,.18)!important;
+  transform:translateZ(0);
+}
+#treeRows .v127-self-map-card:before{
+  width:7px!important;
+  background:#3478f6!important;
+}
+#treeRows .v127-self-map-card .card-avatar{
+  width:56px!important;
+  height:56px!important;
+  border:3px solid #dce9ff!important;
+  box-shadow:0 3px 10px rgba(52,120,246,.12);
+}
+#treeRows .v127-self-map-card .card-name{
+  color:#173b73!important;
+  font-size:16px!important;
+}
+#treeRows .v127-self-map-card .pv-box{
+  border-color:#c8daf7!important;
+  background:#f7faff!important;
+}
+#treeRows .v127-self-map-card .v127-self-badge{
+  position:absolute;
+  left:8px;
+  top:8px;
+  z-index:4;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 7px;
+  border-radius:999px;
+  background:#173b73;
+  color:#fff;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.05em;
+  box-shadow:0 3px 8px rgba(23,59,115,.16);
+}
+#treeRows .v127-self-map-card .v120-card-head{padding-top:12px}
+#treeRows .v127-self-label{
+  margin-bottom:8px;
+  padding:4px 11px;
+  border-radius:999px;
+  background:#e8f1ff;
+  color:#245ea8;
+  font-size:10px;
+  font-weight:900;
+}
+
+@media(max-width:720px){
+  .v127-direct-zone{
+    min-width:320px;
+    max-width:760px;
+    margin-bottom:18px;
+    padding:8px 9px 10px;
+  }
+  .v127-direct-cards{gap:6px}
+  .v127-mini-card{width:154px;min-height:60px;grid-template-columns:30px minmax(0,1fr);padding:6px 7px}
+  .v127-mini-avatar{width:30px;height:30px}
+  #treeRows .v127-self-map-card{width:224px!important}
+}
+
+/* The off-screen export clone uses the same full-width structure. */
+#v126CaptureHost .v127-direct-zone,
+#v122CaptureHost .v127-direct-zone{max-width:980px!important}
