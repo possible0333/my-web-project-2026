@@ -1,1 +1,1 @@
-Business Map v1.26 deploy trigger retry
+Business Map v1.28 deploy trigger retry
