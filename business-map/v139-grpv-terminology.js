@@ -1,5 +1,9 @@
 (function(){
+  const baseRenderCard = typeof renderCard==='function' ? renderCard : window.renderCard;
+
   function simplifiedCard(p){
+    if(p?.id==='self' && typeof baseRenderCard==='function') return baseRenderCard(p);
+
     const gp=groupPvFor(p.id);
     const status=currentStatusLabel(p);
     return `<div class="member-card" data-id="${p.id}" data-type="${p.type}">
