@@ -1,10 +1,13 @@
 (function(){
-  const APP_VERSION='v1.36';
-  const LOCAL_DB='business-map-shared-v136';
+  const APP_VERSION='v1.37';
+  const LOCAL_DB='business-map-shared-v137';
   const LOCAL_STORE='maps';
-  let cloud=null;
+  const BUCKET='business-maps';
+  const TABLE='business_maps';
+  let supa=null;
   let uploadBlob=null;
   let uploadUrl='';
+  let currentItems=[];
 
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,43 +16,50 @@
     if(Number.isNaN(d.getTime())) return '更新日時不明';
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
+
   function selfName(){
-    try{
-      if(typeof state!=='undefined'&&state?.self?.name) return String(state.self.name).trim();
-    }catch(e){}
+    try{ if(typeof state!=='undefined'&&state?.self?.name) return String(state.self.name).trim(); }catch(e){}
     const el=document.querySelector('#selfCard .card-name,#selfCard .v128-self-namewrap .card-name');
-    return el?.textContent?.trim()||'名前未設定';
+    return el?.textContent?.trim()||localStorage.getItem('businessMapShareName')||'名前未設定';
   }
+
   function applyVersion(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
     const small=$('.brand small'); if(small) small.textContent=APP_VERSION;
     document.title=`Business Map ${APP_VERSION}`;
   }
+
   function ownerKey(){
     let id=localStorage.getItem('businessMapShareOwnerId');
     if(!id){ id=(crypto.randomUUID?.()||`bm-${Date.now()}-${Math.random().toString(36).slice(2)}`); localStorage.setItem('businessMapShareOwnerId',id); }
     return id;
   }
-  function hasFirebaseConfig(){
-    const c=window.BUSINESS_MAP_FIREBASE_CONFIG;
-    return !!(c&&typeof c==='object'&&c.apiKey&&c.projectId&&c.appId);
+
+  function hasSupabaseConfig(){
+    const c=window.BUSINESS_MAP_SUPABASE_CONFIG;
+    return !!(c&&c.url&&c.publishableKey);
   }
-  async function initCloud(){
-    if(cloud) return cloud;
-    if(!hasFirebaseConfig()) return null;
-    const V='12.16.0';
-    const [appM,authM,fsM,stM]=await Promise.all([
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`),
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`),
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`),
-      import(`https://www.gstatic.com/firebasejs/${V}/firebase-storage.js`)
-    ]);
-    const app=appM.getApps().length?appM.getApp():appM.initializeApp(window.BUSINESS_MAP_FIREBASE_CONFIG);
-    const auth=authM.getAuth(app);
-    if(!auth.currentUser) await authM.signInAnonymously(auth);
-    cloud={app,auth,fs:fsM.getFirestore(app),storage:stM.getStorage(app),appM,authM,fsM,stM};
-    return cloud;
+
+  async function initSupabase(){
+    if(supa) return supa;
+    if(!hasSupabaseConfig()) return null;
+    const mod=await import('https://esm.sh/@supabase/supabase-js@2.111.0');
+    const cfg=window.BUSINESS_MAP_SUPABASE_CONFIG;
+    const client=mod.createClient(cfg.url,cfg.publishableKey,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
+    });
+    let {data:{session},error}=await client.auth.getSession();
+    if(error) throw error;
+    if(!session){
+      const signed=await client.auth.signInAnonymously();
+      if(signed.error) throw signed.error;
+      session=signed.data.session;
+    }
+    if(!session?.user) throw new Error('Supabase匿名ログインを有効にしてください');
+    supa={client,user:session.user};
+    return supa;
   }
+
   function openDb(){
     return new Promise((resolve,reject)=>{
       const req=indexedDB.open(LOCAL_DB,1);
@@ -57,6 +67,7 @@
       req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
     });
   }
+
   async function localPut(record,blob){
     const db=await openDb();
     return new Promise((resolve,reject)=>{
@@ -65,6 +76,7 @@
       tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error);
     });
   }
+
   async function localGetAll(){
     const db=await openDb();
     return new Promise((resolve,reject)=>{
@@ -74,30 +86,52 @@
       req.onerror=()=>reject(req.error);
     });
   }
+
   async function saveMap(record,blob){
-    const c=await initCloud().catch(e=>{console.warn('[v1.36] Firebase init failed',e);return null;});
-    if(!c){ await localPut(record,blob); return {mode:'local'}; }
-    const uid=c.auth.currentUser.uid;
-    const imageRef=c.stM.ref(c.storage,`business-maps/${uid}/latest.png`);
-    await c.stM.uploadBytes(imageRef,blob,{contentType:'image/png',cacheControl:'public,max-age=300'});
-    const imageUrl=await c.stM.getDownloadURL(imageRef);
-    await c.fsM.setDoc(c.fsM.doc(c.fs,'businessMaps',uid),{
-      ownerUid:uid,name:record.name,comment:record.comment||'',imageUrl,
-      updatedAt:c.fsM.serverTimestamp(),clientUpdatedAt:Date.now(),version:APP_VERSION
-    },{merge:true});
+    const s=await initSupabase().catch(e=>{console.warn('[v1.37] Supabase init failed',e);return null;});
+    if(!s){ await localPut(record,blob); return {mode:'local'}; }
+
+    const uid=s.user.id;
+    const path=`${uid}/latest.png`;
+    const uploaded=await s.client.storage.from(BUCKET).upload(path,blob,{
+      contentType:'image/png',cacheControl:'300',upsert:true
+    });
+    if(uploaded.error) throw uploaded.error;
+
+    const publicData=s.client.storage.from(BUCKET).getPublicUrl(path);
+    const imageUrl=`${publicData.data.publicUrl}?v=${Date.now()}`;
+    const row={
+      user_id:uid,
+      name:record.name,
+      comment:record.comment||'',
+      image_path:path,
+      image_url:imageUrl,
+      client_updated_at:Date.now(),
+      updated_at:new Date().toISOString(),
+      version:APP_VERSION
+    };
+    const saved=await s.client.from(TABLE).upsert(row,{onConflict:'user_id'});
+    if(saved.error) throw saved.error;
     return {mode:'cloud',imageUrl};
   }
+
   async function loadMaps(){
-    const c=await initCloud().catch(e=>{console.warn('[v1.36] Firebase load failed',e);return null;});
-    if(!c) return {mode:'local',items:await localGetAll()};
-    const snap=await c.fsM.getDocs(c.fsM.collection(c.fs,'businessMaps'));
-    const items=snap.docs.map(d=>{
-      const x=d.data()||{};
-      const when=x.updatedAt?.toDate?.()||new Date(x.clientUpdatedAt||0);
-      return {id:d.id,...x,when};
-    }).sort((a,b)=>(b.when?.getTime?.()||0)-(a.when?.getTime?.()||0));
+    const s=await initSupabase().catch(e=>{console.warn('[v1.37] Supabase load failed',e);return null;});
+    if(!s) return {mode:'local',items:await localGetAll()};
+    const res=await s.client.from(TABLE).select('user_id,name,comment,image_url,client_updated_at,updated_at,version').order('client_updated_at',{ascending:false});
+    if(res.error) throw res.error;
+    const items=(res.data||[]).map(x=>({
+      id:x.user_id,
+      name:x.name,
+      comment:x.comment||'',
+      imageUrl:x.image_url,
+      clientUpdatedAt:x.client_updated_at,
+      when:new Date(x.updated_at||x.client_updated_at||Date.now()),
+      version:x.version
+    }));
     return {mode:'cloud',items};
   }
+
   function injectButtons(){
     const actions=$('.top-actions'); if(!actions) return;
     if(!$('#communityMapsBtn')){
@@ -109,6 +143,7 @@
       const save=$('#saveImageBtn'); save?.insertAdjacentElement('afterend',b);
     }
   }
+
   function injectUi(){
     if($('#v136GalleryModal')) return;
     document.body.insertAdjacentHTML('beforeend',`
@@ -122,13 +157,16 @@
       </div></div>
       <div class="v136-viewer" id="v136Viewer"><button class="btn ghost v136-viewer-close" id="v136ViewerClose">閉じる</button><img id="v136ViewerImg" alt="共有マップ"></div>`);
   }
+
   function noticeHtml(mode){
     return mode==='cloud'
-      ? '<div class="v136-notice v136-cloud-ok">☁️ クラウド共有モード：アップロードしたマップは他のメンバーからも確認できます。</div>'
-      : '<div class="v136-notice">🧪 ローカル確認モード：Firebase未設定のため、この端末内だけで共有画面を確認できます。Firebase設定後は自動で全員共有へ切り替わります。</div>';
+      ? '<div class="v136-notice v136-cloud-ok">☁️ Supabase共有モード：アップロードしたマップは他のメンバーからも確認できます。</div>'
+      : '<div class="v136-notice">🧪 ローカル確認モード：Supabaseのテーブル・Storage・匿名認証設定が未完了、または接続できないため、この端末内だけで表示しています。</div>';
   }
+
   function openModal(id){ $(id)?.classList.add('is-open'); }
   function closeModal(id){ $(id)?.classList.remove('is-open'); }
+
   async function createPreview(){
     const box=$('#v136UploadPreview');
     box.innerHTML='<div class="v136-spinner"></div>';
@@ -138,25 +176,30 @@
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
       box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー">`;
-    }catch(e){ box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`; throw e; }
+    }catch(e){
+      box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
+      throw e;
+    }
   }
+
   async function openUpload(){
     injectUi();
     $('#v136UploadName').value=selfName();
     $('#v136UploadDate').value=fmtDate(new Date());
     $('#v136UploadComment').value='';
-    $('#v136UploadNotice').innerHTML=noticeHtml(hasFirebaseConfig()?'cloud':'local');
+    $('#v136UploadNotice').innerHTML=noticeHtml(hasSupabaseConfig()?'cloud':'local');
     openModal('#v136UploadModal');
     await createPreview().catch(()=>{});
   }
+
   function renderCards(items){
     const q=$('#v136Search')?.value?.trim().toLowerCase()||'';
     const filtered=items.filter(x=>!q||String(x.name||'').toLowerCase().includes(q));
     const grid=$('#v136MapGrid');
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map((x,i)=>`<article class="v136-map-card" data-v136-i="${i}"><div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card"><div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
   }
-  let currentItems=[];
+
   async function refreshGallery(){
     const grid=$('#v136MapGrid'); const stateEl=$('#v136GalleryState');
     grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1"><div class="v136-spinner" style="margin:auto"></div></div>';
@@ -166,29 +209,42 @@
       $('#v136GalleryNotice').innerHTML=noticeHtml(result.mode);
       renderCards(currentItems); stateEl.textContent=`${currentItems.length}件`;
     }catch(e){
-      console.error(e); grid.innerHTML=`<div class="v136-empty" style="grid-column:1/-1">読み込みに失敗しました<br>${esc(e.message||e)}</div>`; stateEl.textContent='';
+      console.error(e);
+      grid.innerHTML=`<div class="v136-empty" style="grid-column:1/-1">読み込みに失敗しました<br>${esc(e.message||e)}</div>`;
+      stateEl.textContent='';
     }
   }
+
   async function openGallery(){ injectUi(); openModal('#v136GalleryModal'); await refreshGallery(); }
+
   async function doUpload(){
     const btn=$('#v136DoUpload');
-    const name=$('#v136UploadName').value.trim(); const comment=$('#v136UploadComment').value.trim();
+    const name=$('#v136UploadName').value.trim();
+    const comment=$('#v136UploadComment').value.trim();
     if(!name){ alert('名前を入力してください'); return; }
     if(!uploadBlob) await createPreview();
     const old=btn.textContent; btn.disabled=true; btn.textContent='アップロード中…';
     try{
       const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob);
       localStorage.setItem('businessMapShareName',name);
-      alert(result.mode==='cloud'?'みんなのマップへアップロードしました！':'この端末の「みんなのマップ」に保存しました。\nFirebase設定後は全員共有になります。');
+      alert(result.mode==='cloud'?'みんなのマップへアップロードしました！':'この端末の「みんなのマップ」に保存しました。\nSupabase設定完了後は全員共有になります。');
       closeModal('#v136UploadModal');
       await openGallery();
-    }catch(e){ console.error(e); alert(`アップロードに失敗しました。\n${e.message||e}`); }
-    finally{ btn.disabled=false; btn.textContent=old; }
+    }catch(e){
+      console.error(e);
+      alert(`アップロードに失敗しました。\n${e.message||e}`);
+    }finally{
+      btn.disabled=false; btn.textContent=old;
+    }
   }
+
   function bind(){
     applyVersion(); injectButtons(); injectUi();
-    $('#communityMapsBtn').onclick=openGallery; $('#uploadMapBtn').onclick=openUpload;
-    $('#v136Reload').onclick=refreshGallery; $('#v136Recreate').onclick=()=>createPreview().catch(()=>{}); $('#v136DoUpload').onclick=doUpload;
+    $('#communityMapsBtn').onclick=openGallery;
+    $('#uploadMapBtn').onclick=openUpload;
+    $('#v136Reload').onclick=refreshGallery;
+    $('#v136Recreate').onclick=()=>createPreview().catch(()=>{});
+    $('#v136DoUpload').onclick=doUpload;
     $('#v136Search').addEventListener('input',()=>renderCards(currentItems));
     document.addEventListener('click',e=>{
       const close=e.target.closest('[data-v136-close]');
@@ -200,5 +256,6 @@
     $('#v136ViewerClose').onclick=()=>$('#v136Viewer').classList.remove('is-open');
     $('#v136Viewer').addEventListener('click',e=>{ if(e.target.id==='v136Viewer') e.currentTarget.classList.remove('is-open'); });
   }
+
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true}); else bind();
 })();
