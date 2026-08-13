@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.35';
+  const APP_VERSION='v1.36';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -91,13 +91,26 @@
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
         if(blob) return blob;
-      }catch(e){ console.warn('[v1.35] html-to-image fallback',e); }
+      }catch(e){ console.warn('[v1.36] html-to-image fallback',e); }
     }
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
       return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
     }
     throw new Error('画像保存ライブラリが読み込めませんでした');
+  }
+
+  async function createBlob(){
+    let cap;
+    try{
+      if(typeof window.v126Recalculate==='function') window.v126Recalculate();
+      if(document.fonts?.ready) await document.fonts.ready;
+      await raf2();
+      cap=buildSurface();
+      return await render(cap.surface);
+    }finally{
+      cap?.host?.remove();
+    }
   }
 
   function download(blob){
@@ -139,21 +152,17 @@
   async function capture(){
     if(busy) return;
     busy=true;
-    let cap;
     const buttons=[document.getElementById('saveImageBtn'),document.getElementById('mapSaveImageBtn')].filter(Boolean);
     const old=buttons.map(b=>b.textContent);
     buttons.forEach(b=>{b.disabled=true;b.textContent='画像作成中…';});
     try{
-      if(typeof window.v126Recalculate==='function') window.v126Recalculate();
-      if(document.fonts?.ready) await document.fonts.ready;
-      await raf2();
-      cap=buildSurface();
-      const blob=await render(cap.surface);
+      const blob=await createBlob();
       preview(blob);
+      return blob;
     }catch(e){
       console.error(e); alert(`画像保存に失敗しました。\n${e.message||e}`);
+      throw e;
     }finally{
-      cap?.host?.remove();
       buttons.forEach((b,i)=>{b.disabled=false;b.textContent=old[i]||'画像保存';});
       busy=false;
     }
@@ -167,6 +176,7 @@
     if(map) map.onclick=capture;
     window.saveImage=capture;
     window.v135Capture=capture;
+    window.v135CreateBlob=createBlob;
 
     document.addEventListener('click',e=>{
       const btn=e.target.closest('#v130MobileBar [data-v130-action="save"]');
