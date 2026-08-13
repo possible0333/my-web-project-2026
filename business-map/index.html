@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Business Map v1.37</title>
+<title>Business Map v1.38</title>
 <link rel="stylesheet" href="v103-style.css?v=1.03">
 <link rel="stylesheet" href="v104-image-save.css?v=1.04">
 <link rel="stylesheet" href="v107-stable.css?v=1.07">
@@ -19,25 +19,33 @@
 <link rel="stylesheet" href="v128-self-focus.css?v=1.28">
 <link rel="stylesheet" href="v129-compact-members.css?v=1.29">
 <link rel="stylesheet" href="v130-mobile.css?v=1.30">
-<link rel="stylesheet" href="v136-share.css?v=1.37">
+<link rel="stylesheet" href="v136-share.css?v=1.38">
+<style>
+  .map-share-actions{display:flex;flex-direction:column;gap:10px;width:min(520px,100%);margin:14px auto 4px;padding:0 8px;box-sizing:border-box}
+  .map-share-actions .btn{width:100%;min-height:50px;font-size:15px;font-weight:800;border-radius:14px}
+  .map-share-actions #uploadMapBtn{background:#0f766e;color:#fff;border-color:#0f766e}
+  .post-map-summary{margin-top:16px}
+  @media (max-width:720px){
+    .map-share-actions{width:100%;padding:0 2px;gap:8px;margin-top:12px}
+    .map-share-actions .btn{min-height:52px;font-size:16px}
+    .post-map-summary{margin-top:14px}
+  }
+</style>
 </head>
 <body>
 <div class="app">
   <div class="topbar">
     <div>
-      <div class="brand">Business Map <small>v1.37</small></div>
+      <div class="brand">Business Map <small>v1.38</small></div>
       <div class="sub">PV・ネットワーク・GrPV管理</div>
     </div>
     <div class="top-actions">
       <button class="btn" id="jsonExportBtn">JSON保存</button>
       <button class="btn" id="jsonImportBtn">JSON読込</button>
-      <button class="btn dark" id="saveImageBtn">画像保存</button>
     </div>
   </div>
 
   <section class="self-card" id="selfCard"></section>
-  <section class="summary-grid" id="statusSummary"></section>
-  <section class="type-row" id="typeSummary"></section>
 
   <section class="section">
     <div class="section-head">
@@ -56,8 +64,19 @@
         <div id="treeRows"></div>
       </div>
     </div>
+
+    <div class="map-share-actions" aria-label="マップ共有・保存">
+      <button class="btn primary" id="uploadMapBtn">アップロード</button>
+      <button class="btn dark" id="saveImageBtn">画像保存</button>
+    </div>
+
     <div class="footer-note">自動保存先：このブラウザのlocalStorage（電源を落としても通常は消えません）</div>
   </section>
+
+  <div class="post-map-summary">
+    <section class="summary-grid" id="statusSummary"></section>
+    <section class="type-row" id="typeSummary"></section>
+  </div>
 </div>
 
 <input id="fileInput" type="file" accept="application/json" hidden>
@@ -168,9 +187,9 @@
 <script src="v129-version.js?v=1.29"></script>
 <script src="v130-mobile-export.js?v=1.30"></script>
 <script src="v131-tight-export.js?v=1.31"></script>
-<script src="v132-grpv-terminology.js?v=1.37"></script>
-<script src="v135-export.js?v=1.37"></script>
-<script src="supabase-config.js?v=1.37"></script>
-<script src="v136-share.js?v=1.37"></script>
+<script src="v132-grpv-terminology.js?v=1.38"></script>
+<script src="v135-export.js?v=1.38"></script>
+<script src="supabase-config.js?v=1.38"></script>
+<script src="v136-share.js?v=1.38"></script>
 </body>
 </html>
