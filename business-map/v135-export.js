@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.36';
+  const APP_VERSION='v1.38';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -91,7 +91,7 @@
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
         if(blob) return blob;
-      }catch(e){ console.warn('[v1.36] html-to-image fallback',e); }
+      }catch(e){ console.warn('[v1.38] html-to-image fallback',e); }
     }
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
