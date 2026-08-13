@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.34';
+  const APP_VERSION='v1.35';
   function apply(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
     const small=document.querySelector('.brand small');
