@@ -15,8 +15,6 @@
   function isDirectManaged(p){
     if(!p || p.parentId!=='self') return false;
     if(p.type!=='カスタマー' && p.type!=='小売') return false;
-    // Safety for legacy data: if a customer/retail member somehow has children,
-    // keep the branch in the normal tree rather than orphaning descendants.
     return !(state.members||[]).some(x=>x.parentId===p.id && isCurrent(x));
   }
 
@@ -64,7 +62,7 @@
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
-        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv">実績 ${fmt(p.actual||0)}PV</span></span>
+        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv">実 ${fmt(p.actual||0)}PV</span></span>
         ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
       </span>
     </button>`;
