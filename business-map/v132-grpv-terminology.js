@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.39';
+  const APP_VERSION='v1.40';
 
   function apply(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
@@ -11,7 +11,7 @@
   function loadTerminologyPatch(){
     if(document.querySelector('script[data-v139-grpv]')) return;
     const s=document.createElement('script');
-    s.src='v139-grpv-terminology.js?v=1.39';
+    s.src='v139-grpv-terminology.js?v=1.40';
     s.dataset.v139Grpv='1';
     s.async=false;
     document.body.appendChild(s);
@@ -66,9 +66,9 @@
       reset.addEventListener('click',resetMap);
       document.getElementById('latestRefreshBtn')?.insertAdjacentElement('afterend',reset);
     }
-    if(!document.getElementById('v139TopControlStyle')){
+    if(!document.getElementById('v140TopControlStyle')){
       const style=document.createElement('style');
-      style.id='v139TopControlStyle';
+      style.id='v140TopControlStyle';
       style.textContent=`@media (max-width:720px){.top-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:7px;width:100%;margin-top:8px}.top-actions .btn{min-height:42px;padding:8px 10px;font-size:12px;white-space:nowrap}#latestRefreshBtn,#resetMapBtn{font-weight:800}}`;
       document.head.appendChild(style);
     }
