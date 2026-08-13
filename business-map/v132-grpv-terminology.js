@@ -30,7 +30,12 @@
       console.error('[Business Map v1.38] Supabase bootstrap failed',e);
     }
   }
-  function boot(){ apply(); bootstrapSupabase(); }
+  function boot(){
+    apply();
+    bootstrapSupabase();
+    setTimeout(apply,100);
+    setTimeout(apply,1000);
+  }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
   else boot();
 })();
