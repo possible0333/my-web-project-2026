@@ -8,8 +8,25 @@ const read=name=>readFile(new URL(name,root),'utf8');
 
 test('the public entrypoint loads the central version first',async()=>{
   const html=await read('index.html');
-  assert.match(html,/<script src="config\/version\.js\?v=1\.41"><\/script>/);
-  assert.equal((html.match(/Business Map v1\.41/g)||[]).length,1);
+  assert.match(html,/<script src="config\/version\.js\?v=1\.42"><\/script>/);
+  assert.equal((html.match(/Business Map v1\.42/g)||[]).length,1);
+  assert.match(html,/css\/product-ui\.css\?v=1\.42/);
+  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.42/);
+});
+
+test('mobile and export modules share the central version',async()=>{
+  for(const file of ['v103-app-1.js','v130-mobile-export.js','v135-export.js','v136-share.js']){
+    const source=await read(file);
+    assert.match(source,/BUSINESS_MAP_CONFIG\?\.version/);
+  }
+});
+
+test('product shell exposes non-destructive diagnostics',async()=>{
+  const source=await read('js/ui/product-shell.js');
+  assert.match(source,/window\.businessMapDiagnostics=diagnostics/);
+  assert.match(source,/duplicateIds/);
+  assert.match(source,/orphanParents/);
+  assert.match(source,/horizontalOverflow/);
 });
 
 test('runtime modules use the central version',async()=>{
@@ -35,6 +52,7 @@ test('hierarchy traversal guards duplicate and cyclic ids',async()=>{
 test('migration repairs cycles and GrPV counts every person once',async()=>{
   const source=await read('v103-app-1.js');
   const sandbox={console,localStorage:{getItem(){return null},setItem(){}}};
+  sandbox.window=sandbox;
   vm.createContext(sandbox);
   vm.runInContext(`${source}\nthis.__api={migrate,groupPvFor,descendants,setState:v=>state=v};`,sandbox);
   const migrated=sandbox.__api.migrate({

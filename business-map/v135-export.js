@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.41';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));

@@ -1,4 +1,4 @@
-const VERSION = 'v1.03';
+const VERSION = window.BUSINESS_MAP_CONFIG?.version || 'v1.42';
 const STORAGE_KEYS = ['business_map_v1_03','business_map_v1_02','business_map_v1_01','business_map_v1','business_map_v8_clean_icons'];
 const ICONS = Array.from({length:36}, (_,i)=>`icons/avatar-${String(i+1).padStart(2,'0')}.png?v=20260810e`);
 const TYPE_COLORS = {ABO:'#3478f6','カスタマー':'#16a34a','プロスペ':'#f59e0b','小売':'#ec4899'};

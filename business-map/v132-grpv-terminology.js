@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.41';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
 
   function apply(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
@@ -11,7 +11,7 @@
   function loadTerminologyPatch(){
     if(document.querySelector('script[data-v139-grpv]')) return;
     const s=document.createElement('script');
-    s.src=`v139-grpv-terminology.js?v=${window.BUSINESS_MAP_CONFIG?.cacheTag||'1.41'}`;
+    s.src=`v139-grpv-terminology.js?v=${window.BUSINESS_MAP_CONFIG?.cacheTag||'1.42'}`;
     s.dataset.v139Grpv='1';
     s.async=false;
     document.body.appendChild(s);
