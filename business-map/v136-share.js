@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.37';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.41';
   const LOCAL_DB='business-map-shared-v137';
   const LOCAL_STORE='maps';
   const BUCKET='business-maps';
@@ -43,6 +43,15 @@
   async function initSupabase(){
     if(supa) return supa;
     if(!hasSupabaseConfig()) return null;
+    if(window.BUSINESS_MAP_SUPABASE_READY){
+      await window.BUSINESS_MAP_SUPABASE_READY.catch(()=>null);
+      const boot=window.BUSINESS_MAP_SUPABASE_BOOT;
+      if(boot?.ok&&boot.client&&boot.userId){
+        supa={client:boot.client,user:{id:boot.userId}};
+        return supa;
+      }
+      if(boot?.ok===false) return null;
+    }
     const mod=await import('https://esm.sh/@supabase/supabase-js@2.111.0');
     const cfg=window.BUSINESS_MAP_SUPABASE_CONFIG;
     const client=mod.createClient(cfg.url,cfg.publishableKey,{
@@ -88,7 +97,7 @@
   }
 
   async function saveMap(record,blob){
-    const s=await initSupabase().catch(e=>{console.warn('[v1.37] Supabase init failed',e);return null;});
+    const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
     if(!s){ await localPut(record,blob); return {mode:'local'}; }
 
     const uid=s.user.id;
@@ -116,7 +125,7 @@
   }
 
   async function loadMaps(){
-    const s=await initSupabase().catch(e=>{console.warn('[v1.37] Supabase load failed',e);return null;});
+    const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase load failed`,e);return null;});
     if(!s) return {mode:'local',items:await localGetAll()};
     const res=await s.client.from(TABLE).select('user_id,name,comment,image_url,client_updated_at,updated_at,version').order('client_updated_at',{ascending:false});
     if(res.error) throw res.error;

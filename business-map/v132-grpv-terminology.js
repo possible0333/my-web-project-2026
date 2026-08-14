@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.40';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.41';
 
   function apply(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
@@ -11,7 +11,7 @@
   function loadTerminologyPatch(){
     if(document.querySelector('script[data-v139-grpv]')) return;
     const s=document.createElement('script');
-    s.src='v139-grpv-terminology.js?v=1.40';
+    s.src=`v139-grpv-terminology.js?v=${window.BUSINESS_MAP_CONFIG?.cacheTag||'1.41'}`;
     s.dataset.v139Grpv='1';
     s.async=false;
     document.body.appendChild(s);
@@ -87,16 +87,20 @@
         if(signed.error) throw signed.error;
         session=signed.data.session;
       }
-      if(session?.user) window.BUSINESS_MAP_SUPABASE_BOOT={ok:true,userId:session.user.id,client};
+      if(session?.user){
+        window.BUSINESS_MAP_SUPABASE_BOOT={ok:true,userId:session.user.id,client};
+        return window.BUSINESS_MAP_SUPABASE_BOOT;
+      }
     }catch(e){
       window.BUSINESS_MAP_SUPABASE_BOOT={ok:false,error:String(e?.message||e)};
+      return window.BUSINESS_MAP_SUPABASE_BOOT;
     }
   }
 
   function boot(){
     apply();
     injectTopControls();
-    bootstrapSupabase();
+    window.BUSINESS_MAP_SUPABASE_READY=bootstrapSupabase();
     loadTerminologyPatch();
     setTimeout(apply,100);
     setTimeout(apply,1000);

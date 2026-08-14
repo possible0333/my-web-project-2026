@@ -35,7 +35,11 @@ function allPeople(){ return [state.self, ...state.members]; }
 function getPerson(id){ return id==='self' ? state.self : state.members.find(x=>x.id===id); }
 function childrenOf(id){ return state.members.filter(x=>x.parentId===id); }
 function descendants(id){
-  const out=[]; const walk=(pid)=>{ childrenOf(pid).forEach(c=>{ out.push(c); walk(c.id); }); };
+  const out=[]; const visited=new Set([id]);
+  const walk=(pid)=>{ childrenOf(pid).forEach(c=>{
+    if(!c?.id || visited.has(c.id)) return;
+    visited.add(c.id); out.push(c); walk(c.id);
+  }); };
   walk(id); return out;
 }
 function depthOf(id){
@@ -106,6 +110,23 @@ function migrate(raw){
   }));
   const self = {...DEFAULT_SELF, ...(migrated.find(x=>x.id==='self') || migrated[0] || DEFAULT_SELF), id:'self', type:'ABO', parentId:null};
   const members = migrated.filter(x=>x.id!=='self');
+  const seenIds = new Set(['self']);
+  members.forEach(p=>{
+    if(!p.id || seenIds.has(p.id)) p.id=uid();
+    seenIds.add(p.id);
+  });
+  const byId = new Map(members.map(p=>[p.id,p]));
+  members.forEach(p=>{
+    if(!p.parentId || p.parentId===p.id || (p.parentId!=='self'&&!byId.has(p.parentId))) p.parentId='self';
+    const visited=new Set([p.id]);
+    let cursor=p;
+    while(cursor?.parentId && cursor.parentId!=='self'){
+      if(visited.has(cursor.parentId)){ p.parentId='self'; break; }
+      visited.add(cursor.parentId);
+      cursor=byId.get(cursor.parentId);
+      if(!cursor){ p.parentId='self'; break; }
+    }
+  });
   return {self, members};
 }
 function load(){
