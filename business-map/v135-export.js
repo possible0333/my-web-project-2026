@@ -1,10 +1,38 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
   async function raf2(){ await raf(); await raf(); }
   function isMobile(){ return matchMedia('(max-width:720px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+  function directGridMetrics(count){
+    const columns=count<=0?0:count<=3?count:count<=6?3:4;
+    const cardWidth=172,gap=8,padding=24;
+    return {columns,width:columns?columns*cardWidth+(columns-1)*gap+padding:0};
+  }
+
+  function applyDirectGrid(direct){
+    const cards=[...direct.querySelectorAll('.v127-mini-card')];
+    const metrics=directGridMetrics(cards.length);
+    if(!metrics.columns) return metrics;
+    direct.style.setProperty('width',metrics.width+'px','important');
+    direct.style.setProperty('min-width','0','important');
+    direct.style.setProperty('max-width',metrics.width+'px','important');
+    const grid=direct.querySelector('.v127-direct-cards');
+    if(grid){
+      grid.style.setProperty('display','grid','important');
+      grid.style.setProperty('grid-template-columns',`repeat(${metrics.columns},minmax(0,1fr))`,'important');
+      grid.style.setProperty('gap','8px','important');
+      grid.style.setProperty('justify-content','center','important');
+    }
+    cards.forEach(card=>{
+      card.style.setProperty('width','100%','important');
+      card.style.setProperty('min-width','0','important');
+      card.style.setProperty('box-sizing','border-box','important');
+    });
+    return metrics;
+  }
 
   function applyVersion(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
@@ -32,7 +60,9 @@
     const next=document.getElementById('nextMonthProspects');
     if(!sourceRows||!sourceArea) throw new Error('ネットワークマップが見つかりませんでした');
 
-    const treeWidth=Math.ceil(Math.max(sourceRows.scrollWidth,sourceRows.offsetWidth,720));
+    const directCount=sourceRows.querySelectorAll('.v127-direct-zone .v127-mini-card').length;
+    const directWidth=directGridMetrics(directCount).width;
+    const treeWidth=Math.ceil(Math.max(sourceRows.scrollWidth,sourceRows.offsetWidth,720,directWidth+24));
     const width=Math.ceil(Math.max(treeWidth,620)+32);
     const host=document.createElement('div');
     host.id='v135CaptureHost';
@@ -62,14 +92,7 @@
     if(rows){
       rows.style.cssText='width:max-content;min-width:max-content;max-width:none;margin:0 auto;padding-top:6px;zoom:1;transform:none;';
       const direct=rows.querySelector('.v127-direct-zone');
-      if(direct){
-        const directWidth=Math.min(760,Math.max(360,treeWidth-40));
-        direct.style.setProperty('width',directWidth+'px','important');
-        direct.style.setProperty('min-width','0','important');
-        direct.style.setProperty('max-width',directWidth+'px','important');
-        const cards=direct.querySelector('.v127-direct-cards');
-        if(cards){ cards.style.flexWrap='wrap'; cards.style.maxWidth='100%'; }
-      }
+      if(direct) applyDirectGrid(direct);
     }
     surface.appendChild(area);
     host.appendChild(surface);
@@ -177,6 +200,7 @@
     window.saveImage=capture;
     window.v135Capture=capture;
     window.v135CreateBlob=createBlob;
+    window.v135DirectGridMetrics=directGridMetrics;
 
     document.addEventListener('click',e=>{
       const btn=e.target.closest('#v130MobileBar [data-v130-action="save"]');

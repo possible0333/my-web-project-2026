@@ -1,5 +1,5 @@
 (function(){
-  const VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
+  const VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
   let mapObserver=null;
 
   function modalOpen(){

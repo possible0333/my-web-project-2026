@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
   const LOCAL_DB='business-map-shared-v137';
   const LOCAL_STORE='maps';
   const BUCKET='business-maps';

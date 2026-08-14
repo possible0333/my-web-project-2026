@@ -8,10 +8,18 @@ const read=name=>readFile(new URL(name,root),'utf8');
 
 test('the public entrypoint loads the central version first',async()=>{
   const html=await read('index.html');
-  assert.match(html,/<script src="config\/version\.js\?v=1\.42"><\/script>/);
-  assert.equal((html.match(/Business Map v1\.42/g)||[]).length,1);
-  assert.match(html,/css\/product-ui\.css\?v=1\.42/);
-  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.42/);
+  assert.match(html,/<script src="config\/version\.js\?v=1\.43"><\/script>/);
+  assert.equal((html.match(/Business Map v1\.43/g)||[]).length,1);
+  assert.match(html,/css\/product-ui\.css\?v=1\.43/);
+  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.43/);
+});
+
+test('PNG export uses compact direct-customer grids',async()=>{
+  for(const file of ['v130-mobile-export.js','v135-export.js']){
+    const source=await read(file);
+    assert.match(source,/count<=3\?count:count<=6\?3:4/);
+    assert.match(source,/grid-template-columns/);
+  }
 });
 
 test('mobile and export modules share the central version',async()=>{

@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
   let busy=false;
   let fittedOnce=false;
 
@@ -9,6 +9,12 @@
   function version(){ return APP_VERSION; }
   function raf(){ return new Promise(r=>requestAnimationFrame(r)); }
   async function raf2(){ await raf(); await raf(); }
+
+  function directGridMetrics(count){
+    const columns=count<=0?0:count<=3?count:count<=6?3:4;
+    const cardWidth=172,gap=8,padding=24;
+    return {columns,width:columns?columns*cardWidth+(columns-1)*gap+padding:0};
+  }
 
   function applyVersion(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
@@ -245,16 +251,23 @@
     let treeWidth=naturalTreeWidth(rows);
     const direct=rows.querySelector('.v127-direct-zone');
     if(direct){
-      const directWidth=Math.min(isMobile()?480:720,Math.max(340,treeWidth));
+      const cards=[...direct.querySelectorAll('.v127-mini-card')];
+      const metrics=directGridMetrics(cards.length);
+      const directWidth=metrics.width;
       direct.style.setProperty('width',directWidth+'px','important');
       direct.style.setProperty('min-width','0','important');
       direct.style.setProperty('max-width',directWidth+'px','important');
       const directCards=direct.querySelector('.v127-direct-cards');
-      if(directCards && isMobile()){
+      if(directCards){
         directCards.style.setProperty('display','grid','important');
-        directCards.style.setProperty('grid-template-columns','repeat(2,minmax(0,1fr))','important');
+        directCards.style.setProperty('grid-template-columns',`repeat(${metrics.columns},minmax(0,1fr))`,'important');
+        directCards.style.setProperty('gap','8px','important');
       }
-      direct.querySelectorAll('.v127-mini-card').forEach(card=>card.style.setProperty('width','100%','important'));
+      cards.forEach(card=>{
+        card.style.setProperty('width','100%','important');
+        card.style.setProperty('min-width','0','important');
+        card.style.setProperty('box-sizing','border-box','important');
+      });
       await raf();
       treeWidth=Math.max(treeWidth,Math.ceil(direct.scrollWidth));
     }

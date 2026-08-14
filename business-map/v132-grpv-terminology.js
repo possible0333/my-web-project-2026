@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.42';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
 
   function apply(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
