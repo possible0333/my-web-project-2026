@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.44';
   const LOCAL_DB='business-map-shared-v137';
   const LOCAL_STORE='maps';
   const BUCKET='business-maps';
@@ -8,6 +8,8 @@
   let uploadBlob=null;
   let uploadUrl='';
   let currentItems=[];
+  let currentMode='cloud';
+  const selectedIds=new Set();
 
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -91,8 +93,17 @@
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(LOCAL_STORE,'readonly');
       const req=tx.objectStore(LOCAL_STORE).getAll();
-      req.onsuccess=()=>resolve((req.result||[]).map(r=>({...r,imageUrl:URL.createObjectURL(r.blob),_localUrl:true})).sort((a,b)=>(b.clientUpdatedAt||0)-(a.clientUpdatedAt||0)));
+      req.onsuccess=()=>resolve((req.result||[]).map(r=>({...r,imageUrl:URL.createObjectURL(r.blob),imagePath:'',owned:true,_localUrl:true})).sort((a,b)=>(b.clientUpdatedAt||0)-(a.clientUpdatedAt||0)));
       req.onerror=()=>reject(req.error);
+    });
+  }
+
+  async function localDelete(ids){
+    const db=await openDb();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(LOCAL_STORE,'readwrite');
+      ids.forEach(id=>tx.objectStore(LOCAL_STORE).delete(id));
+      tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error);
     });
   }
 
@@ -127,16 +138,18 @@
   async function loadMaps(){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase load failed`,e);return null;});
     if(!s) return {mode:'local',items:await localGetAll()};
-    const res=await s.client.from(TABLE).select('user_id,name,comment,image_url,client_updated_at,updated_at,version').order('client_updated_at',{ascending:false});
+    const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version').order('client_updated_at',{ascending:false});
     if(res.error) throw res.error;
     const items=(res.data||[]).map(x=>({
       id:x.user_id,
       name:x.name,
       comment:x.comment||'',
+      imagePath:x.image_path||'',
       imageUrl:x.image_url,
       clientUpdatedAt:x.client_updated_at,
       when:new Date(x.updated_at||x.client_updated_at||Date.now()),
-      version:x.version
+      version:x.version,
+      owned:x.user_id===s.user.id
     }));
     return {mode:'cloud',items};
   }
@@ -158,7 +171,7 @@
     document.body.insertAdjacentHTML('beforeend',`
       <div class="v136-share-modal" id="v136GalleryModal"><div class="v136-share-sheet">
         <div class="v136-share-head"><div><div class="v136-share-title">みんなのマップ</div><div class="v136-share-sub">グループの最新Business Mapを一覧で確認</div></div><button class="btn ghost" data-v136-close="gallery">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-map-grid" id="v136MapGrid"></div></div>
+        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div>
       </div></div>
       <div class="v136-share-modal" id="v136UploadModal"><div class="v136-share-sheet" style="width:min(760px,100%)">
         <div class="v136-share-head"><div><div class="v136-share-title">マップをアップロード</div><div class="v136-share-sub">現在のマップを画像化して最新版として共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
@@ -205,8 +218,47 @@
     const q=$('#v136Search')?.value?.trim().toLowerCase()||'';
     const filtered=items.filter(x=>!q||String(x.name||'').toLowerCase().includes(q));
     const grid=$('#v136MapGrid');
+    updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card"><div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${x.owned?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
+  }
+
+  function updateDeleteButton(){
+    const btn=$('#v136DeleteSelected');
+    if(!btn) return;
+    btn.disabled=selectedIds.size===0;
+    btn.textContent=`選択削除（${selectedIds.size}）`;
+  }
+
+  async function deleteSelectedMaps(){
+    const owned=currentItems.filter(x=>selectedIds.has(x.id)&&x.owned);
+    if(!owned.length){ selectedIds.clear(); updateDeleteButton(); return; }
+    if(!confirm(`選択した${owned.length}件のマップを削除します。\nこの操作は元に戻せません。`)) return;
+    const btn=$('#v136DeleteSelected');
+    btn.disabled=true; btn.textContent='削除中…';
+    try{
+      if(currentMode==='local'){
+        await localDelete(owned.map(x=>x.id));
+      }else{
+        const s=await initSupabase();
+        const mine=owned.filter(x=>x.id===s.user.id);
+        if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
+        const paths=mine.map(x=>x.imagePath).filter(Boolean);
+        if(paths.length){
+          const removed=await s.client.storage.from(BUCKET).remove(paths);
+          if(removed.error) throw removed.error;
+        }
+        const deleted=await s.client.from(TABLE).delete().in('user_id',mine.map(x=>x.id)).eq('user_id',s.user.id).select('user_id');
+        if(deleted.error) throw deleted.error;
+        if((deleted.data||[]).length!==mine.length) throw new Error('削除対象を確認できませんでした');
+      }
+      selectedIds.clear();
+      await refreshGallery();
+    }catch(e){
+      console.error(e);
+      alert(`削除に失敗しました。\n${e.message||e}`);
+      updateDeleteButton();
+    }
   }
 
   async function refreshGallery(){
@@ -214,7 +266,8 @@
     grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1"><div class="v136-spinner" style="margin:auto"></div></div>';
     stateEl.textContent='読み込み中…';
     try{
-      const result=await loadMaps(); currentItems=result.items;
+      const result=await loadMaps(); currentMode=result.mode; currentItems=result.items;
+      selectedIds.clear();
       $('#v136GalleryNotice').innerHTML=noticeHtml(result.mode);
       renderCards(currentItems); stateEl.textContent=`${currentItems.length}件`;
     }catch(e){
@@ -252,9 +305,17 @@
     $('#communityMapsBtn').onclick=openGallery;
     $('#uploadMapBtn').onclick=openUpload;
     $('#v136Reload').onclick=refreshGallery;
+    $('#v136DeleteSelected').onclick=deleteSelectedMaps;
     $('#v136Recreate').onclick=()=>createPreview().catch(()=>{});
     $('#v136DoUpload').onclick=doUpload;
     $('#v136Search').addEventListener('input',()=>renderCards(currentItems));
+    $('#v136MapGrid').addEventListener('change',e=>{
+      const input=e.target.closest('[data-v136-select]');
+      if(!input) return;
+      if(input.checked) selectedIds.add(input.dataset.v136Select); else selectedIds.delete(input.dataset.v136Select);
+      input.closest('.v136-map-card')?.classList.toggle('is-selected',input.checked);
+      updateDeleteButton();
+    });
     document.addEventListener('click',e=>{
       const close=e.target.closest('[data-v136-close]');
       if(close) closeModal(close.dataset.v136Close==='gallery'?'#v136GalleryModal':'#v136UploadModal');

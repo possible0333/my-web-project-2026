@@ -49,7 +49,10 @@ function populateSelects(){
 }
 function buildSponsorOptions(currentId){
   const invalid = new Set([currentId, ...descendants(currentId||'').map(x=>x.id)]);
-  const list = [{id:'self', name:state.self.name}, ...state.members].filter(p=>!invalid.has(p.id));
+  const currentParent=currentId?getPerson(currentId)?.parentId:null;
+  const list = [{id:'self', name:state.self.name, type:'ABO'}, ...state.members].filter(p=>
+    !invalid.has(p.id) && (p.id==='self' || p.type==='ABO' || p.type==='プロスペ' || p.id===currentParent)
+  );
   $('fSponsor').innerHTML = list.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
 }
 function renderAvatarPicker(){

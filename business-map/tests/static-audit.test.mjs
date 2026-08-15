@@ -8,10 +8,11 @@ const read=name=>readFile(new URL(name,root),'utf8');
 
 test('the public entrypoint loads the central version first',async()=>{
   const html=await read('index.html');
-  assert.match(html,/<script src="config\/version\.js\?v=1\.43"><\/script>/);
-  assert.equal((html.match(/Business Map v1\.43/g)||[]).length,1);
-  assert.match(html,/css\/product-ui\.css\?v=1\.43/);
-  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.43/);
+  assert.match(html,/<script src="config\/version\.js\?v=1\.44"><\/script>/);
+  assert.equal((html.match(/Business Map v1\.44/g)||[]).length,1);
+  assert.match(html,/css\/product-ui\.css\?v=1\.44/);
+  assert.match(html,/css\/share-controls\.css\?v=1\.44/);
+  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.44/);
 });
 
 test('PNG export uses compact direct-customer grids',async()=>{
@@ -27,6 +28,20 @@ test('mobile and export modules share the central version',async()=>{
     const source=await read(file);
     assert.match(source,/BUSINESS_MAP_CONFIG\?\.version/);
   }
+});
+
+test('gallery deletion is owner-scoped and removes storage objects',async()=>{
+  const source=await read('v136-share.js');
+  assert.match(source,/x\.user_id===s\.user\.id/);
+  assert.match(source,/storage\.from\(BUCKET\)\.remove\(paths\)/);
+  assert.match(source,/\.delete\(\)\.in\('user_id'/);
+  assert.match(source,/id="v136DeleteSelected"/);
+});
+
+test('new sponsor choices exclude customer and retail members',async()=>{
+  const source=await read('v103-app-2.js');
+  assert.match(source,/p\.type==='ABO' \|\| p\.type==='プロスペ'/);
+  assert.match(source,/p\.id===currentParent/);
 });
 
 test('product shell exposes non-destructive diagnostics',async()=>{

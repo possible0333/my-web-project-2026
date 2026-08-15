@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.43';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.44';
   let busy=false;
   let fittedOnce=false;
 
