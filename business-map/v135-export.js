@@ -178,7 +178,7 @@
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
       const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
-      return await trimBlob(blob);
+      return await trimBlob(blob,ownerCenter);
     }
     throw new Error('画像保存ライブラリが読み込めませんでした');
   }
