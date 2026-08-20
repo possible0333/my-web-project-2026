@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.45';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.46';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -107,7 +107,7 @@
       network?.scrollWidth||0,
       directWidth
     ));
-    const topWidth=Math.ceil(top.getBoundingClientRect().width||0);
+    const topWidth=Math.ceil((top.firstElementChild?.scrollWidth||0)+(top.lastElementChild!==top.firstElementChild?(top.lastElementChild?.scrollWidth||0)+12:0));
     const finalWidth=Math.max(620,measuredTree+32,Math.min(topWidth+32,1200));
     host.style.width=finalWidth+'px';
     surface.style.width=finalWidth+'px';
