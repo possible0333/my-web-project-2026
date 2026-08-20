@@ -1,6 +1,9 @@
 /* Business Map v1.27: direct customer/retail zone + emphasized self card */
 #treeRows.v127-tree-root{
-  display:inline-flex!important;
+  display:flex!important;
+  width:max-content!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
   justify-content:center!important;
   align-items:flex-start!important;
   min-width:max-content!important;
