@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.47';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.48';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -110,6 +110,9 @@
     const finalWidth=Math.max(620,measuredTree+32);
     host.style.width=finalWidth+'px';
     surface.style.width=finalWidth+'px';
+    top.style.width=(finalWidth-32)+'px';
+    top.style.marginLeft='auto';
+    top.style.marginRight='auto';
     area.style.width=(finalWidth-32)+'px';
     area.style.minWidth=(finalWidth-32)+'px';
     if(rows){
