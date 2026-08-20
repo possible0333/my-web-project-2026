@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.44';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.45';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -62,8 +62,9 @@
 
     const directCount=sourceRows.querySelectorAll('.v127-direct-zone .v127-mini-card').length;
     const directWidth=directGridMetrics(directCount).width;
-    const treeWidth=Math.ceil(Math.max(sourceRows.scrollWidth,sourceRows.offsetWidth,720,directWidth+24));
-    const width=Math.ceil(Math.max(treeWidth,620)+32);
+    const provisionalWidth=Math.max(20000,directWidth+2000);
+    const treeWidth=provisionalWidth;
+    const width=provisionalWidth;
     const host=document.createElement('div');
     host.id='v135CaptureHost';
     host.style.cssText=`position:fixed;left:-100000px;top:0;width:${width}px;background:#fff;z-index:-99999;pointer-events:none;overflow:visible;`;
@@ -97,6 +98,26 @@
     surface.appendChild(area);
     host.appendChild(surface);
     document.body.appendChild(host);
+
+    // Measure only the cloned content. The live map may retain a very large
+    // scrollWidth after zooming, resizing, or rendering many members.
+    const network=rows?.querySelector('.v127-network') || rows;
+    const measuredTree=Math.ceil(Math.max(
+      network?.getBoundingClientRect().width||0,
+      network?.scrollWidth||0,
+      directWidth
+    ));
+    const topWidth=Math.ceil(top.getBoundingClientRect().width||0);
+    const finalWidth=Math.max(620,measuredTree+32,Math.min(topWidth+32,1200));
+    host.style.width=finalWidth+'px';
+    surface.style.width=finalWidth+'px';
+    area.style.width=(finalWidth-32)+'px';
+    area.style.minWidth=(finalWidth-32)+'px';
+    if(rows){
+      rows.style.width='max-content';
+      rows.style.minWidth='max-content';
+      rows.style.margin='0 auto';
+    }
     return {host,surface};
   }
 
@@ -106,6 +127,39 @@
     return Math.max(.85,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
+  async function trimBlob(blob){
+    const bitmap=await createImageBitmap(blob);
+    const canvas=document.createElement('canvas');
+    canvas.width=bitmap.width; canvas.height=bitmap.height;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.drawImage(bitmap,0,0);
+    bitmap.close?.();
+    const {data,width,height}=ctx.getImageData(0,0,canvas.width,canvas.height);
+    let minX=width,minY=height,maxX=-1,maxY=-1;
+    for(let y=0;y<height;y++){
+      for(let x=0;x<width;x++){
+        const i=(y*width+x)*4;
+        const visible=data[i+3]>12 && (data[i]<247 || data[i+1]<247 || data[i+2]<247);
+        if(!visible) continue;
+        if(x<minX) minX=x; if(x>maxX) maxX=x;
+        if(y<minY) minY=y; if(y>maxY) maxY=y;
+      }
+    }
+    if(maxX<minX||maxY<minY) return blob;
+    const pad=Math.max(12,Math.round(width*.008));
+    // The capture surface centers MAP OWNER. Crop equal distances from that
+    // center so the saved image keeps the owner visually centered.
+    const center=width/2;
+    const half=Math.max(center-minX,maxX-center)+pad;
+    const sx=Math.max(0,Math.floor(center-half));
+    const ex=Math.min(width,Math.ceil(center+half));
+    const sy=Math.max(0,minY-pad), ey=Math.min(height,maxY+pad+1);
+    const out=document.createElement('canvas');
+    out.width=Math.max(1,ex-sx); out.height=Math.max(1,ey-sy);
+    out.getContext('2d').drawImage(canvas,sx,sy,out.width,out.height,0,0,out.width,out.height);
+    return await new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('画像トリムに失敗しました')),'image/png',1));
+  }
+
   async function render(surface){
     await waitImages(surface);
     await raf2();
@@ -113,12 +167,13 @@
     if(window.htmlToImage?.toBlob){
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
-        if(blob) return blob;
+        if(blob) return await trimBlob(blob);
       }catch(e){ console.warn(`[${APP_VERSION}] html-to-image fallback`,e); }
     }
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
-      return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
+      return await trimBlob(blob);
     }
     throw new Error('画像保存ライブラリが読み込めませんでした');
   }
@@ -159,7 +214,7 @@
       modal=document.createElement('div');
       modal.id='v135ImageModal';
       modal.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.52);display:none;align-items:center;justify-content:center;padding:12px;';
-      modal.innerHTML=`<div style="width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div><b style="font-size:17px;color:#172033">Business Map画像 ${APP_VERSION}</b><div style="font-size:10px;color:#64748b;margin-top:2px">マップ全体を余白少なめで保存</div></div><button class="btn ghost" id="v135Close">閉じる</button></div><div style="background:#eef2f7;border-radius:12px;padding:6px;overflow:auto"><img id="v135Preview" style="display:block;max-width:100%;height:auto;margin:auto;background:#fff"></div><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px"><button class="btn primary" id="v135Share">共有・保存</button><button class="btn" id="v135Download">ダウンロード</button></div></div>`;
+      modal.innerHTML=`<div style="width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div><b style="font-size:17px;color:#172033">Business Map画像 ${APP_VERSION}</b><div style="font-size:10px;color:#64748b;margin-top:2px">実コンテンツに合わせてトリム・自分を中央に配置</div></div><button class="btn ghost" id="v135Close">閉じる</button></div><div style="background:#eef2f7;border-radius:12px;padding:6px;overflow:auto"><img id="v135Preview" style="display:block;max-width:100%;height:auto;margin:auto;background:#fff"></div><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px"><button class="btn primary" id="v135Share">共有・保存</button><button class="btn" id="v135Download">ダウンロード</button></div></div>`;
       document.body.appendChild(modal);
       document.getElementById('v135Close').onclick=()=>modal.style.display='none';
       modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
