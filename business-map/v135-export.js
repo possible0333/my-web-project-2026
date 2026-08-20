@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.48';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.49';
   let busy=false;
 
   const raf=()=>new Promise(r=>requestAnimationFrame(r));
@@ -129,7 +129,7 @@
     return Math.max(.85,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
-  async function trimBlob(blob){
+  async function trimBlob(blob,centerHint){
     const bitmap=await createImageBitmap(blob);
     const canvas=document.createElement('canvas');
     canvas.width=bitmap.width; canvas.height=bitmap.height;
@@ -151,7 +151,7 @@
     const pad=Math.max(12,Math.round(width*.008));
     // The capture surface centers MAP OWNER. Crop equal distances from that
     // center so the saved image keeps the owner visually centered.
-    const center=width/2;
+    const center=Number.isFinite(centerHint)?Math.max(0,Math.min(width,centerHint)):width/2;
     const half=Math.max(center-minX,maxX-center)+pad;
     const sx=Math.max(0,Math.floor(center-half));
     const ex=Math.min(width,Math.ceil(center+half));
@@ -166,10 +166,13 @@
     await waitImages(surface);
     await raf2();
     const w=Math.ceil(surface.scrollWidth), h=Math.ceil(surface.scrollHeight), scale=ratio(w,h);
+    const sr=surface.getBoundingClientRect();
+    const owner=surface.querySelector('[data-id="self"]')?.getBoundingClientRect();
+    const ownerCenter=owner?((owner.left+owner.width/2)-sr.left)*scale:null;
     if(window.htmlToImage?.toBlob){
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
-        if(blob) return await trimBlob(blob);
+        if(blob) return await trimBlob(blob,ownerCenter);
       }catch(e){ console.warn(`[${APP_VERSION}] html-to-image fallback`,e); }
     }
     if(window.html2canvas){
