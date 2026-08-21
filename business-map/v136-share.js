@@ -25,6 +25,108 @@
     return el?.textContent?.trim()||localStorage.getItem('businessMapShareName')||'名前未設定';
   }
 
+  function deadlineInfo(value){
+    const raw=String(value||'').trim();
+    if(!raw) return {raw:'',date:null,state:'none',days:null};
+    let year,month,day,m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const now=new Date();
+    if(m){ year=Number(m[1]); month=Number(m[2]); day=Number(m[3]); }
+    else {
+      m=raw.match(/^(\d{1,2})[-\/](\d{1,2})$/);
+      if(!m) return {raw,date:null,state:'invalid',days:null};
+      year=now.getFullYear(); month=Number(m[1]); day=Number(m[2]);
+    }
+    const due=new Date(year,month-1,day);
+    if(due.getFullYear()!==year||due.getMonth()!==month-1||due.getDate()!==day) return {raw,date:null,state:'invalid',days:null};
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const days=Math.round((due-today)/86400000);
+    return {
+      raw,
+      date:`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+      state:days<0?'overdue':days===0?'today':days<=3?'soon':'future',
+      days
+    };
+  }
+
+  function sharedPerson(p){
+    const due=deadlineInfo(p?.deadline);
+    return {
+      id:String(p?.id||''),
+      name:String(p?.name||'名称未設定'),
+      type:String(p?.type||''),
+      parentId:p?.parentId==null?null:String(p.parentId),
+      status:String(p?.status||''),
+      statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
+      targetPv:Number(p?.target||0),
+      actualPv:Number(p?.actual||0),
+      deadline:due,
+      nextAction:String(p?.nextAction||'')
+    };
+  }
+
+  function buildOperationalMapData(){
+    const people=[sharedPerson(state.self),...(state.members||[]).map(sharedPerson)];
+    const gp=typeof groupPvFor==='function'?groupPvFor('self'):{target:0,actual:0};
+    const reminders=people.filter(p=>p.id!=='self'&&['overdue','today','soon'].includes(p.deadline.state));
+    return {
+      schema:'business-map-operational',
+      schemaVersion:1,
+      generatedAt:new Date().toISOString(),
+      appVersion:APP_VERSION,
+      owner:{id:'self',name:String(state.self?.name||'自分')},
+      summary:{
+        peopleCount:people.length,
+        targetGrPv:Number(gp?.target||0),
+        actualGrPv:Number(gp?.actual||0),
+        overdueCount:reminders.filter(x=>x.deadline.state==='overdue').length,
+        dueTodayCount:reminders.filter(x=>x.deadline.state==='today').length,
+        dueSoonCount:reminders.filter(x=>x.deadline.state==='soon').length,
+        nextMonthCount:people.filter(x=>x.status==='next-month').length
+      },
+      people,
+      reminders
+    };
+  }
+
+  function buildReminderSummary(mapData){
+    return {
+      overdue:Number(mapData?.summary?.overdueCount||0),
+      dueToday:Number(mapData?.summary?.dueTodayCount||0),
+      dueSoon:Number(mapData?.summary?.dueSoonCount||0),
+      generatedAt:mapData?.generatedAt||new Date().toISOString()
+    };
+  }
+
+  function downloadGroupJson(){
+    const maps=currentItems.map(x=>({
+      userId:x.id,
+      name:x.name,
+      comment:x.comment||'',
+      updatedAt:x.when instanceof Date?x.when.toISOString():new Date(x.when||x.clientUpdatedAt||Date.now()).toISOString(),
+      appVersion:x.version||'',
+      dataSchemaVersion:Number(x.dataSchemaVersion||1),
+      reminderSummary:x.reminderSummary||{},
+      mapData:x.mapData||{}
+    }));
+    const totals=maps.reduce((a,x)=>{
+      const s=x.mapData?.summary||x.reminderSummary||{};
+      a.maps+=1;
+      a.people+=Number(s.peopleCount||0);
+      a.overdue+=Number(s.overdueCount??s.overdue??0);
+      a.dueToday+=Number(s.dueTodayCount??s.dueToday??0);
+      a.dueSoon+=Number(s.dueSoonCount??s.dueSoon??0);
+      return a;
+    },{maps:0,people:0,overdue:0,dueToday:0,dueSoon:0});
+    const payload={schema:'business-map-group-export',schemaVersion:1,exportedAt:new Date().toISOString(),totals,maps};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`business-map-group-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+  }
+
   function applyVersion(){
     window.BUSINESS_MAP_VERSION=APP_VERSION;
     const small=$('.brand small'); if(small) small.textContent=APP_VERSION;
@@ -107,7 +209,7 @@
     });
   }
 
-  async function saveMap(record,blob){
+  async function saveMap(record,blob,mapData){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
     if(!s){ await localPut(record,blob); return {mode:'local'}; }
 
@@ -128,7 +230,10 @@
       image_url:imageUrl,
       client_updated_at:Date.now(),
       updated_at:new Date().toISOString(),
-      version:APP_VERSION
+      version:APP_VERSION,
+      map_data:mapData,
+      data_schema_version:Number(mapData?.schemaVersion||1),
+      reminder_summary:buildReminderSummary(mapData)
     };
     const saved=await s.client.from(TABLE).upsert(row,{onConflict:'user_id'});
     if(saved.error) throw saved.error;
@@ -138,7 +243,7 @@
   async function loadMaps(){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase load failed`,e);return null;});
     if(!s) return {mode:'local',items:await localGetAll()};
-    const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version').order('client_updated_at',{ascending:false});
+    const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary').order('client_updated_at',{ascending:false});
     if(res.error) throw res.error;
     const items=(res.data||[]).map(x=>({
       id:x.user_id,
@@ -149,6 +254,9 @@
       clientUpdatedAt:x.client_updated_at,
       when:new Date(x.updated_at||x.client_updated_at||Date.now()),
       version:x.version,
+      mapData:x.map_data||{},
+      dataSchemaVersion:x.data_schema_version||1,
+      reminderSummary:x.reminder_summary||{},
       owned:x.user_id===s.user.id
     }));
     return {mode:'cloud',items};
@@ -171,7 +279,7 @@
     document.body.insertAdjacentHTML('beforeend',`
       <div class="v136-share-modal" id="v136GalleryModal"><div class="v136-share-sheet">
         <div class="v136-share-head"><div><div class="v136-share-title">みんなのマップ</div><div class="v136-share-sub">グループの最新Business Mapを一覧で確認</div></div><button class="btn ghost" data-v136-close="gallery">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div>
+        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div>
       </div></div>
       <div class="v136-share-modal" id="v136UploadModal"><div class="v136-share-sheet" style="width:min(760px,100%)">
         <div class="v136-share-head"><div><div class="v136-share-title">マップをアップロード</div><div class="v136-share-sub">現在のマップを画像化して最新版として共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
@@ -287,7 +395,8 @@
     if(!uploadBlob) await createPreview();
     const old=btn.textContent; btn.disabled=true; btn.textContent='アップロード中…';
     try{
-      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob);
+      const mapData=buildOperationalMapData();
+      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,mapData);
       localStorage.setItem('businessMapShareName',name);
       alert(result.mode==='cloud'?'みんなのマップへアップロードしました！':'この端末の「みんなのマップ」に保存しました。\nSupabase設定完了後は全員共有になります。');
       closeModal('#v136UploadModal');
@@ -305,6 +414,7 @@
     $('#communityMapsBtn').onclick=openGallery;
     $('#uploadMapBtn').onclick=openUpload;
     $('#v136Reload').onclick=refreshGallery;
+    $('#v136DownloadJson').onclick=downloadGroupJson;
     $('#v136DeleteSelected').onclick=deleteSelectedMaps;
     $('#v136Recreate').onclick=()=>createPreview().catch(()=>{});
     $('#v136DoUpload').onclick=doUpload;
