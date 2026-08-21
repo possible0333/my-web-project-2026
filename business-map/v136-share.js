@@ -211,7 +211,7 @@
 
   async function saveMap(record,blob,mapData){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
-    if(!s){ await localPut(record,blob); return {mode:'local'}; }
+    if(!s){ await localPut({...record,mapData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
 
     const uid=s.user.id;
     const path=`${uid}/latest.png`;
@@ -411,6 +411,8 @@
 
   function bind(){
     applyVersion(); injectButtons(); injectUi();
+    window.v150BuildOperationalMapData=buildOperationalMapData;
+    window.v150DownloadGroupJson=downloadGroupJson;
     $('#communityMapsBtn').onclick=openGallery;
     $('#uploadMapBtn').onclick=openUpload;
     $('#v136Reload').onclick=refreshGallery;
