@@ -59,10 +59,11 @@
     const actionText=[deadline?`期限 ${deadline}`:'',action].filter(Boolean).join('｜');
     return `<button type="button" class="v127-mini-card" data-v127-id="${escapeHtml(p.id)}" data-type="${escapeHtml(p.type)}">
       <span class="v127-mini-status" style="background:${currentStatusColor(p)}" title="${escapeHtml(currentStatusLabel(p))}"></span>
+      ${Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved v153-mini-achieved">達成</span>':''}
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
-        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv">実 ${fmt(p.actual||0)}PV</span></span>
+        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv"><b>目 ${fmt(p.target||0)}</b><b>実 ${fmt(p.actual||0)}</b></span></span>
         ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
       </span>
     </button>`;
