@@ -59,6 +59,14 @@
       statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
       targetPv:Number(p?.target||0),
       actualPv:Number(p?.actual||0),
+      age:String(p?.age||''),
+      job:String(p?.job||''),
+      hobby:String(p?.hobby||''),
+      etc:String(p?.etc||''),
+      memo1:String(p?.memo1||''),
+      memo2:String(p?.memo2||''),
+      memo3:String(p?.memo3||''),
+      memos:[p?.memo1,p?.memo2,p?.memo3].map(v=>String(v||'')).filter(Boolean),
       deadline:due,
       nextAction:String(p?.nextAction||'')
     };
