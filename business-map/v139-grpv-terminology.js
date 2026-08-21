@@ -7,6 +7,7 @@
     const gp=groupPvFor(p.id);
     const status=currentStatusLabel(p);
     return `<div class="member-card" data-id="${p.id}" data-type="${p.type}">
+      ${p.id!=='self'&&Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved">達成</span>':''}
       <div class="status-stamp" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</div>
       <div class="card-left">
         <img class="card-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
