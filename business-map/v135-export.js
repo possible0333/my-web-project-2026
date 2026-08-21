@@ -124,9 +124,9 @@
   }
 
   function ratio(w,h){
-    const base=isMobile()?2.0:2.5;
-    const max=isMobile()?32000000:64000000;
-    return Math.max(1.15,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
+    const base=isMobile()?2.4:3.0;
+    const max=isMobile()?48000000:96000000;
+    return Math.max(1.35,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
   async function trimBlob(blob,centerHint){
