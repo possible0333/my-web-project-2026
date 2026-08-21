@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.26';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.50';
 
   function eligibleForCurrentMonth(p){
     return Boolean(p) && p.status!=='next-month';
@@ -19,7 +19,7 @@
     let target=ownCounts ? Number(person.target||0) : 0;
     let actual=ownCounts ? Number(person.actual||0) : 0;
 
-    const children=(state.members||[]).filter(p=>p.parentId===id && eligibleForCurrentMonth(p));
+    const children=(state.members||[]).filter(p=>p.parentId===id);
     children.forEach(child=>{
       const line=calculateGroupPv(child.id,new Set(seen));
       target+=Number(line.target||0);
