@@ -221,3 +221,51 @@
 /* The off-screen export clone uses the same full-width structure. */
 #v126CaptureHost .v127-direct-zone,
 #v122CaptureHost .v127-direct-zone{max-width:980px!important}
+
+
+/* v1.53: direct customer/retail details and target achievement */
+.v153-achieved{
+  position:absolute;
+  left:7px;
+  top:7px;
+  z-index:12;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:38px;
+  padding:4px 7px;
+  border:2px solid #15803d;
+  border-radius:7px;
+  background:rgba(240,253,244,.96);
+  color:#15803d;
+  font-size:10px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:.12em;
+  transform:rotate(-7deg);
+  box-shadow:0 2px 7px rgba(21,128,61,.16);
+}
+.v127-mini-card{min-height:80px}
+.v127-mini-card .v153-mini-achieved{
+  left:4px;
+  top:4px;
+  min-width:28px;
+  padding:2px 4px;
+  border-width:1.5px;
+  border-radius:5px;
+  font-size:7px;
+}
+.v127-mini-pv{display:inline-flex;gap:5px;align-items:center}
+.v127-mini-pv b{font:inherit;font-weight:900}
+.v127-mini-action{
+  display:-webkit-box;
+  white-space:normal;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  line-height:1.3;
+  max-height:2.6em;
+}
+@media(max-width:720px){
+  .v127-mini-card{min-height:76px}
+  .v153-achieved{font-size:9px;min-width:34px;padding:3px 6px}
+}
