@@ -136,14 +136,83 @@ function exportJSON(){
   a.href = URL.createObjectURL(blob); a.download = `business_map_${VERSION}.json`; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href), 800);
 }
+function parseImportedJson(text){
+  try{ return JSON.parse(text); }
+  catch(firstError){
+    // Repair the known broken tail produced by an interrupted/edited group export:
+    // one extra object closer and/or a trailing comma immediately before maps[] closes.
+    const repaired=String(text||'')
+      .replace(/,\s*}\s*,\s*]\s*}\s*$/, '\n]}')
+      .replace(/,\s*]\s*}\s*$/, '\n]}');
+    if(repaired===text) throw firstError;
+    return JSON.parse(repaired);
+  }
+}
+function operationalMapToState(mapData){
+  const people=Array.isArray(mapData?.people)?mapData.people:[];
+  if(!people.length) throw new Error('個人マップデータがありません');
+  const owner=people.find(p=>p?.id==='self')||people[0];
+  const ownerSourceId=String(owner?.id||'self');
+  const convert=(p,isSelf)=>({
+    id:isSelf?'self':String(p?.id||uid()),
+    name:String(p?.name|| (isSelf?'自分':'名称未設定')),
+    type:isSelf?'ABO':String(p?.type||'ABO'),
+    parentId:isSelf?null:(String(p?.parentId||'self')===ownerSourceId?'self':String(p?.parentId||'self')),
+    target:Math.max(0,Number(p?.targetPv??p?.target??0)),
+    actual:Math.max(0,Number(p?.actualPv??p?.actual??0)),
+    status:String(p?.status||'appointment-open'),
+    customStatus:String(p?.customStatus||''),
+    deadline:String(p?.deadline?.raw??p?.deadline??''),
+    nextAction:String(p?.nextAction||''),
+    age:String(p?.age||''),
+    job:String(p?.job||''),
+    hobby:String(p?.hobby||''),
+    etc:String(p?.etc||''),
+    memo1:String(p?.memo1??p?.memos?.[0]??''),
+    memo2:String(p?.memo2??p?.memos?.[1]??''),
+    memo3:String(p?.memo3??p?.memos?.[2]??''),
+    avatar:Number.isFinite(Number(p?.avatar))?Number(p.avatar):0
+  });
+  return {
+    self:convert(owner,true),
+    members:people.filter(p=>p!==owner).map(p=>convert(p,false))
+  };
+}
+function chooseGroupMap(group){
+  const candidates=(group?.maps||[]).filter(m=>Array.isArray(m?.mapData?.people)&&m.mapData.people.length);
+  if(!candidates.length) throw new Error('復元できる個人マップがありません');
+  if(candidates.length===1) return candidates[0];
+  const guide=candidates.map((m,i)=>`${i+1}: ${m.name||m.mapData?.owner?.name||'名称未設定'}`).join('\n');
+  const answer=window.prompt(`読み込む個人マップの番号を入力してください。\n\n${guide}`,'1');
+  if(answer===null) return null;
+  const index=Number(answer)-1;
+  if(!Number.isInteger(index)||index<0||index>=candidates.length) throw new Error('選択番号が正しくありません');
+  return candidates[index];
+}
+function normalizeImportedState(parsed){
+  if(parsed?.self && Array.isArray(parsed.members)) return parsed;
+  if(parsed?.schema==='business-map-operational') return operationalMapToState(parsed);
+  if(parsed?.schema==='business-map-group-export'){
+    const selected=chooseGroupMap(parsed);
+    return selected?operationalMapToState(selected.mapData):null;
+  }
+  if(Array.isArray(parsed?.people)) return operationalMapToState(parsed);
+  throw new Error('対応していないJSON形式です');
+}
 function importJSON(file){
   const reader = new FileReader();
   reader.onload = ()=>{
     try{
-      const parsed = JSON.parse(reader.result);
-      if(!parsed.self || !Array.isArray(parsed.members)) throw new Error('invalid');
-      state = migrate(parsed); render(); alert('JSONを読み込みました');
-    }catch(e){ alert('JSONファイルを読み込めませんでした'); }
+      const parsed=parseImportedJson(reader.result);
+      const normalized=normalizeImportedState(parsed);
+      if(!normalized) return;
+      state=migrate(normalized);
+      render();
+      alert('個人マップとして読み込みました');
+    }catch(e){
+      console.error(e);
+      alert(`JSONファイルを読み込めませんでした。\n${e.message||e}`);
+    }
   };
   reader.readAsText(file, 'utf-8');
 }
