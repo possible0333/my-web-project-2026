@@ -55,7 +55,7 @@
     bar.id='v130MobileBar';
     bar.setAttribute('aria-label','スマホ用クイック操作');
     bar.innerHTML=`
-      <button type="button" data-v130-action="fit">全体</button>
+      <button type="button" data-v130-action="upload">アップロード</button>
       <button type="button" data-v130-action="add">＋追加</button>
       <button type="button" data-v130-action="self">自分</button>
       <button type="button" data-v130-action="save">画像保存</button>`;
@@ -64,7 +64,7 @@
       const btn=e.target.closest('[data-v130-action]');
       if(!btn) return;
       const action=btn.dataset.v130Action;
-      if(action==='fit') fitMap();
+      if(action==='upload') clickExisting('uploadMapBtn');
       if(action==='add') clickExisting('addBtn');
       if(action==='self') clickExisting('editSelfBtn');
       if(action==='save') captureFullMap();
