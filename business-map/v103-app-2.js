@@ -131,10 +131,12 @@ function deleteCurrent(){
   closeModal(); render();
 }
 function exportJSON(){
-  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `business_map_${VERSION}.json`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 800);
+  const payload={...state,scheduleData:typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():undefined};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url; a.download=`business_map_${VERSION}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
 }
 function parseImportedJson(text){
   try{ return JSON.parse(text); }
@@ -204,6 +206,7 @@ function importJSON(file){
   reader.onload = ()=>{
     try{
       const parsed=parseImportedJson(reader.result);
+      if(parsed?.scheduleData&&typeof window.v156SetScheduleData==='function') window.v156SetScheduleData(parsed.scheduleData);
       const normalized=normalizeImportedState(parsed);
       if(!normalized) return;
       state=migrate(normalized);
