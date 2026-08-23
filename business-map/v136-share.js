@@ -62,6 +62,7 @@
       targetPv:Number(p?.target||0),
       actualPv:Number(p?.actual||0),
       avatar:Number.isInteger(Number(p?.avatar))&&Number(p.avatar)>=0&&Number(p.avatar)<36?Number(p.avatar):null,
+      avatarUrl:Number.isInteger(Number(p?.avatar))&&Number(p.avatar)>=0&&Number(p.avatar)<36?`icons/avatar-${String(Number(p.avatar)+1).padStart(2,'0')}.webp?v=20260810e`:'',
       age:String(p?.age||''),
       job:String(p?.job||''),
       hobby:String(p?.hobby||''),
