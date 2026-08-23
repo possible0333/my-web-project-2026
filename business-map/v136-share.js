@@ -364,9 +364,9 @@
       }else{
         const s=await initSupabase();
         if(adminMode){
-          const deleted=await s.client.rpc('admin_delete_business_maps',{p_password:adminPassword,p_user_ids:owned.map(x=>x.id)});
+          const deleted=await s.client.functions.invoke('admin-delete-business-maps',{body:{password:adminPassword,userIds:owned.map(x=>x.id)}});
           if(deleted.error) throw deleted.error;
-          if(Number(deleted.data||0)!==owned.length) throw new Error('管理者削除件数を確認できませんでした');
+          if(Number(deleted.data?.deleted||0)!==owned.length) throw new Error('管理者削除件数を確認できませんでした');
         }else{
           const mine=owned.filter(x=>x.id===s.user.id);
           if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
