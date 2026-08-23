@@ -114,7 +114,8 @@
       appVersion:x.version||'',
       dataSchemaVersion:Number(x.dataSchemaVersion||1),
       reminderSummary:x.reminderSummary||{},
-      mapData:x.mapData||{}
+      mapData:x.mapData||{},
+      scheduleData:x.scheduleData||{}
     }));
     const totals=maps.reduce((a,x)=>{
       const s=x.mapData?.summary||x.reminderSummary||{};
@@ -217,9 +218,9 @@
     });
   }
 
-  async function saveMap(record,blob,mapData){
+  async function saveMap(record,blob,mapData,scheduleData){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
-    if(!s){ await localPut({...record,mapData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
+    if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
 
     const uid=s.user.id;
     const path=`${uid}/latest.png`;
@@ -241,7 +242,8 @@
       version:APP_VERSION,
       map_data:mapData,
       data_schema_version:Number(mapData?.schemaVersion||1),
-      reminder_summary:buildReminderSummary(mapData)
+      reminder_summary:buildReminderSummary(mapData),
+      schedule_data:scheduleData||{}
     };
     const saved=await s.client.from(TABLE).upsert(row,{onConflict:'user_id'});
     if(saved.error) throw saved.error;
@@ -251,7 +253,7 @@
   async function loadMaps(){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase load failed`,e);return null;});
     if(!s) return {mode:'local',items:await localGetAll()};
-    const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary').order('client_updated_at',{ascending:false});
+    const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary,schedule_data').order('client_updated_at',{ascending:false});
     if(res.error) throw res.error;
     const items=(res.data||[]).map(x=>({
       id:x.user_id,
@@ -265,6 +267,7 @@
       mapData:x.map_data||{},
       dataSchemaVersion:x.data_schema_version||1,
       reminderSummary:x.reminder_summary||{},
+      scheduleData:x.schedule_data||{},
       owned:x.user_id===s.user.id
     }));
     return {mode:'cloud',items};
@@ -273,7 +276,7 @@
   function injectButtons(){
     const actions=$('.top-actions'); if(!actions) return;
     if(!$('#communityMapsBtn')){
-      const b=document.createElement('button'); b.className='btn'; b.id='communityMapsBtn'; b.textContent='みんなのマップ';
+      const b=document.createElement('button'); b.className='btn'; b.id='communityMapsBtn'; b.textContent='みんなのマップ／スケジュール';
       actions.insertBefore(b,actions.firstChild);
     }
     if(!$('#uploadMapBtn')){
@@ -286,12 +289,12 @@
     if($('#v136GalleryModal')) return;
     document.body.insertAdjacentHTML('beforeend',`
       <div class="v136-share-modal" id="v136GalleryModal"><div class="v136-share-sheet">
-        <div class="v136-share-head"><div><div class="v136-share-title">みんなのマップ</div><div class="v136-share-sub">グループの最新Business Mapを一覧で確認</div></div><button class="btn ghost" data-v136-close="gallery">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div>
+        <div class="v136-share-head"><div><div class="v136-share-title">みんなのマップ／スケジュール</div><div class="v136-share-sub">全員の最新マップと今月・来月の予定を確認</div></div><button class="btn ghost" data-v136-close="gallery">閉じる</button></div>
+        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v156-group-tabs"><button class="active" data-v156-gallery="maps">マップ一覧</button><button data-v156-gallery="schedule">みんなのスケジュール</button></div><div id="v136MapListPanel"><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div><div id="v156GroupSchedule" hidden></div></div>
       </div></div>
       <div class="v136-share-modal" id="v136UploadModal"><div class="v136-share-sheet" style="width:min(760px,100%)">
-        <div class="v136-share-head"><div><div class="v136-share-title">マップをアップロード</div><div class="v136-share-sub">現在のマップを画像化して最新版として共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">このマップをアップロード</button></div></div></div>
+        <div class="v136-share-head"><div><div class="v136-share-title">マップとスケジュールをアップロード</div><div class="v136-share-sub">現在のMAP画像・MAP JSON・スケジュールをまとめて共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
+        <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">MAPとスケジュールをアップロード</button></div></div></div>
       </div></div>
       <div class="v136-viewer" id="v136Viewer"><button class="btn ghost v136-viewer-close" id="v136ViewerClose">閉じる</button><img id="v136ViewerImg" alt="共有マップ"></div>`);
   }
@@ -385,7 +388,7 @@
       const result=await loadMaps(); currentMode=result.mode; currentItems=result.items;
       selectedIds.clear();
       $('#v136GalleryNotice').innerHTML=noticeHtml(result.mode);
-      renderCards(currentItems); stateEl.textContent=`${currentItems.length}件`;
+      renderCards(currentItems); window.v156RenderGroupSchedules?.(currentItems); stateEl.textContent=`${currentItems.length}件`;
     }catch(e){
       console.error(e);
       grid.innerHTML=`<div class="v136-empty" style="grid-column:1/-1">読み込みに失敗しました<br>${esc(e.message||e)}</div>`;
@@ -404,9 +407,10 @@
     const old=btn.textContent; btn.disabled=true; btn.textContent='アップロード中…';
     try{
       const mapData=buildOperationalMapData();
-      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,mapData);
+      const scheduleData=typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{};
+      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,mapData,scheduleData);
       localStorage.setItem('businessMapShareName',name);
-      alert(result.mode==='cloud'?'みんなのマップへアップロードしました！':'この端末の「みんなのマップ」に保存しました。\nSupabase設定完了後は全員共有になります。');
+      alert(result.mode==='cloud'?'MAPとスケジュールを共有しました！':'この端末にMAPとスケジュールを保存しました。\nSupabase設定完了後は全員共有になります。');
       closeModal('#v136UploadModal');
       await openGallery();
     }catch(e){
@@ -442,6 +446,13 @@
       const view=e.target.closest('[data-v136-view]');
       if(view){ $('#v136ViewerImg').src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');
+    });
+    $('#v136GalleryModal').addEventListener('click',e=>{
+      const b=e.target.closest('[data-v156-gallery]'); if(!b)return;
+      $('#v136GalleryModal').querySelectorAll('[data-v156-gallery]').forEach(x=>x.classList.toggle('active',x===b));
+      const showSchedule=b.dataset.v156Gallery==='schedule';
+      $('#v136MapListPanel').hidden=showSchedule; $('#v156GroupSchedule').hidden=!showSchedule;
+      if(showSchedule) window.v156RenderGroupSchedules?.(currentItems);
     });
     $('#v136ViewerClose').onclick=()=>$('#v136Viewer').classList.remove('is-open');
     $('#v136Viewer').addEventListener('click',e=>{ if(e.target.id==='v136Viewer') e.currentTarget.classList.remove('is-open'); });
