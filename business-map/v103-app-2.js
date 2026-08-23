@@ -130,13 +130,19 @@ function deleteCurrent(){
   state.members = state.members.filter(x=>x.id!==editingId);
   closeModal(); render();
 }
-function exportJSON(){
+async function exportJSON(){
   const payload={...state,scheduleData:typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():undefined};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url; a.download=`business_map_${VERSION}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  const filename=`business_map_${VERSION}.json`;
+  const file=new File([blob],filename,{type:'application/json'});
+  if(navigator.share&&navigator.canShare?.({files:[file]})){
+    try{ await navigator.share({files:[file],title:'Business Mapバックアップ'}); return; }
+    catch(e){ if(e?.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url; link.download=filename; link.style.display='none';
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 function parseImportedJson(text){
   try{ return JSON.parse(text); }
