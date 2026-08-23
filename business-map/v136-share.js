@@ -10,6 +10,8 @@
   let currentItems=[];
   let currentMode='cloud';
   const selectedIds=new Set();
+  let adminMode=false;
+  let adminPassword='';
 
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,6 +61,7 @@
       statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
       targetPv:Number(p?.target||0),
       actualPv:Number(p?.actual||0),
+      avatar:String(p?.avatar||''),
       age:String(p?.age||''),
       job:String(p?.job||''),
       hobby:String(p?.hobby||''),
@@ -290,7 +293,7 @@
     document.body.insertAdjacentHTML('beforeend',`
       <div class="v136-share-modal" id="v136GalleryModal"><div class="v136-share-sheet">
         <div class="v136-share-head"><div><div class="v136-share-title">みんなのマップ／スケジュール</div><div class="v136-share-sub">全員の最新マップと今月・来月の予定を確認</div></div><button class="btn ghost" data-v136-close="gallery">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v156-group-tabs"><button class="active" data-v156-gallery="maps">マップ一覧</button><button data-v156-gallery="schedule">みんなのスケジュール</button></div><div id="v136MapListPanel"><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div><div id="v156GroupSchedule" hidden></div></div>
+        <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v159-adminbar"><button class="btn" id="v159AdminBtn">🔒 管理者モード</button><span id="v159AdminState">通常モード</span></div><div class="v156-group-tabs"><button class="active" data-v156-gallery="maps">マップ一覧</button><button data-v156-gallery="schedule">みんなのスケジュール</button></div><div id="v136MapListPanel"><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div><div id="v156GroupSchedule" hidden></div></div>
       </div></div>
       <div class="v136-share-modal" id="v136UploadModal"><div class="v136-share-sheet" style="width:min(760px,100%)">
         <div class="v136-share-head"><div><div class="v136-share-title">マップとスケジュールをアップロード</div><div class="v136-share-sub">現在のMAP画像・MAP JSON・スケジュールをまとめて共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
@@ -339,7 +342,7 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${x.owned?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
   }
 
   function updateDeleteButton(){
@@ -350,9 +353,9 @@
   }
 
   async function deleteSelectedMaps(){
-    const owned=currentItems.filter(x=>selectedIds.has(x.id)&&x.owned);
+    const owned=currentItems.filter(x=>selectedIds.has(x.id)&&(x.owned||adminMode));
     if(!owned.length){ selectedIds.clear(); updateDeleteButton(); return; }
-    if(!confirm(`選択した${owned.length}件のマップを削除します。\nこの操作は元に戻せません。`)) return;
+    if(!confirm(`選択した${owned.length}件の共有MAP・スケジュールを削除します。\nこの操作は元に戻せません。`)) return;
     const btn=$('#v136DeleteSelected');
     btn.disabled=true; btn.textContent='削除中…';
     try{
@@ -360,16 +363,19 @@
         await localDelete(owned.map(x=>x.id));
       }else{
         const s=await initSupabase();
-        const mine=owned.filter(x=>x.id===s.user.id);
-        if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
-        const paths=mine.map(x=>x.imagePath).filter(Boolean);
-        if(paths.length){
-          const removed=await s.client.storage.from(BUCKET).remove(paths);
-          if(removed.error) throw removed.error;
+        if(adminMode){
+          const deleted=await s.client.rpc('admin_delete_business_maps',{p_password:adminPassword,p_user_ids:owned.map(x=>x.id)});
+          if(deleted.error) throw deleted.error;
+          if(Number(deleted.data||0)!==owned.length) throw new Error('管理者削除件数を確認できませんでした');
+        }else{
+          const mine=owned.filter(x=>x.id===s.user.id);
+          if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
+          const paths=mine.map(x=>x.imagePath).filter(Boolean);
+          if(paths.length){ const removed=await s.client.storage.from(BUCKET).remove(paths); if(removed.error) throw removed.error; }
+          const deleted=await s.client.from(TABLE).delete().in('user_id',mine.map(x=>x.id)).eq('user_id',s.user.id).select('user_id');
+          if(deleted.error) throw deleted.error;
+          if((deleted.data||[]).length!==mine.length) throw new Error('削除対象を確認できませんでした');
         }
-        const deleted=await s.client.from(TABLE).delete().in('user_id',mine.map(x=>x.id)).eq('user_id',s.user.id).select('user_id');
-        if(deleted.error) throw deleted.error;
-        if((deleted.data||[]).length!==mine.length) throw new Error('削除対象を確認できませんでした');
       }
       selectedIds.clear();
       await refreshGallery();
@@ -380,6 +386,17 @@
     }
   }
 
+  async function toggleAdmin(){
+    if(adminMode){ adminMode=false; adminPassword=''; selectedIds.clear(); updateAdminUi(); renderCards(currentItems); window.v156RenderGroupSchedules?.(currentItems); return; }
+    const password=prompt('管理者パスワードを入力してください');
+    if(password==null) return;
+    try{
+      const s=await initSupabase(); const checked=await s.client.rpc('admin_verify_business_maps',{p_password:password});
+      if(checked.error||checked.data!==true) throw checked.error||new Error('パスワードが違います');
+      adminMode=true; adminPassword=password; selectedIds.clear(); updateAdminUi(); renderCards(currentItems); window.v156RenderGroupSchedules?.(currentItems);
+    }catch(e){ alert('管理者モードに入れません。パスワードを確認してください。'); }
+  }
+  function updateAdminUi(){ const b=$('#v159AdminBtn'),st=$('#v159AdminState'); if(b)b.textContent=adminMode?'🔓 管理者モードを終了':'🔒 管理者モード'; if(st)st.textContent=adminMode?'管理者モード：全員を選択削除できます':'通常モード'; $('.v136-delete-guide')?.replaceChildren(document.createTextNode(adminMode?'管理者として選択した共有MAP・スケジュールを削除できます。':'自分がアップロードしたマップのみ選択して削除できます。')); }
   async function refreshGallery(){
     const grid=$('#v136MapGrid'); const stateEl=$('#v136GalleryState');
     grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1"><div class="v136-spinner" style="margin:auto"></div></div>';
@@ -425,9 +442,11 @@
     applyVersion(); injectButtons(); injectUi();
     window.v150BuildOperationalMapData=buildOperationalMapData;
     window.v150DownloadGroupJson=downloadGroupJson;
+    window.v159Admin={isActive:()=>adminMode,isSelected:id=>selectedIds.has(id),toggleSelection:(id,on)=>{if(on)selectedIds.add(id);else selectedIds.delete(id);updateDeleteButton();renderCards(currentItems)},deleteSelected:deleteSelectedMaps};
     $('#communityMapsBtn').onclick=openGallery;
     $('#uploadMapBtn').onclick=openUpload;
     $('#v136Reload').onclick=refreshGallery;
+    $('#v159AdminBtn').onclick=toggleAdmin;
     $('#v136DownloadJson').onclick=downloadGroupJson;
     $('#v136DeleteSelected').onclick=deleteSelectedMaps;
     $('#v136Recreate').onclick=()=>createPreview().catch(()=>{});
