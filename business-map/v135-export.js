@@ -123,10 +123,11 @@
     return {host,surface};
   }
 
-  function ratio(w,h){
-    const base=isMobile()?2.4:3.0;
-    const max=isMobile()?48000000:96000000;
-    return Math.max(1.35,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
+  function ratio(w,h,upload=false){
+    const base=upload?(isMobile()?1.05:1.25):(isMobile()?2.4:3.0);
+    const max=upload?12000000:(isMobile()?48000000:96000000);
+    const min=upload?.42:.75;
+    return Math.max(min,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
   async function trimBlob(blob,centerHint){
@@ -162,35 +163,46 @@
     return await new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('画像トリムに失敗しました')),'image/png',1));
   }
 
-  async function render(surface){
+  async function limitUploadBlob(blob){
+    const bitmap=await createImageBitmap(blob);
+    const pixels=bitmap.width*bitmap.height,maxPixels=12000000,maxSide=6000;
+    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,pixels)));
+    if(scale>=.999&&blob.size<=10*1024*1024){ bitmap.close?.(); return blob; }
+    const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(bitmap.width*scale)); canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height); bitmap.close?.();
+    return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/png',.92));
+  }
+
+  async function render(surface,upload=false){
     await waitImages(surface);
     await raf2();
-    const w=Math.ceil(surface.scrollWidth), h=Math.ceil(surface.scrollHeight), scale=ratio(w,h);
+    const w=Math.ceil(surface.scrollWidth), h=Math.ceil(surface.scrollHeight), scale=ratio(w,h,upload);
     const sr=surface.getBoundingClientRect();
     const owner=surface.querySelector('[data-id="self"]')?.getBoundingClientRect();
     const ownerCenter=owner?((owner.left+owner.width/2)-sr.left)*scale:null;
     if(window.htmlToImage?.toBlob){
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
-        if(blob) return await trimBlob(blob,ownerCenter);
+        if(blob){ const trimmed=await trimBlob(blob,ownerCenter); return upload?await limitUploadBlob(trimmed):trimmed; }
       }catch(e){ console.warn(`[${APP_VERSION}] html-to-image fallback`,e); }
     }
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
       const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
-      return await trimBlob(blob,ownerCenter);
+      const trimmed=await trimBlob(blob,ownerCenter);
+      return upload?await limitUploadBlob(trimmed):trimmed;
     }
     throw new Error('画像保存ライブラリが読み込めませんでした');
   }
 
-  async function createBlob(){
+  async function createBlob(options={}){
     let cap;
     try{
       if(typeof window.v126Recalculate==='function') window.v126Recalculate();
       if(document.fonts?.ready) await document.fonts.ready;
       await raf2();
       cap=buildSurface();
-      return await render(cap.surface);
+      return await render(cap.surface,!!options.upload);
     }finally{
       cap?.host?.remove();
     }
@@ -260,6 +272,7 @@
     window.saveImage=capture;
     window.v135Capture=capture;
     window.v135CreateBlob=createBlob;
+    window.v135CreateUploadBlob=()=>createBlob({upload:true});
     window.v135DirectGridMetrics=directGridMetrics;
 
     document.addEventListener('click',e=>{
