@@ -137,7 +137,13 @@ body.bm-modal-open{overflow:hidden}
   #v130MobileBar button[data-v130-action="add"]:before{content:"＋"}
   #v130MobileBar button[data-v130-action="self"]:before{content:"◎"}
   #v130MobileBar button[data-v130-action="save"]:before{content:"⇩"}
+  #v130MobileBar button[data-v130-action="schedule-plan"]:before{content:"＋"}
+  #v130MobileBar button[data-v130-action="schedule-work"]:before{content:"▣"}
+  #v130MobileBar button[data-v130-action="map"]:before{content:"⌗"}
   #v130MobileBar button[data-v130-action="upload"]{background:linear-gradient(135deg,#149286,#0f766e)!important;color:#fff!important}\n  #v130MobileBar button[data-v130-action="add"]{background:linear-gradient(135deg,#3689f7,#1c68df)!important;color:#fff!important}
+  #v130MobileBar button[data-v130-action="schedule-plan"]{background:linear-gradient(135deg,#3689f7,#1c68df)!important;color:#fff!important}
+  #v130MobileBar button[data-v130-action="schedule-work"]{background:#eef3fb!important;color:#27466f!important}
+  #v130MobileBar button[data-v130-action="map"]{background:linear-gradient(135deg,#173b68,#102947)!important;color:#fff!important}
   #v130MobileBar button[data-v130-action="save"]{background:linear-gradient(135deg,#173b68,#102947)!important;color:#fff!important}
 
   .v136-share-sheet{border-radius:22px 22px 0 0}
