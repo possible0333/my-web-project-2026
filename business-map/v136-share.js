@@ -61,7 +61,7 @@
       statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
       targetPv:Number(p?.target||0),
       actualPv:Number(p?.actual||0),
-      avatar:String(p?.avatar||''),
+      avatar:Number.isInteger(Number(p?.avatar))&&Number(p.avatar)>=0&&Number(p.avatar)<36?Number(p.avatar):null,
       age:String(p?.age||''),
       job:String(p?.job||''),
       hobby:String(p?.hobby||''),
