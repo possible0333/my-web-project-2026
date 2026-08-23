@@ -381,7 +381,9 @@
       await refreshGallery();
     }catch(e){
       console.error(e);
-      alert(`削除に失敗しました。\n${e.message||e}`);
+      const raw=String(e?.message||e||'');
+      const message=/storage tables|Storage API/i.test(raw)?'共有データの削除方法を更新しています。ページを再読み込みして、もう一度お試しください。':raw;
+      alert(`削除に失敗しました。\n${message}`);
       updateDeleteButton();
     }
   }
@@ -442,7 +444,7 @@
     applyVersion(); injectButtons(); injectUi();
     window.v150BuildOperationalMapData=buildOperationalMapData;
     window.v150DownloadGroupJson=downloadGroupJson;
-    window.v159Admin={isActive:()=>adminMode,isSelected:id=>selectedIds.has(id),toggleSelection:(id,on)=>{if(on)selectedIds.add(id);else selectedIds.delete(id);updateDeleteButton();renderCards(currentItems)},deleteSelected:deleteSelectedMaps};
+    window.v159Admin={isActive:()=>adminMode,isSelected:id=>selectedIds.has(id),toggleSelection:(id,on)=>{if(on)selectedIds.add(id);else selectedIds.delete(id);updateDeleteButton();renderCards(currentItems)},selectedCount:()=>selectedIds.size,deleteSelected:deleteSelectedMaps};
     $('#communityMapsBtn').onclick=openGallery;
     $('#uploadMapBtn').onclick=openUpload;
     $('#v136Reload').onclick=refreshGallery;
