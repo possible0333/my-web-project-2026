@@ -315,11 +315,12 @@
     const box=$('#v136UploadPreview');
     box.innerHTML='<div class="v136-spinner"></div>';
     try{
-      if(typeof window.v135CreateBlob!=='function') throw new Error('画像作成機能が見つかりません');
-      uploadBlob=await window.v135CreateBlob();
+      const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
+      if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
+      uploadBlob=await maker();
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
-      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー">`;
+      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">アップロード用に最適化済み（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
