@@ -46,19 +46,25 @@
     requestAnimationFrame(()=>{ if(typeof window.drawLines==='function') window.drawLines(); });
   }
 
+  function renderMobileBar(bar){
+    const schedule=document.body.classList.contains('v159-schedule-active');
+    const mode=schedule?'schedule':'map';
+    if(bar.dataset.mode===mode) return;
+    bar.dataset.mode=mode;
+    bar.innerHTML=schedule
+      ? '<button type="button" data-v130-action="upload">アップロード</button><button type="button" data-v130-action="schedule-plan">予定入力</button><button type="button" data-v130-action="schedule-work">仕事入力</button><button type="button" data-v130-action="map">MAPへ</button>'
+      : '<button type="button" data-v130-action="upload">アップロード</button><button type="button" data-v130-action="add">＋追加</button><button type="button" data-v130-action="self">自分</button><button type="button" data-v130-action="save">画像保存</button>';
+  }
+
   function ensureMobileBar(){
     const mobile=isMobile();
     let bar=document.getElementById('v130MobileBar');
     if(!mobile){ if(bar) bar.remove(); return; }
-    if(bar) return;
+    if(bar){ renderMobileBar(bar); return; }
     bar=document.createElement('nav');
     bar.id='v130MobileBar';
     bar.setAttribute('aria-label','スマホ用クイック操作');
-    bar.innerHTML=`
-      <button type="button" data-v130-action="upload">アップロード</button>
-      <button type="button" data-v130-action="add">＋追加</button>
-      <button type="button" data-v130-action="self">自分</button>
-      <button type="button" data-v130-action="save">画像保存</button>`;
+    renderMobileBar(bar);
     document.body.appendChild(bar);
     bar.addEventListener('click',e=>{
       const btn=e.target.closest('[data-v130-action]');
@@ -67,7 +73,10 @@
       if(action==='upload') clickExisting('uploadMapBtn');
       if(action==='add') clickExisting('addBtn');
       if(action==='self') clickExisting('editSelfBtn');
-      if(action==='save') captureFullMap();
+      if(action==='save') clickExisting('saveImageBtn');
+      if(action==='schedule-plan') document.querySelector('.v157-dayrow.today')?.click();
+      if(action==='schedule-work') clickExisting('v157WorkOpen');
+      if(action==='map') document.querySelector('[data-main="map"]')?.click();
     });
   }
 
@@ -406,9 +415,9 @@
 
   function bind(){
     applyVersion();
-    bindSaveButtons();
     ensureMobileBar();
     mobileInitialFit();
+    window.addEventListener('business-map-tab-change',ensureMobileBar);
     window.addEventListener('resize',()=>{
       ensureMobileBar();
       if(isMobile()) setTimeout(fitMap,160);
