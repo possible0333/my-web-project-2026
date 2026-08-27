@@ -300,7 +300,7 @@
         <div class="v136-share-head"><div><div class="v136-share-title">マップとスケジュールをアップロード</div><div class="v136-share-sub">現在のMAP画像・MAP JSON・スケジュールをまとめて共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
         <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">MAPとスケジュールをアップロード</button></div></div></div>
       </div></div>
-      <div class="v136-viewer" id="v136Viewer"><button class="btn ghost v136-viewer-close" id="v136ViewerClose">閉じる</button><img id="v136ViewerImg" alt="共有マップ"></div>`);
+      <div class="v136-viewer" id="v136Viewer"><div class="v167-viewer-stage" id="v167ViewerStage"><img id="v136ViewerImg" alt="共有マップ" draggable="false"></div><div class="v167-viewer-toolbar" role="toolbar" aria-label="マップの拡大縮小"><button class="btn ghost v167-zoom-button" id="v167ZoomOut" type="button" aria-label="縮小">−</button><span class="v167-zoom-value" id="v167ZoomValue" aria-live="polite">100%</span><button class="btn ghost v167-zoom-button" id="v167ZoomIn" type="button" aria-label="拡大">＋</button><button class="btn ghost v167-fit-button" id="v167ZoomFit" type="button">全体</button><button class="btn ghost v136-viewer-close" id="v136ViewerClose" type="button">閉じる</button></div></div>`);
   }
 
   function noticeHtml(mode){
@@ -442,6 +442,111 @@
     }
   }
 
+
+  const viewerState={scale:1,x:0,y:0,pointers:new Map(),drag:null,pinch:null};
+
+  function applyViewerTransform(animate=false){
+    const img=$('#v136ViewerImg');
+    if(!img) return;
+    img.classList.toggle('is-animating',animate);
+    img.style.transform=`translate3d(${viewerState.x}px,${viewerState.y}px,0) scale(${viewerState.scale})`;
+    const value=$('#v167ZoomValue');
+    if(value) value.textContent=`${Math.round(viewerState.scale*100)}%`;
+    if(animate) setTimeout(()=>img.classList.remove('is-animating'),160);
+  }
+
+  function resetViewer(animate=false){
+    viewerState.scale=1;
+    viewerState.x=0;
+    viewerState.y=0;
+    viewerState.pointers.clear();
+    viewerState.drag=null;
+    viewerState.pinch=null;
+    $('#v167ViewerStage')?.classList.remove('is-dragging');
+    applyViewerTransform(animate);
+  }
+
+  function zoomViewer(factor,animate=true){
+    viewerState.scale=Math.min(5,Math.max(.25,viewerState.scale*factor));
+    if(viewerState.scale<=1){
+      viewerState.x=0;
+      viewerState.y=0;
+    }
+    applyViewerTransform(animate);
+  }
+
+  function closeViewer(){
+    $('#v136Viewer')?.classList.remove('is-open');
+    resetViewer();
+  }
+
+  function bindViewerControls(){
+    const viewer=$('#v136Viewer');
+    const stage=$('#v167ViewerStage');
+    const img=$('#v136ViewerImg');
+    if(!viewer||!stage||!img) return;
+    $('#v167ZoomOut').onclick=e=>{ e.stopPropagation(); zoomViewer(.8); };
+    $('#v167ZoomIn').onclick=e=>{ e.stopPropagation(); zoomViewer(1.25); };
+    $('#v167ZoomFit').onclick=e=>{ e.stopPropagation(); resetViewer(true); };
+    $('#v136ViewerClose').onclick=e=>{ e.stopPropagation(); closeViewer(); };
+    img.addEventListener('load',()=>resetViewer());
+
+    const beginGesture=()=>{
+      const points=[...viewerState.pointers.values()];
+      if(points.length===1){
+        viewerState.drag={px:points[0].x,py:points[0].y,x:viewerState.x,y:viewerState.y};
+        viewerState.pinch=null;
+      }else if(points.length>=2){
+        const dx=points[1].x-points[0].x;
+        const dy=points[1].y-points[0].y;
+        viewerState.pinch={distance:Math.hypot(dx,dy)||1,scale:viewerState.scale};
+        viewerState.drag=null;
+      }
+    };
+    stage.addEventListener('pointerdown',e=>{
+      if(!viewer.classList.contains('is-open')) return;
+      stage.setPointerCapture?.(e.pointerId);
+      viewerState.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      stage.classList.add('is-dragging');
+      beginGesture();
+      e.preventDefault();
+    });
+    stage.addEventListener('pointermove',e=>{
+      if(!viewerState.pointers.has(e.pointerId)) return;
+      viewerState.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      const points=[...viewerState.pointers.values()];
+      if(points.length>=2&&viewerState.pinch){
+        const distance=Math.hypot(points[1].x-points[0].x,points[1].y-points[0].y)||1;
+        viewerState.scale=Math.min(5,Math.max(.25,viewerState.pinch.scale*(distance/viewerState.pinch.distance)));
+      }else if(points.length===1&&viewerState.drag){
+        viewerState.x=viewerState.drag.x+(points[0].x-viewerState.drag.px);
+        viewerState.y=viewerState.drag.y+(points[0].y-viewerState.drag.py);
+      }
+      applyViewerTransform();
+      e.preventDefault();
+    });
+    const endPointer=e=>{
+      viewerState.pointers.delete(e.pointerId);
+      if(viewerState.pointers.size) beginGesture();
+      else{
+        viewerState.drag=null;
+        viewerState.pinch=null;
+        stage.classList.remove('is-dragging');
+      }
+    };
+    stage.addEventListener('pointerup',endPointer);
+    stage.addEventListener('pointercancel',endPointer);
+    stage.addEventListener('wheel',e=>{
+      zoomViewer(e.deltaY<0?1.12:.89,false);
+      e.preventDefault();
+    },{passive:false});
+    stage.addEventListener('dblclick',e=>{
+      if(viewerState.scale>1) resetViewer(true); else zoomViewer(2,true);
+      e.preventDefault();
+    });
+    viewer.addEventListener('click',e=>{ if(e.target===viewer) closeViewer(); });
+  }
+
   function bind(){
     applyVersion(); injectButtons(); injectUi();
     window.v150BuildOperationalMapData=buildOperationalMapData;
@@ -467,7 +572,7 @@
       const close=e.target.closest('[data-v136-close]');
       if(close) closeModal(close.dataset.v136Close==='gallery'?'#v136GalleryModal':'#v136UploadModal');
       const view=e.target.closest('[data-v136-view]');
-      if(view){ $('#v136ViewerImg').src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
+      if(view){ resetViewer(); $('#v136ViewerImg').src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');
     });
     $('#v136GalleryModal').addEventListener('click',e=>{
@@ -477,8 +582,7 @@
       $('#v136MapListPanel').hidden=showSchedule; $('#v156GroupSchedule').hidden=!showSchedule;
       if(showSchedule) window.v156RenderGroupSchedules?.(currentItems);
     });
-    $('#v136ViewerClose').onclick=()=>$('#v136Viewer').classList.remove('is-open');
-    $('#v136Viewer').addEventListener('click',e=>{ if(e.target.id==='v136Viewer') e.currentTarget.classList.remove('is-open'); });
+    bindViewerControls();
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true}); else bind();
