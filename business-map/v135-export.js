@@ -124,9 +124,11 @@
   }
 
   function ratio(w,h,upload=false){
-    const base=upload?(isMobile()?1.05:1.25):(isMobile()?2.4:3.0);
-    const max=upload?12000000:(isMobile()?48000000:96000000);
-    const min=upload?.42:.75;
+    // Shared maps need enough source pixels for names and PV values to stay
+    // readable after zooming. WebP compression below keeps the upload small.
+    const base=upload?(isMobile()?2.0:2.2):(isMobile()?2.4:3.0);
+    const max=upload?32000000:(isMobile()?48000000:96000000);
+    const min=upload?.70:.75;
     return Math.max(min,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
@@ -165,12 +167,26 @@
 
   async function limitUploadBlob(blob){
     const bitmap=await createImageBitmap(blob);
-    const pixels=bitmap.width*bitmap.height,maxPixels=12000000,maxSide=6000;
-    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,pixels)));
-    if(scale>=.999&&blob.size<=10*1024*1024){ bitmap.close?.(); return blob; }
-    const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(bitmap.width*scale)); canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height); bitmap.close?.();
-    return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/png',.92));
+    const maxPixels=32000000,maxSide=9000,targetBytes=5.8*1024*1024;
+    let scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,bitmap.width*bitmap.height)));
+    const encode=async(quality)=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+      canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+      const ctx=canvas.getContext('2d');
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/webp',quality));
+    };
+    let out=await encode(.96);
+    if(out.size>targetBytes) out=await encode(.91);
+    if(out.size>targetBytes){
+      scale*=Math.max(.72,Math.min(.96,Math.sqrt(targetBytes/out.size)*.96));
+      out=await encode(.91);
+    }
+    bitmap.close?.();
+    return out;
   }
 
   async function render(surface,upload=false){
