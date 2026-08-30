@@ -227,9 +227,11 @@
     if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
 
     const uid=s.user.id;
-    const path=`${uid}/latest.png`;
+    const imageType=blob.type==='image/webp'?'image/webp':'image/png';
+    const extension=imageType==='image/webp'?'webp':'png';
+    const path=`${uid}/latest.${extension}`;
     const uploaded=await s.client.storage.from(BUCKET).upload(path,blob,{
-      contentType:'image/png',cacheControl:'300',upsert:true
+      contentType:imageType,cacheControl:'300',upsert:true
     });
     if(uploaded.error) throw uploaded.error;
 
@@ -321,7 +323,7 @@
       uploadBlob=await maker();
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
-      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">アップロード用に最適化済み（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
+      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">高画質アップロード用（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
