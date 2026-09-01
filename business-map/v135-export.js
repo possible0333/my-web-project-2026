@@ -248,10 +248,40 @@
     }
   }
 
+  async function createSvgBlob(){
+    let cap;
+    try{
+      if(typeof window.v126Recalculate==='function') window.v126Recalculate();
+      if(document.fonts?.ready) await document.fonts.ready;
+      await raf2();
+      cap=buildSurface();
+      await waitImages(cap.surface);
+      await raf2();
+      if(typeof window.htmlToImage?.toSvg!=='function') throw new Error('SVG生成機能が読み込めませんでした');
+      const width=Math.ceil(cap.surface.scrollWidth);
+      const height=Math.ceil(cap.surface.scrollHeight);
+      const dataUrl=await window.htmlToImage.toSvg(cap.surface,{backgroundColor:'#fff',cacheBust:true,includeQueryParams:true,width,height,style:{width:width+'px',height:height+'px',overflow:'visible'}});
+      const response=await fetch(dataUrl);
+      const source=await response.text();
+      if(!source.includes('<svg')) throw new Error('SVGデータの作成に失敗しました');
+      return new Blob([source],{type:'image/svg+xml;charset=utf-8'});
+    }finally{
+      cap?.host?.remove();
+    }
+  }
+
   function download(blob){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url; a.download=`business-map-${APP_VERSION}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }
+
+  function downloadSvg(blob){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`business-map-${APP_VERSION}.svg`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),4000);
   }
@@ -271,7 +301,7 @@
       modal=document.createElement('div');
       modal.id='v135ImageModal';
       modal.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.52);display:none;align-items:center;justify-content:center;padding:12px;';
-      modal.innerHTML=`<div style="width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div><b style="font-size:17px;color:#172033">Business Map画像 ${APP_VERSION}</b><div style="font-size:10px;color:#64748b;margin-top:2px">高画質・自分を中央に配置。iPhoneは「端末に保存」後、共有メニューで「画像を保存」を選択</div></div><button class="btn ghost" id="v135Close">閉じる</button></div><div style="background:#eef2f7;border-radius:12px;padding:6px;overflow:auto"><img id="v135Preview" style="display:block;max-width:100%;height:auto;margin:auto;background:#fff"></div><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px"><button class="btn primary" id="v135Share">端末に保存</button><button class="btn" id="v135Download">ダウンロード</button></div></div>`;
+      modal.innerHTML=`<div style="width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div><b style="font-size:17px;color:#172033">Business Map画像 ${APP_VERSION}</b><div style="font-size:10px;color:#64748b;margin-top:2px">PNGは写真アプリ向け、SVGは大人数マップを拡大して読む用途に最適です。</div></div><button class="btn ghost" id="v135Close">閉じる</button></div><div style="background:#eef2f7;border-radius:12px;padding:6px;overflow:auto"><img id="v135Preview" style="display:block;max-width:100%;height:auto;margin:auto;background:#fff"></div><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:9px"><button class="btn primary" id="v135Share">PNGを端末に保存</button><button class="btn" id="v135Download">PNG保存</button><button class="btn dark" id="v177DownloadSvg">SVG保存</button></div></div>`;
       document.body.appendChild(modal);
       document.getElementById('v135Close').onclick=()=>modal.style.display='none';
       modal.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
@@ -281,6 +311,13 @@
     const url=URL.createObjectURL(blob); img.dataset.url=url; img.src=url;
     document.getElementById('v135Share').onclick=()=>share(blob);
     document.getElementById('v135Download').onclick=()=>download(blob);
+    document.getElementById('v177DownloadSvg').onclick=async e=>{
+      const button=e.currentTarget,old=button.textContent;
+      button.disabled=true; button.textContent='SVG作成中…';
+      try{ downloadSvg(await createSvgBlob()); }
+      catch(error){ console.error(error); alert(`SVG保存に失敗しました。\n${error.message||error}`); }
+      finally{ button.disabled=false; button.textContent=old; }
+    };
     modal.style.display='flex';
   }
 
@@ -313,6 +350,7 @@
     window.v135Capture=capture;
     window.v135CreateBlob=createBlob;
     window.v135CreateUploadBlob=()=>createBlob({upload:true});
+    window.v177CreateSvgBlob=createSvgBlob;
     window.v135DirectGridMetrics=directGridMetrics;
 
     document.addEventListener('click',e=>{

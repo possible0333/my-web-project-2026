@@ -6,6 +6,7 @@
   const TABLE='business_maps';
   let supa=null;
   let uploadBlob=null;
+  let uploadSvgBlob=null;
   let uploadUrl='';
   let currentItems=[];
   let currentMode='cloud';
@@ -274,10 +275,10 @@
     return out;
   }
 
-  async function saveMap(record,blob,mapData,scheduleData){
+  async function saveMap(record,blob,svgBlob,mapData,scheduleData){
     blob=await ensureUploadPng(blob);
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
-    if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
+    if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},svgBlob||blob); return {mode:'local'}; }
 
     const uid=s.user.id;
     const imageType=blob.type==='image/webp'?'image/webp':'image/png';
@@ -297,12 +298,21 @@
     if(uploaded.error) throw uploaded.error;
 
     const publicData=s.client.storage.from(BUCKET).getPublicUrl(path);
-    const imageUrl=`${publicData.data.publicUrl}?v=${Date.now()}`;
+    const pngUrl=`${publicData.data.publicUrl}?v=${Date.now()}`;
+    let svgUrl='',svgPath='';
+    if(svgBlob?.type?.includes('svg')){
+      svgPath=`${uid}/latest.svg`;
+      const svgUploaded=await s.client.storage.from(BUCKET).upload(svgPath,svgBlob,{contentType:'image/svg+xml',cacheControl:'300',upsert:true});
+      if(svgUploaded.error){ console.warn(`[${APP_VERSION}] SVG upload fallback to PNG`,svgUploaded.error); svgPath=''; }
+      else svgUrl=`${s.client.storage.from(BUCKET).getPublicUrl(svgPath).data.publicUrl}?v=${Date.now()}`;
+    }
+    const imageUrl=svgUrl||pngUrl;
+    mapData={...mapData,assets:{...(mapData?.assets||{}),svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}};
     const row={
       user_id:uid,
       name:record.name,
       comment:record.comment||'',
-      image_path:path,
+      image_path:svgPath||path,
       image_url:imageUrl,
       client_updated_at:Date.now(),
       updated_at:new Date().toISOString(),
@@ -314,7 +324,7 @@
     };
     const saved=await s.client.from(TABLE).upsert(row,{onConflict:'user_id'});
     if(saved.error) throw saved.error;
-    return {mode:'cloud',imageUrl};
+    return {mode:'cloud',imageUrl,pngUrl,svgUrl};
   }
 
   async function loadMaps(){
@@ -328,6 +338,7 @@
       comment:x.comment||'',
       imagePath:x.image_path||'',
       imageUrl:x.image_url,
+      fallbackUrl:x.map_data?.assets?.pngUrl||'',
       clientUpdatedAt:x.client_updated_at,
       when:new Date(x.updated_at||x.client_updated_at||Date.now()),
       version:x.version,
@@ -382,9 +393,15 @@
       const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
       if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
       uploadBlob=await maker();
+      const svgMaker=window.v177CreateSvgBlob;
+      uploadSvgBlob=null;
+      if(typeof svgMaker==='function'){
+        try{ uploadSvgBlob=await svgMaker(); }
+        catch(svgError){ console.warn(`[${APP_VERSION}] SVG preview fallback to PNG`,svgError); }
+      }
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
-      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">超高画質PNG・自動再試行対応（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
+      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">${uploadSvgBlob?`SVG優先表示＋高画質PNG互換（SVG ${(uploadSvgBlob.size/1024/1024).toFixed(1)}MB / PNG ${(uploadBlob.size/1024/1024).toFixed(1)}MB）`:`高画質PNG互換表示（${(uploadBlob.size/1024/1024).toFixed(1)}MB）`}</span>`;
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
@@ -407,7 +424,8 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}"><img src="${esc(x.imageUrl)}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}">マップを見る</button></div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}">マップを見る</button></div></div></article>`).join('');
+    grid.querySelectorAll('img[data-v136-fallback]').forEach(img=>img.addEventListener('error',()=>{const fallback=img.dataset.v136Fallback;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true}));
   }
 
   function updateDeleteButton(){
@@ -435,7 +453,7 @@
         }else{
           const mine=owned.filter(x=>x.id===s.user.id);
           if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
-          const paths=mine.map(x=>x.imagePath).filter(Boolean);
+          const paths=[...new Set(mine.flatMap(x=>[x.imagePath,x.mapData?.assets?.svgPath,x.mapData?.assets?.pngPath]).filter(Boolean))];
           if(paths.length){ const removed=await s.client.storage.from(BUCKET).remove(paths); if(removed.error) throw removed.error; }
           const deleted=await s.client.from(TABLE).delete().in('user_id',mine.map(x=>x.id)).eq('user_id',s.user.id).select('user_id');
           if(deleted.error) throw deleted.error;
@@ -492,7 +510,7 @@
     try{
       const mapData=buildOperationalMapData();
       const scheduleData=typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{};
-      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,mapData,scheduleData);
+      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,mapData,scheduleData);
       localStorage.setItem('businessMapShareName',name);
       alert(result.mode==='cloud'?'MAPとスケジュールを共有しました！':'この端末にMAPとスケジュールを保存しました。\nSupabase設定完了後は全員共有になります。');
       closeModal('#v136UploadModal');
@@ -530,7 +548,7 @@
   }
 
   function zoomViewer(factor,animate=true){
-    viewerState.scale=Math.min(5,Math.max(.25,viewerState.scale*factor));
+    viewerState.scale=Math.min(12,Math.max(.25,viewerState.scale*factor));
     if(viewerState.scale<=1){
       viewerState.x=0;
       viewerState.y=0;
@@ -553,6 +571,10 @@
     $('#v167ZoomFit').onclick=e=>{ e.stopPropagation(); resetViewer(true); };
     $('#v136ViewerClose').onclick=e=>{ e.stopPropagation(); closeViewer(); };
     img.addEventListener('load',()=>resetViewer());
+    img.addEventListener('error',()=>{
+      const fallback=img.dataset.fallback;
+      if(fallback&&img.src!==fallback){ img.dataset.fallback=''; img.src=fallback; }
+    });
 
     const beginGesture=()=>{
       const points=[...viewerState.pointers.values()];
@@ -580,7 +602,7 @@
       const points=[...viewerState.pointers.values()];
       if(points.length>=2&&viewerState.pinch){
         const distance=Math.hypot(points[1].x-points[0].x,points[1].y-points[0].y)||1;
-        viewerState.scale=Math.min(5,Math.max(.25,viewerState.pinch.scale*(distance/viewerState.pinch.distance)));
+        viewerState.scale=Math.min(12,Math.max(.25,viewerState.pinch.scale*(distance/viewerState.pinch.distance)));
       }else if(points.length===1&&viewerState.drag){
         viewerState.x=viewerState.drag.x+(points[0].x-viewerState.drag.px);
         viewerState.y=viewerState.drag.y+(points[0].y-viewerState.drag.py);
@@ -635,7 +657,7 @@
       const close=e.target.closest('[data-v136-close]');
       if(close) closeModal(close.dataset.v136Close==='gallery'?'#v136GalleryModal':'#v136UploadModal');
       const view=e.target.closest('[data-v136-view]');
-      if(view){ resetViewer(); $('#v136ViewerImg').src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
+      if(view){ const img=$('#v136ViewerImg'); resetViewer(); img.dataset.fallback=view.dataset.v136Fallback||''; img.src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');
     });
     $('#v136GalleryModal').addEventListener('click',e=>{
