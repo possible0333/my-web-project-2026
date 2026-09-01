@@ -424,7 +424,7 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}">マップを見る</button></div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}">マップを見る</button>${Array.isArray(x.mapData?.people)&&x.mapData.people.length?`<button class="btn dark" data-v178-restore="${esc(x.id)}">JSON読込</button>`:''}</div></div></article>`).join('');
     grid.querySelectorAll('img[data-v136-fallback]').forEach(img=>img.addEventListener('error',()=>{const fallback=img.dataset.v136Fallback;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true}));
   }
 
@@ -521,6 +521,19 @@
     }finally{
       btn.disabled=false; btn.textContent=old;
     }
+  }
+
+  function restoreCloudMap(id){
+    const item=currentItems.find(x=>String(x.id)===String(id));
+    if(!item?.mapData?.people?.length){ alert('このマップには復元できるJSONデータがありません。'); return; }
+    const ok=confirm(`${item.name||'選択したメンバー'}のMAP JSONをこの端末へ読み込みます。\n\n現在の個人マップは端末内へ自動バックアップしてから置き換えます。実行しますか？`);
+    if(!ok) return;
+    try{
+      if(typeof window.v178RestoreCloudMap!=='function') throw new Error('JSON復元機能が読み込まれていません');
+      const result=window.v178RestoreCloudMap(item.mapData,item.scheduleData||{});
+      closeModal('#v136GalleryModal');
+      alert(`${result.ownerName}のマップ（${result.peopleCount}人）をこの端末へ読み込みました。`);
+    }catch(error){ console.error(error); alert(`JSONを読み込めませんでした。\n${error.message||error}`); }
   }
 
 
@@ -656,6 +669,8 @@
     document.addEventListener('click',e=>{
       const close=e.target.closest('[data-v136-close]');
       if(close) closeModal(close.dataset.v136Close==='gallery'?'#v136GalleryModal':'#v136UploadModal');
+      const restore=e.target.closest('[data-v178-restore]');
+      if(restore){ e.preventDefault(); restoreCloudMap(restore.dataset.v178Restore); return; }
       const view=e.target.closest('[data-v136-view]');
       if(view){ const img=$('#v136ViewerImg'); resetViewer(); img.dataset.fallback=view.dataset.v136Fallback||''; img.src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');

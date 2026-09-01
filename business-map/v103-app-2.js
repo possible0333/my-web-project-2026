@@ -191,7 +191,13 @@ function operationalMapToState(mapData){
     memo1:String(p?.memo1??p?.memos?.[0]??''),
     memo2:String(p?.memo2??p?.memos?.[1]??''),
     memo3:String(p?.memo3??p?.memos?.[2]??''),
-    avatar:Number.isFinite(Number(p?.avatar))?Number(p.avatar):0
+    avatar:Number.isFinite(Number(p?.avatar))?Number(p.avatar):0,
+    monthlyTargetPv:Math.max(0,Number(p?.monthlyTargetPv||0)),
+    frontUpGoal:Math.max(0,Number(p?.frontUpGoal||0)),
+    groupUpGoal:Math.max(0,Number(p?.groupUpGoal||0)),
+    focus1:String(p?.focus1||''),
+    focus2:String(p?.focus2||''),
+    focus3:String(p?.focus3||'')
   });
   return {
     self:convert(owner,true),
@@ -237,6 +243,22 @@ function importJSON(file){
   };
   reader.readAsText(file, 'utf-8');
 }
+
+window.v178RestoreCloudMap=function(mapData,scheduleData){
+  const normalized=normalizeImportedState(mapData);
+  if(!normalized) throw new Error('読み込めるMAP JSONがありません');
+  const backup={
+    schema:'business-map-device-backup',
+    createdAt:new Date().toISOString(),
+    state,
+    scheduleData:typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{}
+  };
+  localStorage.setItem('business_map_before_cloud_restore',JSON.stringify(backup));
+  state=migrate(normalized);
+  if(scheduleData&&typeof window.v156SetScheduleData==='function') window.v156SetScheduleData(scheduleData);
+  render();
+  return {peopleCount:1+(state.members?.length||0),ownerName:state.self?.name||'自分'};
+};
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 function buildExportSurface(){
   const root = $('exportRoot');
