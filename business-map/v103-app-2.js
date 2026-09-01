@@ -122,6 +122,18 @@ function saveForm(){
   closeModal();
   render();
 }
+function resetAllActualPv(){
+  const people=[state.self,...(state.members||[])].filter(Boolean);
+  const affected=people.filter(p=>Number(p.actual||0)!==0).length;
+  if(!affected){
+    alert('全員の実績PVはすでに0です。');
+    return;
+  }
+  if(!confirm(`自分を含む全員（${people.length}人）の実績PVを0にします。\n\n目標PV・期限・やること・メモは変更されません。\nこの操作を実行しますか？`)) return;
+  people.forEach(p=>{ p.actual=0; });
+  render();
+  alert(`${affected}人分の実績PVをリセットしました。`);
+}
 function deleteCurrent(){
   if(!editingId || editingId==='self') return;
   const current = getPerson(editingId);
@@ -280,6 +292,7 @@ $('jsonImportBtn').onclick = ()=>$('fileInput').click();
 $('fileInput').onchange = e=>{ const f=e.target.files[0]; if(f) importJSON(f); e.target.value=''; };
 $('addBtn').onclick = ()=>openModal(null);
 $('editSelfBtn').onclick = ()=>openModal('self');
+$('resetActualPvBtn').onclick = resetAllActualPv;
 $('saveImageBtn').onclick = saveImage;
 $('statusFilter').onchange = renderTree;
 $('typeFilter').onchange = renderTree;
