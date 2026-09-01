@@ -52,6 +52,17 @@
     const diff=Math.round((target-today)/86400000);
     return diff<=3;
   }
+  function deadlineOverdue(value){
+    const s=String(value||'').trim();
+    let m=s.match(/^\d{4}-(\d{2})-(\d{2})$/);
+    if(!m) m=s.match(/^(\d{1,2})[-\/](\d{1,2})$/);
+    if(!m) return false;
+    const month=Number(m[1]),day=Number(m[2]);
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const target=new Date(now.getFullYear(),month-1,day);
+    return target.getMonth()===month-1&&target.getDate()===day&&target<today;
+  }
 
   function miniCard(p){
     const deadline=deadlineText(p.deadline);
@@ -60,6 +71,7 @@
     return `<button type="button" class="v127-mini-card" data-v127-id="${escapeHtml(p.id)}" data-type="${escapeHtml(p.type)}">
       <span class="v127-mini-status" style="background:${currentStatusColor(p)}" title="${escapeHtml(currentStatusLabel(p))}"></span>
       ${Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved v153-mini-achieved">達成</span>':''}
+      ${deadlineOverdue(p.deadline)?'<span class="v169-review-stamp v169-mini-review">要確認</span>':''}
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
