@@ -70,30 +70,30 @@
     host.style.cssText=`position:fixed;left:-100000px;top:0;width:${width}px;background:#fff;z-index:-99999;pointer-events:none;overflow:visible;`;
 
     const surface=document.createElement('div');
-    surface.className='v173-export-readable';
+    surface.className='v174-export-readable';
     surface.style.cssText=`width:${width}px;background:#fff;padding:14px 16px 18px;box-sizing:border-box;overflow:visible;`;
     const readableStyle=document.createElement('style');
     readableStyle.textContent=`
-      .v173-export-readable .member-card{height:auto!important;min-height:190px!important}
-      .v173-export-readable .card-name{font-size:14px!important;line-height:1.25!important}
-      .v173-export-readable .status-stamp{font-size:9px!important;line-height:1.2!important;padding:4px 7px!important}
-      .v173-export-readable .type-badge{font-size:9px!important}
-      .v173-export-readable .v121-profile-inline{font-size:9px!important;line-height:1.25!important}
-      .v173-export-readable .v119-card-action{padding:8px 9px!important}
-      .v173-export-readable .v119-k{font-size:10px!important;min-width:48px!important}
-      .v173-export-readable .v119-v{font-size:11px!important;line-height:1.4!important}
-      .v173-export-readable .v121-urgency-label{font-size:9px!important}
-      .v173-export-readable .v114-pv-label{font-size:10px!important}
-      .v173-export-readable .v114-pv-values{font-size:11px!important;line-height:1.3!important}
-      .v173-export-readable .v114-pv-values small{font-size:9px!important}
-      .v173-export-readable .memo-item{font-size:9.5px!important;line-height:1.35!important}
-      .v173-export-readable .v127-mini-card{min-height:94px!important}
-      .v173-export-readable .v127-mini-name{font-size:12px!important;line-height:1.25!important}
-      .v173-export-readable .v127-mini-meta{font-size:9px!important;line-height:1.25!important}
-      .v173-export-readable .v127-mini-type{font-size:8px!important}
-      .v173-export-readable .v127-mini-action{font-size:10px!important;line-height:1.4!important;max-height:2.8em!important}
-      .v173-export-readable .v127-direct-head{font-size:11px!important}
-      .v173-export-readable .v169-review-stamp{font-size:11px!important}
+      .v174-export-readable .member-card{height:auto!important;min-height:220px!important}
+      .v174-export-readable .card-name{font-size:17px!important;line-height:1.3!important}
+      .v174-export-readable .status-stamp{font-size:11px!important;line-height:1.25!important;padding:5px 8px!important}
+      .v174-export-readable .type-badge{font-size:11px!important}
+      .v174-export-readable .v121-profile-inline{font-size:11px!important;line-height:1.35!important}
+      .v174-export-readable .v119-card-action{padding:9px 10px!important}
+      .v174-export-readable .v119-k{font-size:12px!important;min-width:56px!important}
+      .v174-export-readable .v119-v{font-size:13px!important;line-height:1.45!important}
+      .v174-export-readable .v121-urgency-label{font-size:11px!important}
+      .v174-export-readable .v114-pv-label{font-size:12px!important}
+      .v174-export-readable .v114-pv-values{font-size:13px!important;line-height:1.35!important}
+      .v174-export-readable .v114-pv-values small{font-size:11px!important}
+      .v174-export-readable .memo-item{font-size:11.5px!important;line-height:1.4!important}
+      .v174-export-readable .v127-mini-card{min-height:112px!important}
+      .v174-export-readable .v127-mini-name{font-size:15px!important;line-height:1.3!important}
+      .v174-export-readable .v127-mini-meta{font-size:11px!important;line-height:1.3!important}
+      .v174-export-readable .v127-mini-type{font-size:10px!important}
+      .v174-export-readable .v127-mini-action{font-size:12px!important;line-height:1.45!important;max-height:2.9em!important}
+      .v174-export-readable .v127-direct-head{font-size:13px!important}
+      .v174-export-readable .v169-review-stamp{font-size:13px!important}
     `;
     host.appendChild(readableStyle);
 
