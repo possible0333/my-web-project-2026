@@ -237,6 +237,33 @@
     ));
   }
 
+  async function createUploadFallback(blob){
+    const bitmap=await createImageBitmap(blob);
+    const targetBytes=5.5*1024*1024;
+    let scale=Math.min(1,Math.sqrt(targetBytes/Math.max(1,blob.size))*.94);
+    const encode=async()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+      canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+      const ctx=canvas.getContext('2d');
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      return await new Promise((resolve,reject)=>canvas.toBlob(
+        value=>value?resolve(value):reject(new Error('再試行画像の作成に失敗しました')),
+        'image/png',
+        1
+      ));
+    };
+    let out=await encode();
+    for(let i=0;i<2&&out.size>targetBytes;i++){
+      scale*=Math.max(.7,Math.min(.93,Math.sqrt(targetBytes/out.size)*.94));
+      out=await encode();
+    }
+    bitmap.close?.();
+    return out;
+  }
+
   async function saveMap(record,blob,mapData,scheduleData){
     blob=await ensureUploadPng(blob);
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
@@ -246,9 +273,17 @@
     const imageType=blob.type==='image/webp'?'image/webp':'image/png';
     const extension=imageType==='image/webp'?'webp':'png';
     const path=`${uid}/latest.${extension}`;
-    const uploaded=await s.client.storage.from(BUCKET).upload(path,blob,{
+    let uploadBlob=blob;
+    let uploaded=await s.client.storage.from(BUCKET).upload(path,uploadBlob,{
       contentType:imageType,cacheControl:'300',upsert:true
     });
+    if(uploaded.error&&uploadBlob.size>6*1024*1024){
+      console.warn(`[${APP_VERSION}] high resolution upload retry`,uploaded.error);
+      uploadBlob=await createUploadFallback(uploadBlob);
+      uploaded=await s.client.storage.from(BUCKET).upload(path,uploadBlob,{
+        contentType:'image/png',cacheControl:'300',upsert:true
+      });
+    }
     if(uploaded.error) throw uploaded.error;
 
     const publicData=s.client.storage.from(BUCKET).getPublicUrl(path);
@@ -339,7 +374,7 @@
       uploadBlob=await maker();
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
-      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">高画質PNG・アップロード対応（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
+      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">超高画質PNG・自動再試行対応（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
