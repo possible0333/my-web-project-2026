@@ -126,8 +126,8 @@
   function ratio(w,h,upload=false){
     // Shared maps need enough source pixels for names and PV values to stay
     // readable after zooming. WebP compression below keeps the upload small.
-    const base=upload?(isMobile()?2.0:2.2):(isMobile()?2.4:3.0);
-    const max=upload?32000000:(isMobile()?48000000:96000000);
+    const base=upload?(isMobile()?2.3:2.5):(isMobile()?2.4:3.0);
+    const max=upload?40000000:(isMobile()?48000000:96000000);
     const min=upload?.70:.75;
     return Math.max(min,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
@@ -167,7 +167,7 @@
 
   async function limitUploadBlob(blob){
     const bitmap=await createImageBitmap(blob);
-    const maxPixels=32000000,maxSide=9000,targetBytes=5.5*1024*1024;
+    const maxPixels=40000000,maxSide=10000,targetBytes=9*1024*1024;
     let scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,bitmap.width*bitmap.height)));
     const encode=async()=>{
       const canvas=document.createElement('canvas');
