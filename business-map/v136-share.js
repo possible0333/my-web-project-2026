@@ -222,7 +222,23 @@
     });
   }
 
+  async function ensureUploadPng(blob){
+    if(blob?.type==='image/png') return blob;
+    const bitmap=await createImageBitmap(blob);
+    const canvas=document.createElement('canvas');
+    canvas.width=bitmap.width;
+    canvas.height=bitmap.height;
+    canvas.getContext('2d').drawImage(bitmap,0,0);
+    bitmap.close?.();
+    return await new Promise((resolve,reject)=>canvas.toBlob(
+      value=>value?resolve(value):reject(new Error('PNG変換に失敗しました')),
+      'image/png',
+      1
+    ));
+  }
+
   async function saveMap(record,blob,mapData,scheduleData){
+    blob=await ensureUploadPng(blob);
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
     if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},blob); return {mode:'local'}; }
 
@@ -323,7 +339,7 @@
       uploadBlob=await maker();
       if(uploadUrl) URL.revokeObjectURL(uploadUrl);
       uploadUrl=URL.createObjectURL(uploadBlob);
-      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">高画質アップロード用（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
+      box.innerHTML=`<img src="${uploadUrl}" alt="アップロードプレビュー"><span class="v136-share-state">高画質PNG・アップロード対応（${(uploadBlob.size/1024/1024).toFixed(1)}MB）</span>`;
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
