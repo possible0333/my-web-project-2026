@@ -137,15 +137,8 @@
     if(!box) return;
     const s=currentTeamSummary();
     const self=state.self;
-    const monthlyTargetPv=Math.max(0,Number(self.monthlyTargetPv||0));
-    const monthlyActualPv=Math.max(0,Number(s.teamActual||0));
-    const monthlyRemainingPv=Math.max(0,monthlyTargetPv-monthlyActualPv);
     const rate=self.target?Math.min(100,Math.round(Number(self.actual||0)/Number(self.target||0)*100)):0;
-    box.innerHTML=`<div class="v175-monthly-pv-banner">
-      <div><span>今月の目標PV</span><strong>${monthlyTargetPv?fmt(monthlyTargetPv):'未設定'}</strong></div>
-      <div><span>現在の実績PV（グループ合計）</span><strong>${fmt(monthlyActualPv)}</strong></div>
-      <div class="${monthlyTargetPv&&monthlyRemainingPv===0?'is-achieved':''}"><span>${monthlyTargetPv&&monthlyRemainingPv===0?'目標達成':'残りPV'}</span><strong>${monthlyTargetPv?fmt(monthlyRemainingPv):'―'}</strong></div>
-    </div><div class="self-grid">
+    box.innerHTML=`<div class="self-grid">
       <img class="self-avatar" src="${ICONS[self.avatar||0]}" alt="avatar">
       <div>
         <div class="self-name">${escapeHtml(self.name||'自分')}</div>

@@ -90,6 +90,19 @@
     </section>`;
   }
 
+  function monthlyPvSummaryHtml(){
+    const target=Math.max(0,Number(state.self?.monthlyTargetPv||0));
+    const gp=typeof groupPvFor==='function'?groupPvFor('self'):{actual:0};
+    const actual=Math.max(0,Number(gp?.actual||0));
+    const remaining=Math.max(0,target-actual);
+    const achieved=target>0&&remaining===0;
+    return `<section class="v176-map-pv-summary" aria-label="今月のPV進捗">
+      <div><span>今月の目標PV</span><strong>${target?fmt(target):'未設定'}</strong></div>
+      <div><span>現在の実績PV<br>（グループ合計）</span><strong>${fmt(actual)}</strong></div>
+      <div class="${achieved?'is-achieved':''}"><span>${achieved?'目標達成':'残りPV'}</span><strong>${target?fmt(remaining):'―'}</strong></div>
+    </section>`;
+  }
+
   function selfCardHtml(){
     let html=renderCard(state.self);
     html=html.replace('class="member-card ', 'class="member-card v127-self-map-card ');
@@ -141,7 +154,7 @@
     area.classList.remove('v118-filter-mode');
     svg.style.display='';
 
-    rows.innerHTML=`<div class="v127-network">${directZoneHtml()}${buildNode('self',0)}</div>`;
+    rows.innerHTML=`<div class="v127-network">${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNode('self',0)}</div>`;
     bindClicks(rows);
     applyV127Density();
 
