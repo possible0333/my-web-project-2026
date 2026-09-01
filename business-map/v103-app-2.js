@@ -292,7 +292,12 @@ $('jsonImportBtn').onclick = ()=>$('fileInput').click();
 $('fileInput').onchange = e=>{ const f=e.target.files[0]; if(f) importJSON(f); e.target.value=''; };
 $('addBtn').onclick = ()=>openModal(null);
 $('editSelfBtn').onclick = ()=>openModal('self');
-$('resetActualPvBtn').onclick = resetAllActualPv;
+document.addEventListener('click',e=>{
+  const button=e.target.closest?.('#resetActualPvBtn');
+  if(!button) return;
+  e.preventDefault();
+  resetAllActualPv();
+});
 $('saveImageBtn').onclick = saveImage;
 $('statusFilter').onchange = renderTree;
 $('typeFilter').onchange = renderTree;
