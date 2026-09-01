@@ -72,7 +72,13 @@
       memo3:String(p?.memo3||''),
       memos:[p?.memo1,p?.memo2,p?.memo3].map(v=>String(v||'')).filter(Boolean),
       deadline:due,
-      nextAction:String(p?.nextAction||'')
+      nextAction:String(p?.nextAction||''),
+      monthlyTargetPv:Number(p?.monthlyTargetPv||0),
+      frontUpGoal:Number(p?.frontUpGoal||0),
+      groupUpGoal:Number(p?.groupUpGoal||0),
+      focus1:String(p?.focus1||''),
+      focus2:String(p?.focus2||''),
+      focus3:String(p?.focus3||'')
     };
   }
 
@@ -90,6 +96,10 @@
         peopleCount:people.length,
         targetGrPv:Number(gp?.target||0),
         actualGrPv:Number(gp?.actual||0),
+        monthlyTargetPv:Number(state.self?.monthlyTargetPv||0),
+        remainingPv:Math.max(0,Number(state.self?.monthlyTargetPv||0)-Number(gp?.actual||0)),
+        frontUpGoal:Number(state.self?.frontUpGoal||0),
+        groupUpGoal:Number(state.self?.groupUpGoal||0),
         overdueCount:reminders.filter(x=>x.deadline.state==='overdue').length,
         dueTodayCount:reminders.filter(x=>x.deadline.state==='today').length,
         dueSoonCount:reminders.filter(x=>x.deadline.state==='soon').length,

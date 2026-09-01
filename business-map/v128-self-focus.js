@@ -21,9 +21,10 @@
         </div>
         <span class="v128-edit-badge">自分専用</span>
       </div>
-      <div class="v128-edit-goal">
-        <label for="fMonthlyGoal">今月の目標</label>
-        <textarea id="fMonthlyGoal" class="text-input" rows="2" placeholder="例：18万PV達成 / フロント2人アップ"></textarea>
+      <div class="v128-edit-goals">
+        <div><label for="fMonthlyTargetPv">目標PV</label><input id="fMonthlyTargetPv" class="number-input" type="number" inputmode="numeric" min="0" step="1000" placeholder="例：180000"></div>
+        <div><label for="fFrontUpGoal">フロントアップ数</label><input id="fFrontUpGoal" class="number-input" type="number" inputmode="numeric" min="0" step="1" placeholder="例：2"></div>
+        <div><label for="fGroupUpGoal">グループアップ数</label><input id="fGroupUpGoal" class="number-input" type="number" inputmode="numeric" min="0" step="1" placeholder="例：5"></div>
       </div>
       <div class="v128-focus-inputs">
         <div><label for="fFocus1">意識すること 1</label><input id="fFocus1" class="text-input" placeholder="例：毎日プロスペへ連絡"></div>
@@ -37,6 +38,9 @@
     if(!target?.self) return;
     const src=raw?.self || {};
     target.self.monthlyGoal=String(src.monthlyGoal ?? target.self.monthlyGoal ?? '');
+    target.self.monthlyTargetPv=Math.max(0,Number(src.monthlyTargetPv ?? target.self.monthlyTargetPv ?? 0)||0);
+    target.self.frontUpGoal=Math.max(0,Number(src.frontUpGoal ?? target.self.frontUpGoal ?? 0)||0);
+    target.self.groupUpGoal=Math.max(0,Number(src.groupUpGoal ?? target.self.groupUpGoal ?? 0)||0);
     target.self.focus1=String(src.focus1 ?? target.self.focus1 ?? '');
     target.self.focus2=String(src.focus2 ?? target.self.focus2 ?? '');
     target.self.focus3=String(src.focus3 ?? target.self.focus3 ?? '');
@@ -54,6 +58,9 @@
       }
     }catch(e){ console.warn('[v1.28] self focus restore skipped',e); }
     state.self.monthlyGoal=String(state.self.monthlyGoal||'');
+    state.self.monthlyTargetPv=Math.max(0,Number(state.self.monthlyTargetPv||0));
+    state.self.frontUpGoal=Math.max(0,Number(state.self.frontUpGoal||0));
+    state.self.groupUpGoal=Math.max(0,Number(state.self.groupUpGoal||0));
     state.self.focus1=String(state.self.focus1||'');
     state.self.focus2=String(state.self.focus2||'');
     state.self.focus3=String(state.self.focus3||'');
@@ -73,7 +80,9 @@
 
   function fillSelfFields(p){
     const values={
-      fMonthlyGoal:p?.monthlyGoal||'',
+      fMonthlyTargetPv:Number(p?.monthlyTargetPv||0)||'',
+      fFrontUpGoal:Number(p?.frontUpGoal||0)||'',
+      fGroupUpGoal:Number(p?.groupUpGoal||0)||'',
       fFocus1:p?.focus1||'',
       fFocus2:p?.focus2||'',
       fFocus3:p?.focus3||''
@@ -108,7 +117,9 @@
     const wrapped=function(){
       const data=original.apply(this,arguments);
       if(activeId==='self'){
-        data.monthlyGoal=safe(document.getElementById('fMonthlyGoal')?.value);
+        data.monthlyTargetPv=Math.max(0,Number(document.getElementById('fMonthlyTargetPv')?.value||0));
+        data.frontUpGoal=Math.max(0,Math.floor(Number(document.getElementById('fFrontUpGoal')?.value||0)));
+        data.groupUpGoal=Math.max(0,Math.floor(Number(document.getElementById('fGroupUpGoal')?.value||0)));
         data.focus1=safe(document.getElementById('fFocus1')?.value);
         data.focus2=safe(document.getElementById('fFocus2')?.value);
         data.focus3=safe(document.getElementById('fFocus3')?.value);
@@ -140,12 +151,18 @@
   }
 
   function planningBlock(p){
-    const goal=safe(p.monthlyGoal);
+    const monthlyTargetPv=Math.max(0,Number(p.monthlyTargetPv||0));
+    const frontUpGoal=Math.max(0,Number(p.frontUpGoal||0));
+    const groupUpGoal=Math.max(0,Number(p.groupUpGoal||0));
     const focus=[safe(p.focus1),safe(p.focus2),safe(p.focus3)].filter(Boolean);
     return `<div class="v128-plan-panel">
       <div class="v128-plan-section v128-monthly-goal">
         <div class="v128-plan-label">今月の目標</div>
-        <div class="v128-plan-value ${goal?'':'is-empty'}">${goal?escapeHtml(goal):'未入力'}</div>
+        <div class="v175-goal-grid">
+          <div><span>目標PV</span><b>${monthlyTargetPv?fmt(monthlyTargetPv):'未入力'}</b></div>
+          <div><span>フロントアップ</span><b>${frontUpGoal?`${fmt(frontUpGoal)}人`:'未入力'}</b></div>
+          <div><span>グループアップ</span><b>${groupUpGoal?`${fmt(groupUpGoal)}人`:'未入力'}</b></div>
+        </div>
       </div>
       <div class="v128-plan-section v128-focus-list">
         <div class="v128-plan-label">意識すること</div>
@@ -212,6 +229,7 @@
     restoreFromStorage();
     refreshVersion();
     try{ save(); }catch(e){}
+    try{ if(typeof renderSelf==='function') renderSelf(); }catch(e){ console.warn('[v1.75] monthly summary rerender failed',e); }
     rerender();
   }
 
