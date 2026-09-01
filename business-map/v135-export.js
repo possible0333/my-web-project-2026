@@ -167,9 +167,9 @@
 
   async function limitUploadBlob(blob){
     const bitmap=await createImageBitmap(blob);
-    const maxPixels=32000000,maxSide=9000,targetBytes=5.8*1024*1024;
+    const maxPixels=32000000,maxSide=9000,targetBytes=5.5*1024*1024;
     let scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,bitmap.width*bitmap.height)));
-    const encode=async(quality)=>{
+    const encode=async()=>{
       const canvas=document.createElement('canvas');
       canvas.width=Math.max(1,Math.round(bitmap.width*scale));
       canvas.height=Math.max(1,Math.round(bitmap.height*scale));
@@ -177,13 +177,12 @@
       ctx.imageSmoothingEnabled=true;
       ctx.imageSmoothingQuality='high';
       ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-      return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/webp',quality));
+      return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/png',1));
     };
-    let out=await encode(.96);
-    if(out.size>targetBytes) out=await encode(.91);
-    if(out.size>targetBytes){
-      scale*=Math.max(.72,Math.min(.96,Math.sqrt(targetBytes/out.size)*.96));
-      out=await encode(.91);
+    let out=await encode();
+    for(let i=0;i<3&&out.size>targetBytes;i++){
+      scale*=Math.max(.65,Math.min(.94,Math.sqrt(targetBytes/out.size)*.94));
+      out=await encode();
     }
     bitmap.close?.();
     return out;
