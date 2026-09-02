@@ -51,7 +51,7 @@ values (
   'business-maps',
   true,
   15728640,
-  array['image/png']
+  array['image/png', 'image/svg+xml']
 )
 on conflict (id) do update set
   public = excluded.public,
