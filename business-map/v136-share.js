@@ -7,6 +7,7 @@
   let supa=null;
   let uploadBlob=null;
   let uploadSvgBlob=null;
+  let uploadPages=[];
   let uploadUrl='';
   let currentItems=[];
   let currentMode='cloud';
@@ -277,7 +278,7 @@
     return out;
   }
 
-  async function saveMap(record,blob,svgBlob,mapData,scheduleData){
+  async function saveMap(record,blob,svgBlob,mapData,scheduleData,pageAssets=[]){
     blob=await ensureUploadPng(blob);
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase init failed`,e);return null;});
     if(!s){ await localPut({...record,mapData,scheduleData,dataSchemaVersion:mapData?.schemaVersion||1,reminderSummary:buildReminderSummary(mapData)},svgBlob||blob); return {mode:'local'}; }
@@ -309,7 +310,24 @@
       else svgUrl=`${s.client.storage.from(BUCKET).getPublicUrl(svgPath).data.publicUrl}?v=${Date.now()}`;
     }
     const imageUrl=svgUrl||pngUrl;
-    mapData={...mapData,assets:{...(mapData?.assets||{}),svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}};
+    const sharedPages=[{id:'all',label:'1枚目 全体図',imageUrl,svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}];
+    for(const page of pageAssets.slice(1)){
+      const pagePngPath=`${uid}/latest-${page.id}.png`;
+      let pagePng=await ensureUploadPng(page.png);
+      let pngSaved=await s.client.storage.from(BUCKET).upload(pagePngPath,pagePng,{contentType:'image/png',cacheControl:'300',upsert:true});
+      if(pngSaved.error&&pagePng.size>6*1024*1024){pagePng=await createUploadFallback(pagePng);pngSaved=await s.client.storage.from(BUCKET).upload(pagePngPath,pagePng,{contentType:'image/png',cacheControl:'300',upsert:true});}
+      if(pngSaved.error) throw pngSaved.error;
+      const pagePngUrl=`${s.client.storage.from(BUCKET).getPublicUrl(pagePngPath).data.publicUrl}?v=${Date.now()}`;
+      let pageSvgPath='',pageSvgUrl='';
+      if(page.svg?.type?.includes('svg')){
+        pageSvgPath=`${uid}/latest-${page.id}.svg`;
+        const svgSaved=await s.client.storage.from(BUCKET).upload(pageSvgPath,page.svg,{contentType:'image/svg+xml',cacheControl:'300',upsert:true});
+        if(svgSaved.error){console.warn(`[${APP_VERSION}] ${page.id} SVG fallback`,svgSaved.error);pageSvgPath='';}
+        else pageSvgUrl=`${s.client.storage.from(BUCKET).getPublicUrl(pageSvgPath).data.publicUrl}?v=${Date.now()}`;
+      }
+      sharedPages.push({id:page.id,label:page.label,imageUrl:pageSvgUrl||pagePngUrl,svgUrl:pageSvgUrl,svgPath:pageSvgPath,pngUrl:pagePngUrl,pngPath:pagePngPath,preferred:pageSvgUrl?'svg':'png'});
+    }
+    mapData={...mapData,assets:{...(mapData?.assets||{}),svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png',pages:sharedPages}};
     const row={
       user_id:uid,
       name:record.name,
@@ -377,7 +395,7 @@
         <div class="v136-share-head"><div><div class="v136-share-title">マップとスケジュールをアップロード</div><div class="v136-share-sub">現在のMAP画像・MAP JSON・スケジュールをまとめて共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
         <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">MAPとスケジュールをアップロード</button></div></div></div>
       </div></div>
-      <div class="v136-viewer" id="v136Viewer"><div class="v167-viewer-stage" id="v167ViewerStage"><img id="v136ViewerImg" alt="共有マップ" draggable="false"></div><div class="v167-viewer-toolbar" role="toolbar" aria-label="マップの拡大縮小"><button class="btn ghost v167-zoom-button" id="v167ZoomOut" type="button" aria-label="縮小">−</button><span class="v167-zoom-value" id="v167ZoomValue" aria-live="polite">100%</span><button class="btn ghost v167-zoom-button" id="v167ZoomIn" type="button" aria-label="拡大">＋</button><button class="btn ghost v167-fit-button" id="v167ZoomFit" type="button">全体</button><button class="btn ghost v136-viewer-close" id="v136ViewerClose" type="button">閉じる</button></div></div>`);
+      <div class="v136-viewer" id="v136Viewer"><div class="v167-viewer-stage" id="v167ViewerStage"><img id="v136ViewerImg" alt="共有マップ" draggable="false"></div><div class="v167-viewer-toolbar" role="toolbar" aria-label="マップの拡大縮小"><button class="btn ghost v180-view-page" id="v180ViewPrev" type="button">‹ 前</button><span class="v180-view-page-label" id="v180ViewPageLabel">1/1</span><button class="btn ghost v180-view-page" id="v180ViewNext" type="button">次 ›</button><button class="btn ghost v167-zoom-button" id="v167ZoomOut" type="button" aria-label="縮小">−</button><span class="v167-zoom-value" id="v167ZoomValue" aria-live="polite">100%</span><button class="btn ghost v167-zoom-button" id="v167ZoomIn" type="button" aria-label="拡大">＋</button><button class="btn ghost v167-fit-button" id="v167ZoomFit" type="button">全体</button><button class="btn ghost v136-viewer-close" id="v136ViewerClose" type="button">閉じる</button></div></div>`);
   }
 
   function noticeHtml(mode){
@@ -456,7 +474,7 @@
         }else{
           const mine=owned.filter(x=>x.id===s.user.id);
           if(mine.length!==owned.length) throw new Error('削除権限を確認できないマップが含まれています');
-          const paths=[...new Set(mine.flatMap(x=>[x.imagePath,x.mapData?.assets?.svgPath,x.mapData?.assets?.pngPath]).filter(Boolean))];
+          const paths=[...new Set(mine.flatMap(x=>[x.imagePath,x.mapData?.assets?.svgPath,x.mapData?.assets?.pngPath,...(x.mapData?.assets?.pages||[]).flatMap(p=>[p.svgPath,p.pngPath])]).filter(Boolean))];
           if(paths.length){ const removed=await s.client.storage.from(BUCKET).remove(paths); if(removed.error) throw removed.error; }
           const deleted=await s.client.from(TABLE).delete().in('user_id',mine.map(x=>x.id)).eq('user_id',s.user.id).select('user_id');
           if(deleted.error) throw deleted.error;
@@ -509,11 +527,15 @@
     const comment=$('#v136UploadComment').value.trim();
     if(!name){ alert('名前を入力してください'); return; }
     if(!uploadBlob) await createPreview();
-    const old=btn.textContent; btn.disabled=true; btn.textContent='アップロード中…';
+    const old=btn.textContent; btn.disabled=true; btn.textContent='4ページ画像を作成中…';
     try{
+      uploadPages=await createAllPageAssets();
+      uploadBlob=uploadPages[0]?.png||uploadBlob;
+      uploadSvgBlob=uploadPages[0]?.svg||uploadSvgBlob;
+      btn.textContent='4ページをアップロード中…';
       const mapData=buildOperationalMapData();
       const scheduleData=typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{};
-      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,mapData,scheduleData);
+      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,mapData,scheduleData,uploadPages);
       localStorage.setItem('businessMapShareName',name);
       alert(result.mode==='cloud'?'MAPとスケジュールを共有しました！':'この端末にMAPとスケジュールを保存しました。\nSupabase設定完了後は全員共有になります。');
       closeModal('#v136UploadModal');
@@ -523,6 +545,28 @@
       alert(`アップロードに失敗しました。\n${e.message||e}`);
     }finally{
       btn.disabled=false; btn.textContent=old;
+    }
+  }
+
+  async function createAllPageAssets(){
+    const pages=Array.isArray(window.v180MapPages)&&window.v180MapPages.length?window.v180MapPages:[{id:'all',label:'1枚目 全体図'}];
+    const original=typeof window.v180GetMapPage==='function'?window.v180GetMapPage():'all';
+    const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
+    const svgMaker=window.v177CreateSvgBlob;
+    if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
+    const results=[];
+    try{
+      for(const page of pages){
+        window.v180SetMapPage?.(page.id);
+        await new Promise(resolve=>setTimeout(resolve,140));
+        const png=await maker();
+        let svg=null;
+        if(typeof svgMaker==='function'){try{svg=await svgMaker();}catch(error){console.warn(`[${APP_VERSION}] ${page.id} SVG fallback`,error);}}
+        results.push({...page,png,svg});
+      }
+      return results;
+    }finally{
+      window.v180SetMapPage?.(original);
     }
   }
 
@@ -556,7 +600,32 @@
   }
 
 
-  const viewerState={scale:1,x:0,y:0,pointers:new Map(),drag:null,pinch:null,vector:false,baseWidth:0,baseHeight:0};
+  const viewerState={scale:1,x:0,y:0,pointers:new Map(),drag:null,pinch:null,vector:false,baseWidth:0,baseHeight:0,pages:[],pageIndex:0};
+
+  function viewerPagesFor(item){
+    const pages=item?.mapData?.assets?.pages;
+    if(Array.isArray(pages)&&pages.length) return pages;
+    return [{id:'all',label:'全体図',imageUrl:item?.imageUrl||'',pngUrl:item?.fallbackUrl||item?.imageUrl||'',preferred:item?.isSvg?'svg':'png'}];
+  }
+
+  function showViewerPage(index){
+    if(!viewerState.pages.length) return;
+    viewerState.pageIndex=(index+viewerState.pages.length)%viewerState.pages.length;
+    const page=viewerState.pages[viewerState.pageIndex];
+    const img=$('#v136ViewerImg');
+    viewerState.vector=page.preferred==='svg'||/\.svg(?:\?|$)/i.test(page.imageUrl||'');
+    viewerState.baseWidth=0; viewerState.baseHeight=0; resetViewer();
+    img.dataset.fallback=page.pngUrl||''; img.src=page.imageUrl||page.pngUrl||'';
+    const label=$('#v180ViewPageLabel'); if(label) label.textContent=`${viewerState.pageIndex+1}/${viewerState.pages.length} ${page.label||''}`;
+    const prev=$('#v180ViewPrev'),next=$('#v180ViewNext'),multiple=viewerState.pages.length>1;
+    if(prev) prev.disabled=!multiple; if(next) next.disabled=!multiple;
+    if(multiple){const ahead=viewerState.pages[(viewerState.pageIndex+1)%viewerState.pages.length];if(ahead?.imageUrl){const preload=new Image();preload.src=ahead.imageUrl;}}
+  }
+
+  function openSharedViewer(item){
+    viewerState.pages=viewerPagesFor(item); viewerState.pageIndex=0;
+    $('#v136Viewer')?.classList.add('is-open'); showViewerPage(0);
+  }
 
   function applyViewerTransform(animate=false){
     const img=$('#v136ViewerImg');
@@ -609,6 +678,8 @@
     $('#v167ZoomOut').onclick=e=>{ e.stopPropagation(); zoomViewer(.8); };
     $('#v167ZoomIn').onclick=e=>{ e.stopPropagation(); zoomViewer(1.25); };
     $('#v167ZoomFit').onclick=e=>{ e.stopPropagation(); resetViewer(true); };
+    $('#v180ViewPrev').onclick=e=>{e.stopPropagation();showViewerPage(viewerState.pageIndex-1);};
+    $('#v180ViewNext').onclick=e=>{e.stopPropagation();showViewerPage(viewerState.pageIndex+1);};
     $('#v136ViewerClose').onclick=e=>{ e.stopPropagation(); closeViewer(); };
     img.addEventListener('load',()=>{
       img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight=''; img.style.transform='none';
@@ -706,7 +777,7 @@
       const restore=e.target.closest('[data-v178-restore]');
       if(restore){ e.preventDefault(); restoreCloudMap(restore.dataset.v178Restore); return; }
       const view=e.target.closest('[data-v136-view]');
-      if(view){ const img=$('#v136ViewerImg'); viewerState.vector=view.dataset.v136Vector==='1'; viewerState.baseWidth=0; viewerState.baseHeight=0; resetViewer(); img.dataset.fallback=view.dataset.v136Fallback||''; img.src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
+      if(view){ const article=view.closest('[data-v136-map-id]'); const item=currentItems.find(x=>String(x.id)===String(article?.dataset.v136MapId)); if(item) openSharedViewer(item); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');
     });
     $('#v136GalleryModal').addEventListener('click',e=>{

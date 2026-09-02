@@ -9,9 +9,14 @@
 .v167-viewer-toolbar .v167-zoom-button{font-size:24px;line-height:1}
 .v167-zoom-value{min-width:52px;text-align:center;color:#172033;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
 .v167-viewer-toolbar .v136-viewer-close{position:static;background:#172033;color:#fff;border-color:#172033}
+.v180-view-page-label{min-width:118px;max-width:190px;color:#1e3a5f;font-size:11px;font-weight:900;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v167-viewer-toolbar .v180-view-page{min-width:58px;font-size:11px}
 @media(max-width:720px){
   .v167-viewer-stage img{max-width:96vw;max-height:calc(100dvh - 100px)}
   .v167-viewer-toolbar{top:auto;bottom:max(12px,env(safe-area-inset-bottom));width:calc(100% - 20px);box-sizing:border-box;justify-content:center}
+  .v167-viewer-toolbar{flex-wrap:wrap}
+  .v180-view-page-label{order:-2;min-width:105px;max-width:145px}
+  .v167-viewer-toolbar .v180-view-page{order:-3}
   .v167-viewer-toolbar .btn{flex:0 0 auto;min-width:42px;padding:7px 10px}
   .v167-viewer-toolbar .v167-fit-button{min-width:54px}
 }

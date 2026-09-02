@@ -15,6 +15,14 @@
   align-items:center;
   min-width:max-content;
 }
+.v180-map-pages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0 8px;padding:6px;border:1px solid #d8e4f2;border-radius:14px;background:#edf3fa}
+.v180-map-pages button{min-height:42px;border:0;border-radius:10px;background:transparent;color:#53657d;font-size:11px;font-weight:900;cursor:pointer}
+.v180-map-pages button.is-active{background:#fff;color:#1763ce;box-shadow:0 3px 12px rgba(24,70,130,.12)}
+.v180-deep-owner{margin-bottom:30px}
+.v180-deep-group{display:flex;flex-direction:column;align-items:center;min-width:max-content;margin:0 auto 34px;padding:14px 18px 20px;border:2px solid #cfdef3;border-radius:20px;background:linear-gradient(180deg,#f7fbff,#fff)}
+.v180-deep-title{align-self:stretch;margin:-2px 0 18px;padding:9px 14px;border-radius:12px;background:#1e5fae;color:#fff;text-align:center;font-size:15px;font-weight:950;letter-spacing:.02em}
+.v180-deep-roots{display:flex;align-items:flex-start;justify-content:center;gap:24px}
+.v180-deep-empty{margin:8px auto;padding:28px 40px;border:1px dashed #b8c8db;border-radius:16px;color:#64748b;background:#f8fafc;font-weight:800}
 .v127-direct-zone{
   min-width:360px;
   max-width:min(980px,calc(100vw - 56px));
@@ -206,6 +214,8 @@
 }
 
 @media(max-width:720px){
+  .v180-map-pages{grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+  .v180-map-pages button{min-height:38px;font-size:9px;padding:5px}
   .v127-direct-zone{
     min-width:320px;
     max-width:760px;

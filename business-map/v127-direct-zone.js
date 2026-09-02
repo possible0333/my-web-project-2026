@@ -1,6 +1,13 @@
 (function(){
   const APP_VERSION='v1.27';
   const previousRenderTree=window.renderTree;
+  let mapPage='all';
+  const MAP_PAGES=[
+    {id:'all',label:'1枚目 全体図'},
+    {id:'front',label:'2枚目 フロントライン'},
+    {id:'group',label:'3枚目 グループマップ'},
+    {id:'deep',label:'4枚目 グループマップ2'}
+  ];
 
   function filtersActive(){
     const status=document.getElementById('statusFilter')?.value || 'all';
@@ -122,6 +129,72 @@
     </div>`;
   }
 
+  function buildNodeLimited(id,depth,maxDepth){
+    const p=id==='self' ? state.self : getPerson(id);
+    if(!p || (id!=='self' && !isCurrent(p))) return '';
+    const kids=depth<maxDepth?treeChildren(id):[];
+    const card=id==='self' ? selfCardHtml() : renderCard(p);
+    return `<div class="v109-node" data-node-id="${escapeHtml(id)}">
+      ${id==='self'?'<div class="v127-self-label">MAP OWNER</div>':''}
+      ${card}
+      ${kids.length?`<div class="v109-children">${kids.map(c=>buildNodeLimited(c.id,depth+1,maxDepth)).join('')}</div>`:''}
+    </div>`;
+  }
+
+  function directFrontOf(person){
+    let cursor=person,guard=0;
+    while(cursor&&cursor.parentId&&cursor.parentId!=='self'&&guard++<40) cursor=getPerson(cursor.parentId);
+    return cursor?.parentId==='self'?cursor:null;
+  }
+
+  function deepGroupsHtml(){
+    const fourth=(state.members||[]).filter(p=>isCurrent(p)&&depthOf(p.id)===4);
+    const groups=new Map();
+    fourth.forEach(p=>{
+      const front=directFrontOf(p);
+      if(!front) return;
+      if(!groups.has(front.id)) groups.set(front.id,{front,nodes:[]});
+      groups.get(front.id).nodes.push(p);
+    });
+    if(!groups.size) return `<div class="v180-deep-empty">フォース以降のメンバーはまだいません</div>`;
+    return [...groups.values()].map(({front,nodes})=>`<section class="v180-deep-group">
+      <div class="v180-deep-title">${escapeHtml(front.name||'名称未設定')}グループ</div>
+      <div class="v180-deep-roots">${nodes.map(p=>buildNode(p.id,4)).join('')}</div>
+    </section>`).join('');
+  }
+
+  function pageContentsHtml(){
+    if(mapPage==='front') return `${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNodeLimited('self',0,1)}`;
+    if(mapPage==='group') return `${monthlyPvSummaryHtml()}${buildNodeLimited('self',0,3)}`;
+    if(mapPage==='deep') return `${monthlyPvSummaryHtml()}<div class="v180-deep-owner">${buildNodeLimited('self',0,0)}</div>${deepGroupsHtml()}`;
+    return `${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNode('self',0)}`;
+  }
+
+  function ensurePageControls(){
+    if(document.getElementById('v180MapPages')) return;
+    const map=document.querySelector('.map-wrap');
+    if(!map) return;
+    const nav=document.createElement('nav');
+    nav.id='v180MapPages'; nav.className='v180-map-pages'; nav.setAttribute('aria-label','マップページ切り替え');
+    nav.innerHTML=MAP_PAGES.map(p=>`<button type="button" data-v180-page="${p.id}">${p.label}</button>`).join('');
+    map.insertAdjacentElement('beforebegin',nav);
+    nav.addEventListener('click',e=>{const button=e.target.closest('[data-v180-page]');if(button) setMapPage(button.dataset.v180Page);});
+    updatePageControls();
+  }
+
+  function updatePageControls(){
+    document.querySelectorAll('[data-v180-page]').forEach(b=>b.classList.toggle('is-active',b.dataset.v180Page===mapPage));
+  }
+
+  function setMapPage(next){
+    if(!MAP_PAGES.some(p=>p.id===next)) next='all';
+    const status=document.getElementById('statusFilter'),type=document.getElementById('typeFilter');
+    if(status) status.value='all'; if(type) type.value='all';
+    mapPage=next; updatePageControls(); renderNormalTree();
+    document.querySelector('.map-wrap')?.scrollTo?.({left:0,top:0,behavior:'smooth'});
+    return mapPage;
+  }
+
   function applyV127Density(){
     const rows=document.getElementById('treeRows');
     if(!rows || filtersActive()) return;
@@ -154,7 +227,7 @@
     area.classList.remove('v118-filter-mode');
     svg.style.display='';
 
-    rows.innerHTML=`<div class="v127-network">${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNode('self',0)}</div>`;
+    rows.innerHTML=`<div class="v127-network v180-page-${mapPage}" data-v180-current-page="${mapPage}">${pageContentsHtml()}</div>`;
     bindClicks(rows);
     applyV127Density();
 
@@ -187,9 +260,13 @@
   }
 
   function bind(){
+    ensurePageControls();
     window.renderTree=renderTreeV127;
     try{ renderTree=renderTreeV127; }catch(e){}
     window.v127ApplyDensity=applyV127Density;
+    window.v180SetMapPage=setMapPage;
+    window.v180GetMapPage=()=>mapPage;
+    window.v180MapPages=MAP_PAGES.map(p=>({...p}));
     refreshVersion();
     stabilizeNormal();
     window.addEventListener('resize',()=>{
