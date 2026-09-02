@@ -106,7 +106,9 @@ function migrate(raw){
     job: p.job || p.occupation || '',
     hobby: p.hobby || '',
     etc: p.etc || '',
-    avatar: Number.isFinite(+p.avatar) ? +p.avatar : 0
+    avatar: Number.isFinite(+p.avatar) ? +p.avatar : 0,
+    sharedSourceUserId: String(p.sharedSourceUserId||''),
+    sharedSourcePersonId: String(p.sharedSourcePersonId||'')
   }));
   const self = {...DEFAULT_SELF, ...(migrated.find(x=>x.id==='self') || migrated[0] || DEFAULT_SELF), id:'self', type:'ABO', parentId:null};
   const members = migrated.filter(x=>x.id!=='self');

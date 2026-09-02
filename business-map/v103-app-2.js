@@ -197,7 +197,9 @@ function operationalMapToState(mapData){
     groupUpGoal:Math.max(0,Number(p?.groupUpGoal||0)),
     focus1:String(p?.focus1||''),
     focus2:String(p?.focus2||''),
-    focus3:String(p?.focus3||'')
+    focus3:String(p?.focus3||''),
+    sharedSourceUserId:String(p?.sharedSourceUserId||''),
+    sharedSourcePersonId:String(p?.sharedSourcePersonId||'')
   });
   return {
     self:convert(owner,true),
@@ -258,6 +260,33 @@ window.v178RestoreCloudMap=function(mapData,scheduleData){
   if(scheduleData&&typeof window.v156SetScheduleData==='function') window.v156SetScheduleData(scheduleData);
   render();
   return {peopleCount:1+(state.members?.length||0),ownerName:state.self?.name||'自分'};
+};
+
+window.v179SharedFrontMode=function(sourceUserId){
+  return state.members.some(p=>String(p.sharedSourceUserId||'')===String(sourceUserId)&&String(p.sharedSourcePersonId||'')==='self')?'update':'add';
+};
+
+window.v179MergeSharedFront=function(sourceUserId,mapData){
+  const normalized=normalizeImportedState(mapData);
+  if(!normalized) throw new Error('追加できるMAP JSONがありません');
+  const sourceKey=String(sourceUserId||mapData?.owner?.name||'shared-map');
+  const existingRoot=state.members.find(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')==='self');
+  const backup={schema:'business-map-before-front-merge',createdAt:new Date().toISOString(),state};
+  localStorage.setItem('business_map_before_front_merge',JSON.stringify(backup));
+
+  let rootId=existingRoot?.id||uid();
+  if(existingRoot){
+    const removeIds=new Set([existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]);
+    state.members=state.members.filter(p=>!removeIds.has(p.id));
+  }
+  const idMap=new Map([['self',rootId]]);
+  normalized.members.forEach(p=>idMap.set(String(p.id),uid()));
+  const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});
+  const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
+  const branch=normalized.members.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
+  state.members.push(root,...branch);
+  render();
+  return {mode:existingRoot?'update':'add',rootName:root.name||'名称未設定',peopleCount:1+branch.length};
 };
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 function buildExportSurface(){

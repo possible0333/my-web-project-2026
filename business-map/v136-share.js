@@ -79,7 +79,9 @@
       groupUpGoal:Number(p?.groupUpGoal||0),
       focus1:String(p?.focus1||''),
       focus2:String(p?.focus2||''),
-      focus3:String(p?.focus3||'')
+      focus3:String(p?.focus3||''),
+      sharedSourceUserId:String(p?.sharedSourceUserId||''),
+      sharedSourcePersonId:String(p?.sharedSourcePersonId||'')
     };
   }
 
@@ -219,7 +221,7 @@
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(LOCAL_STORE,'readonly');
       const req=tx.objectStore(LOCAL_STORE).getAll();
-      req.onsuccess=()=>resolve((req.result||[]).map(r=>({...r,imageUrl:URL.createObjectURL(r.blob),imagePath:'',owned:true,_localUrl:true})).sort((a,b)=>(b.clientUpdatedAt||0)-(a.clientUpdatedAt||0)));
+      req.onsuccess=()=>resolve((req.result||[]).map(r=>({...r,imageUrl:URL.createObjectURL(r.blob),imagePath:'',fallbackUrl:'',isSvg:String(r.blob?.type||'').includes('svg'),owned:true,_localUrl:true})).sort((a,b)=>(b.clientUpdatedAt||0)-(a.clientUpdatedAt||0)));
       req.onerror=()=>reject(req.error);
     });
   }
@@ -339,6 +341,7 @@
       imagePath:x.image_path||'',
       imageUrl:x.image_url,
       fallbackUrl:x.map_data?.assets?.pngUrl||'',
+      isSvg:x.map_data?.assets?.preferred==='svg'||/\.svg(?:\?|$)/i.test(x.image_url||''),
       clientUpdatedAt:x.client_updated_at,
       when:new Date(x.updated_at||x.client_updated_at||Date.now()),
       version:x.version,
@@ -424,7 +427,7 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>`<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}">マップを見る</button>${Array.isArray(x.mapData?.people)&&x.mapData.people.length?`<button class="btn dark" data-v178-restore="${esc(x.id)}">JSON読込</button>`:''}</div></div></article>`).join('');
+    grid.innerHTML=filtered.map(x=>{const hasJson=Array.isArray(x.mapData?.people)&&x.mapData.people.length;const branchMode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(x.id):'add';return `<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${x.isSvg?'1':'0'}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${x.isSvg?'1':'0'}">マップを見る</button>${hasJson?`<button class="btn dark" data-v179-add-front="${esc(x.id)}">${branchMode==='update'?'系列を更新':'フロント追加'}</button><button class="btn" data-v178-restore="${esc(x.id)}">全体読込</button>`:''}</div></div></article>`;}).join('');
     grid.querySelectorAll('img[data-v136-fallback]').forEach(img=>img.addEventListener('error',()=>{const fallback=img.dataset.v136Fallback;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true}));
   }
 
@@ -536,14 +539,38 @@
     }catch(error){ console.error(error); alert(`JSONを読み込めませんでした。\n${error.message||error}`); }
   }
 
+  function addSharedFront(id){
+    const item=currentItems.find(x=>String(x.id)===String(id));
+    if(!item?.mapData?.people?.length){ alert('このマップには追加できるJSONデータがありません。'); return; }
+    const mode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(item.id):'add';
+    const message=mode==='update'
+      ? `${item.name||'選択したメンバー'}の追加済み系列を、共有MAPの最新データへ更新します。\nスケジュールは変更しません。実行しますか？`
+      : `${item.name||'選択したメンバー'}を自分の直フロントABOとして追加し、配下の全マップデータも取り込みます。\nスケジュールは追加しません。実行しますか？`;
+    if(!confirm(message)) return;
+    try{
+      if(typeof window.v179MergeSharedFront!=='function') throw new Error('フロント追加機能が読み込まれていません');
+      const result=window.v179MergeSharedFront(item.id,item.mapData);
+      closeModal('#v136GalleryModal');
+      alert(`${result.rootName}の系列（${result.peopleCount}人）を${result.mode==='update'?'更新':'追加'}しました。`);
+    }catch(error){ console.error(error); alert(`系列を追加できませんでした。\n${error.message||error}`); }
+  }
 
-  const viewerState={scale:1,x:0,y:0,pointers:new Map(),drag:null,pinch:null};
+
+  const viewerState={scale:1,x:0,y:0,pointers:new Map(),drag:null,pinch:null,vector:false,baseWidth:0,baseHeight:0};
 
   function applyViewerTransform(animate=false){
     const img=$('#v136ViewerImg');
     if(!img) return;
     img.classList.toggle('is-animating',animate);
-    img.style.transform=`translate3d(${viewerState.x}px,${viewerState.y}px,0) scale(${viewerState.scale})`;
+    if(viewerState.vector&&viewerState.baseWidth>0){
+      img.style.maxWidth='none'; img.style.maxHeight='none';
+      img.style.width=`${viewerState.baseWidth*viewerState.scale}px`;
+      img.style.height=`${viewerState.baseHeight*viewerState.scale}px`;
+      img.style.transform=`translate3d(${viewerState.x}px,${viewerState.y}px,0)`;
+    }else{
+      img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight='';
+      img.style.transform=`translate3d(${viewerState.x}px,${viewerState.y}px,0) scale(${viewerState.scale})`;
+    }
     const value=$('#v167ZoomValue');
     if(value) value.textContent=`${Math.round(viewerState.scale*100)}%`;
     if(animate) setTimeout(()=>img.classList.remove('is-animating'),160);
@@ -583,10 +610,15 @@
     $('#v167ZoomIn').onclick=e=>{ e.stopPropagation(); zoomViewer(1.25); };
     $('#v167ZoomFit').onclick=e=>{ e.stopPropagation(); resetViewer(true); };
     $('#v136ViewerClose').onclick=e=>{ e.stopPropagation(); closeViewer(); };
-    img.addEventListener('load',()=>resetViewer());
+    img.addEventListener('load',()=>{
+      img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight=''; img.style.transform='none';
+      const rect=img.getBoundingClientRect();
+      viewerState.baseWidth=rect.width; viewerState.baseHeight=rect.height;
+      resetViewer();
+    });
     img.addEventListener('error',()=>{
       const fallback=img.dataset.fallback;
-      if(fallback&&img.src!==fallback){ img.dataset.fallback=''; img.src=fallback; }
+      if(fallback&&img.src!==fallback){ viewerState.vector=false; img.dataset.fallback=''; img.src=fallback; }
     });
 
     const beginGesture=()=>{
@@ -669,10 +701,12 @@
     document.addEventListener('click',e=>{
       const close=e.target.closest('[data-v136-close]');
       if(close) closeModal(close.dataset.v136Close==='gallery'?'#v136GalleryModal':'#v136UploadModal');
+      const addFront=e.target.closest('[data-v179-add-front]');
+      if(addFront){ e.preventDefault(); addSharedFront(addFront.dataset.v179AddFront); return; }
       const restore=e.target.closest('[data-v178-restore]');
       if(restore){ e.preventDefault(); restoreCloudMap(restore.dataset.v178Restore); return; }
       const view=e.target.closest('[data-v136-view]');
-      if(view){ const img=$('#v136ViewerImg'); resetViewer(); img.dataset.fallback=view.dataset.v136Fallback||''; img.src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
+      if(view){ const img=$('#v136ViewerImg'); viewerState.vector=view.dataset.v136Vector==='1'; viewerState.baseWidth=0; viewerState.baseHeight=0; resetViewer(); img.dataset.fallback=view.dataset.v136Fallback||''; img.src=view.dataset.v136View; $('#v136Viewer').classList.add('is-open'); }
       if(e.target.classList?.contains('v136-share-modal')) e.target.classList.remove('is-open');
     });
     $('#v136GalleryModal').addEventListener('click',e=>{
