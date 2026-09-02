@@ -287,11 +287,11 @@
     const imageType=blob.type==='image/webp'?'image/webp':'image/png';
     const extension=imageType==='image/webp'?'webp':'png';
     const path=`${uid}/latest.${extension}`;
-    let uploadBlob=blob;
+    let uploadBlob=blob.size>5.5*1024*1024?await createUploadFallback(blob):blob;
     let uploaded=await s.client.storage.from(BUCKET).upload(path,uploadBlob,{
       contentType:imageType,cacheControl:'300',upsert:true
     });
-    if(uploaded.error&&uploadBlob.size>6*1024*1024){
+    if(uploaded.error){
       console.warn(`[${APP_VERSION}] high resolution upload retry`,uploaded.error);
       uploadBlob=await createUploadFallback(uploadBlob);
       uploaded=await s.client.storage.from(BUCKET).upload(path,uploadBlob,{
@@ -312,10 +312,12 @@
     const imageUrl=svgUrl||pngUrl;
     const sharedPages=[{id:'all',label:'1枚目 全体図',imageUrl,svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}];
     for(const page of pageAssets.slice(1)){
+      try{
       const pagePngPath=`${uid}/latest-${page.id}.png`;
       let pagePng=await ensureUploadPng(page.png);
+      if(pagePng.size>5.5*1024*1024) pagePng=await createUploadFallback(pagePng);
       let pngSaved=await s.client.storage.from(BUCKET).upload(pagePngPath,pagePng,{contentType:'image/png',cacheControl:'300',upsert:true});
-      if(pngSaved.error&&pagePng.size>6*1024*1024){pagePng=await createUploadFallback(pagePng);pngSaved=await s.client.storage.from(BUCKET).upload(pagePngPath,pagePng,{contentType:'image/png',cacheControl:'300',upsert:true});}
+      if(pngSaved.error){pagePng=await createUploadFallback(pagePng);pngSaved=await s.client.storage.from(BUCKET).upload(pagePngPath,pagePng,{contentType:'image/png',cacheControl:'300',upsert:true});}
       if(pngSaved.error) throw pngSaved.error;
       const pagePngUrl=`${s.client.storage.from(BUCKET).getPublicUrl(pagePngPath).data.publicUrl}?v=${Date.now()}`;
       let pageSvgPath='',pageSvgUrl='';
@@ -326,6 +328,11 @@
         else pageSvgUrl=`${s.client.storage.from(BUCKET).getPublicUrl(pageSvgPath).data.publicUrl}?v=${Date.now()}`;
       }
       sharedPages.push({id:page.id,label:page.label,imageUrl:pageSvgUrl||pagePngUrl,svgUrl:pageSvgUrl,svgPath:pageSvgPath,pngUrl:pagePngUrl,pngPath:pagePngPath,preferred:pageSvgUrl?'svg':'png'});
+      }catch(pageError){
+        // Keep the primary map and JSON available even if one optional page
+        // fails on a weak network or a memory-constrained phone.
+        console.warn(`[${APP_VERSION}] optional page ${page.id} skipped`,pageError);
+      }
     }
     mapData={...mapData,assets:{...(mapData?.assets||{}),svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png',pages:sharedPages}};
     const row={
@@ -545,6 +552,7 @@
       alert(`アップロードに失敗しました。\n${e.message||e}`);
     }finally{
       btn.disabled=false; btn.textContent=old;
+      uploadPages=[];
     }
   }
 
@@ -554,15 +562,24 @@
     const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
     const svgMaker=window.v177CreateSvgBlob;
     if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
-    const results=[];
+    // Page 1 was already rendered for the preview. Reusing it removes the
+    // biggest duplicate canvas/SVG allocation on 40–50 person mobile maps.
+    const first=pages[0]||{id:'all',label:'1枚目 全体図'};
+    const results=[{...first,png:uploadBlob,svg:uploadSvgBlob}];
     try{
-      for(const page of pages){
-        window.v180SetMapPage?.(page.id);
-        await new Promise(resolve=>setTimeout(resolve,140));
-        const png=await maker();
-        let svg=null;
-        if(typeof svgMaker==='function'){try{svg=await svgMaker();}catch(error){console.warn(`[${APP_VERSION}] ${page.id} SVG fallback`,error);}}
-        results.push({...page,png,svg});
+      for(const page of pages.slice(1)){
+        try{
+          window.v180SetMapPage?.(page.id);
+          await new Promise(resolve=>setTimeout(resolve,140));
+          const png=await maker();
+          let svg=null;
+          if(typeof svgMaker==='function'){try{svg=await svgMaker();}catch(error){console.warn(`[${APP_VERSION}] ${page.id} SVG fallback`,error);}}
+          results.push({...page,png,svg});
+        }catch(pageError){
+          // The all-map image and JSON should still upload even if an optional
+          // page cannot be rendered on a low-memory device.
+          console.warn(`[${APP_VERSION}] ${page.id} generation skipped`,pageError);
+        }
       }
       return results;
     }finally{

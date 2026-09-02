@@ -7,7 +7,9 @@
   function isMobile(){ return matchMedia('(max-width:720px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
   function directGridMetrics(count){
-    const columns=count<=0?0:count<=3?count:count<=6?3:4;
+    // Use more columns for a large direct-customer/retail group so the saved
+    // map stays landscape instead of becoming a fixed four-column portrait.
+    const columns=count<=0?0:count<=3?count:Math.min(8,Math.max(3,Math.ceil(Math.sqrt(count*2))));
     const cardWidth=172,gap=8,padding=24;
     return {columns,width:columns?columns*cardWidth+(columns-1)*gap+padding:0};
   }
@@ -192,7 +194,9 @@
 
   async function limitUploadBlob(blob){
     const bitmap=await createImageBitmap(blob);
-    const maxPixels=40000000,maxSide=10000,targetBytes=9*1024*1024;
+    // Supabase standard uploads are most reliable below 6 MB. Reduce before
+    // the first request instead of waiting for a large upload to fail.
+    const maxPixels=40000000,maxSide=10000,targetBytes=5.5*1024*1024;
     let scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height),Math.sqrt(maxPixels/Math.max(1,bitmap.width*bitmap.height)));
     const encode=async()=>{
       const canvas=document.createElement('canvas');
