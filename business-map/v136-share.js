@@ -417,9 +417,14 @@
   async function createPreview(){
     const box=$('#v136UploadPreview');
     box.innerHTML='<div class="v136-spinner"></div>';
+    const originalPage=typeof window.v180GetMapPage==='function'?window.v180GetMapPage():'all';
     try{
       const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
       if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
+      // Page 1 must always be the complete map. Previously the preview reused
+      // whichever page happened to be open and mislabeled it as 全体図.
+      window.v180SetMapPage?.('all');
+      await new Promise(resolve=>setTimeout(resolve,140));
       uploadBlob=await maker();
       const svgMaker=window.v177CreateSvgBlob;
       uploadSvgBlob=null;
@@ -433,6 +438,8 @@
     }catch(e){
       box.innerHTML=`<div class="v136-empty">プレビュー作成に失敗しました<br>${esc(e.message||e)}</div>`;
       throw e;
+    }finally{
+      window.v180SetMapPage?.(originalPage);
     }
   }
 
