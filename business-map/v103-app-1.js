@@ -12,7 +12,13 @@ const STATUS_OPTIONS = [
   {id:'next-month', label:'来月以降', color:'#ef4444'},
   {id:'custom', label:'自由入力', color:'#334155'}
 ];
-const DEFAULT_SELF = {id:'self',name:'自分',type:'ABO',parentId:null,target:30000,actual:0,status:'appointment-open',customStatus:'',memo1:'',memo2:'',memo3:'',age:'',job:'',hobby:'',etc:'',avatar:0};
+const DEFAULT_SELF = {
+  id:'self',name:'自分',type:'ABO',parentId:null,target:30000,actual:0,
+  status:'appointment-open',customStatus:'',memo1:'',memo2:'',memo3:'',
+  age:'',job:'',hobby:'',etc:'',avatar:0,deadline:'',nextAction:'',
+  monthlyGoal:'',monthlyTargetPv:0,frontUpGoal:0,groupUpGoal:0,
+  focus1:'',focus2:'',focus3:'',sharedSourceUserId:'',sharedSourcePersonId:''
+};
 let state = {self:{...DEFAULT_SELF}, members:[]};
 let editingId = null;
 let selectedAvatar = 0;
@@ -107,6 +113,15 @@ function migrate(raw){
     hobby: p.hobby || '',
     etc: p.etc || '',
     avatar: Number.isFinite(+p.avatar) ? +p.avatar : 0,
+    deadline: String(p.deadline?.raw ?? p.deadline ?? ''),
+    nextAction: String(p.nextAction || ''),
+    monthlyGoal: String(p.monthlyGoal || ''),
+    monthlyTargetPv: Math.max(0, Number(p.monthlyTargetPv || 0)),
+    frontUpGoal: Math.max(0, Math.floor(Number(p.frontUpGoal || 0))),
+    groupUpGoal: Math.max(0, Math.floor(Number(p.groupUpGoal || 0))),
+    focus1: String(p.focus1 || ''),
+    focus2: String(p.focus2 || ''),
+    focus3: String(p.focus3 || ''),
     sharedSourceUserId: String(p.sharedSourceUserId||''),
     sharedSourcePersonId: String(p.sharedSourcePersonId||'')
   }));
