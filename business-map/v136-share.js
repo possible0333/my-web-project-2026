@@ -655,7 +655,10 @@
     const img=$('#v136ViewerImg');
     if(!img) return;
     img.classList.toggle('is-animating',animate);
-    if(viewerState.vector&&viewerState.baseWidth>0){
+    if(viewerState.baseWidth>0){
+      // Resize the image element itself for both SVG and PNG. Transform-only
+      // zoom enlarged the browser's already downsampled phone-size bitmap,
+      // which made otherwise high-resolution PNG text look crushed.
       img.style.maxWidth='none'; img.style.maxHeight='none';
       img.style.width=`${viewerState.baseWidth*viewerState.scale}px`;
       img.style.height=`${viewerState.baseHeight*viewerState.scale}px`;
@@ -709,6 +712,7 @@
       img.style.width=''; img.style.height=''; img.style.maxWidth=''; img.style.maxHeight=''; img.style.transform='none';
       const rect=img.getBoundingClientRect();
       viewerState.baseWidth=rect.width; viewerState.baseHeight=rect.height;
+      img.style.imageRendering='auto';
       resetViewer();
     });
     img.addEventListener('error',()=>{
