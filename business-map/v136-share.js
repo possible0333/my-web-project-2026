@@ -384,7 +384,7 @@
       else svgUrl=`${s.client.storage.from(BUCKET).getPublicUrl(svgPath).data.publicUrl}?v=${Date.now()}`;
     }
     const imageUrl=svgUrl||pngUrl;
-    const sharedPages=[{id:'all',label:'1枚目 全体図',imageUrl,svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}];
+    const sharedPages=[{id:'all',label:'1枚目 全体マップ',imageUrl,svgUrl,svgPath,pngUrl,pngPath:path,preferred:svgUrl?'svg':'png'}];
     for(const page of pageAssets.slice(1)){
       try{
       const pagePngPath=`${uid}/latest-${page.id}.png`;
@@ -603,12 +603,12 @@
     const comment=$('#v136UploadComment').value.trim();
     if(!name){ alert('名前を入力してください'); return; }
     if(!uploadBlob) await createPreview();
-    const old=btn.textContent; btn.disabled=true; btn.textContent='4ページ画像を作成中…';
+    const old=btn.textContent; btn.disabled=true; btn.textContent='2ページ画像を作成中…';
     try{
       uploadPages=await createAllPageAssets();
       uploadBlob=uploadPages[0]?.png||uploadBlob;
       uploadSvgBlob=uploadPages[0]?.svg||uploadSvgBlob;
-      btn.textContent='4ページをアップロード中…';
+      btn.textContent='2ページをアップロード中…';
       const mapData=buildOperationalMapData();
       const scheduleData=typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{};
       const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,mapData,scheduleData,uploadPages);
@@ -626,14 +626,14 @@
   }
 
   async function createAllPageAssets(){
-    const pages=Array.isArray(window.v180MapPages)&&window.v180MapPages.length?window.v180MapPages:[{id:'all',label:'1枚目 全体図'}];
+    const pages=Array.isArray(window.v180MapPages)&&window.v180MapPages.length?window.v180MapPages:[{id:'all',label:'1枚目 全体マップ'}];
     const original=typeof window.v180GetMapPage==='function'?window.v180GetMapPage():'all';
     const maker=window.v135CreateUploadBlob||window.v135CreateBlob;
     const svgMaker=window.v177CreateSvgBlob;
     if(typeof maker!=='function') throw new Error('画像作成機能が見つかりません');
     // Page 1 was already rendered for the preview. Reusing it removes the
     // biggest duplicate canvas/SVG allocation on 40–50 person mobile maps.
-    const first=pages[0]||{id:'all',label:'1枚目 全体図'};
+    const first=pages[0]||{id:'all',label:'1枚目 全体マップ'};
     const results=[{...first,png:uploadBlob,svg:uploadSvgBlob}];
     try{
       for(const page of pages.slice(1)){
@@ -690,7 +690,7 @@
 
   function viewerPagesFor(item){
     const pages=item?.mapData?.assets?.pages;
-    const source=Array.isArray(pages)&&pages.length?pages:[{id:'all',label:'全体図',imageUrl:item?.imageUrl||'',pngUrl:item?.fallbackUrl||item?.imageUrl||'',preferred:item?.isSvg?'svg':'png'}];
+    const source=Array.isArray(pages)&&pages.length?pages:[{id:'all',label:'1枚目 全体マップ',imageUrl:item?.imageUrl||'',pngUrl:item?.fallbackUrl||item?.imageUrl||'',preferred:item?.isSvg?'svg':'png'}];
     if(!preferRaster()) return source;
     return source.map(page=>({...page,imageUrl:page.pngUrl||page.imageUrl||'',preferred:'png'}));
   }

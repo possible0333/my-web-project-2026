@@ -3,10 +3,8 @@
   const previousRenderTree=window.renderTree;
   let mapPage='all';
   const MAP_PAGES=[
-    {id:'all',label:'1枚目 全体図'},
-    {id:'front',label:'2枚目 フロントライン'},
-    {id:'group',label:'3枚目 グループマップ'},
-    {id:'deep',label:'4枚目 グループマップ2'}
+    {id:'all',label:'1枚目 全体マップ'},
+    {id:'overdue',label:'2枚目 期限切れメンバー'}
   ];
   const GROUP_COLORS=[
     ['#2563eb','#eff6ff'],['#059669','#ecfdf5'],['#d97706','#fffbeb'],['#7c3aed','#f5f3ff'],
@@ -57,38 +55,39 @@
     });
   }
 
-  function deadlineText(value){
+  function deadlineDate(value){
     const s=String(value||'').trim();
-    let m=s.match(/^\d{4}-(\d{2})-(\d{2})$/);
-    if(m) return `${Number(m[1])}/${Number(m[2])}`;
+    let year,month,day;
+    let m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m){ year=Number(m[1]); month=Number(m[2]); day=Number(m[3]); }
+    else {
     m=s.match(/^(\d{1,2})[-\/](\d{1,2})$/);
-    if(!m) return '';
-    return `${Number(m[1])}/${Number(m[2])}`;
+      if(!m) return null;
+      const now=new Date(); year=now.getFullYear(); month=Number(m[1]); day=Number(m[2]);
+    }
+    const date=new Date(year,month-1,day);
+    return date.getFullYear()===year&&date.getMonth()===month-1&&date.getDate()===day?date:null;
+  }
+
+  function deadlineText(value){
+    const date=deadlineDate(value);
+    return date?`${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`:'';
   }
 
   function deadlineUrgent(value){
-    const s=String(value||'').trim();
-    let m=s.match(/^\d{4}-(\d{2})-(\d{2})$/);
-    if(!m) m=s.match(/^(\d{1,2})[-\/](\d{1,2})$/);
-    if(!m) return false;
-    const month=Number(m[1]), day=Number(m[2]);
+    const target=deadlineDate(value);
+    if(!target) return false;
     const now=new Date();
     const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const target=new Date(now.getFullYear(),month-1,day);
-    if(target.getMonth()!==month-1 || target.getDate()!==day) return false;
     const diff=Math.round((target-today)/86400000);
     return diff<=3;
   }
   function deadlineOverdue(value){
-    const s=String(value||'').trim();
-    let m=s.match(/^\d{4}-(\d{2})-(\d{2})$/);
-    if(!m) m=s.match(/^(\d{1,2})[-\/](\d{1,2})$/);
-    if(!m) return false;
-    const month=Number(m[1]),day=Number(m[2]);
+    const target=deadlineDate(value);
+    if(!target) return false;
     const now=new Date();
     const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const target=new Date(now.getFullYear(),month-1,day);
-    return target.getMonth()===month-1&&target.getDate()===day&&target<today;
+    return target<today;
   }
 
   function miniCard(p){
@@ -171,6 +170,49 @@
     return cursor?.parentId==='self'?cursor:null;
   }
 
+  function sponsorAboOf(person){
+    let parent=person?.parentId==='self'?state.self:getPerson(person?.parentId),guard=0;
+    while(parent&&parent.type!=='ABO'&&parent.id!=='self'&&guard++<40){
+      parent=parent.parentId==='self'?state.self:getPerson(parent.parentId);
+    }
+    return parent?.type==='ABO'||parent?.id==='self'?parent:null;
+  }
+
+  function overdueGroupOf(person){
+    const front=directFrontOf(person);
+    return front?.type==='ABO'?front:state.self;
+  }
+
+  function overdueCard(person){
+    const due=deadlineDate(person.deadline);
+    const today=new Date(); today.setHours(0,0,0,0);
+    const overdueDays=due?Math.max(1,Math.round((today-due)/86400000)):0;
+    const sponsor=sponsorAboOf(person);
+    const action=String(person.nextAction||'').trim();
+    return `<button type="button" class="v190-overdue-card" data-v127-id="${escapeHtml(person.id)}" data-type="${escapeHtml(person.type)}">
+      <span class="v190-overdue-person"><img src="${ICONS[person.avatar||0]}" alt=""><span><strong>${escapeHtml(person.name||'名称未設定')}</strong><small>${escapeHtml(person.type||'未設定')}</small></span></span>
+      <span class="v190-overdue-detail"><small>いつまでに</small><strong>${escapeHtml(deadlineText(person.deadline)||'期限不明')}</strong><em>${overdueDays}日超過</em></span>
+      <span class="v190-overdue-detail v190-overdue-action"><small>何をやる</small><strong>${escapeHtml(action||'未設定')}</strong></span>
+      <span class="v190-overdue-sponsor"><small>スポンサーABO</small><strong>${escapeHtml(sponsor?.name||'未設定')}</strong></span>
+    </button>`;
+  }
+
+  function overduePageHtml(){
+    const people=(state.members||[]).filter(p=>deadlineOverdue(p.deadline)).sort((a,b)=>deadlineDate(a.deadline)-deadlineDate(b.deadline));
+    if(!people.length) return `<section class="v190-overdue-page"><div class="v190-overdue-head"><div><span>期限切れメンバー</span><strong>0人</strong></div><p>期限が切れているメンバーはいません。</p></div><div class="v180-deep-empty">期限切れメンバーはいません</div></section>`;
+    const groups=new Map();
+    people.forEach(person=>{
+      const front=overdueGroupOf(person); const key=front?.id||'self';
+      if(!groups.has(key)) groups.set(key,{front,people:[]});
+      groups.get(key).people.push(person);
+    });
+    const body=[...groups.values()].map(({front,people:members})=>{
+      const meta=front?.id==='self'?{color:'#173b73',bg:'#eef5ff',label:`${state.self?.name||'自分'}グループ`}:groupMetaByFront(front);
+      return `<section class="v190-overdue-group" style="--v190-group:${meta?.color||'#173b73'};--v190-group-bg:${meta?.bg||'#eef5ff'}"><div class="v190-overdue-group-title"><strong>${escapeHtml(meta?.label||'所属グループ未設定')}</strong><span>${members.length}人</span></div><div class="v190-overdue-cards">${members.map(overdueCard).join('')}</div></section>`;
+    }).join('');
+    return `<section class="v190-overdue-page"><div class="v190-overdue-head"><div><span>期限切れメンバー</span><strong>${people.length}人</strong></div><p>「いつまでに・何をやる」と直アップラインを、スポンサーABOのグループ別に表示しています。</p></div><div class="v190-overdue-groups">${body}</div></section>`;
+  }
+
   function deepGroupsHtml(){
     const fourth=(state.members||[]).filter(p=>isCurrent(p)&&depthOf(p.id)===4);
     const groups=new Map();
@@ -188,9 +230,7 @@
   }
 
   function pageContentsHtml(){
-    if(mapPage==='front') return `${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNodeLimited('self',0,1)}`;
-    if(mapPage==='group') return `${monthlyPvSummaryHtml()}${buildNodeLimited('self',0,3)}`;
-    if(mapPage==='deep') return `${monthlyPvSummaryHtml()}<div class="v180-deep-owner">${buildNodeLimited('self',0,0)}</div>${deepGroupsHtml()}`;
+    if(mapPage==='overdue') return overduePageHtml();
     return `${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNode('self',0)}`;
   }
 
