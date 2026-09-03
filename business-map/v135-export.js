@@ -100,6 +100,7 @@
     host.appendChild(readableStyle);
 
     const top=document.createElement('div');
+    top.className='v186-export-top';
     top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';
     if(legend){
       const l=legend.cloneNode(true); l.removeAttribute('id');
@@ -159,7 +160,7 @@
     return Math.max(min,Math.min(base,Math.sqrt(max/Math.max(1,w*h))));
   }
 
-  async function trimBlob(blob,centerHint){
+  async function trimBlob(blob){
     const bitmap=await createImageBitmap(blob);
     const canvas=document.createElement('canvas');
     canvas.width=bitmap.width; canvas.height=bitmap.height;
@@ -179,17 +180,68 @@
     }
     if(maxX<minX||maxY<minY) return blob;
     const pad=Math.max(12,Math.round(width*.008));
-    // The capture surface centers MAP OWNER. Crop equal distances from that
-    // center so the saved image keeps the owner visually centered.
-    const center=Number.isFinite(centerHint)?Math.max(0,Math.min(width,centerHint)):width/2;
-    const half=Math.max(center-minX,maxX-center)+pad;
-    const sx=Math.max(0,Math.floor(center-half));
-    const ex=Math.min(width,Math.ceil(center+half));
+    // Crop to the actual painted bounds. Keeping equal distances around MAP
+    // OWNER left a large blank side when a branch extended mostly one way.
+    const sx=Math.max(0,minX-pad);
+    const ex=Math.min(width,maxX+pad+1);
     const sy=Math.max(0,minY-pad), ey=Math.min(height,maxY+pad+1);
     const out=document.createElement('canvas');
     out.width=Math.max(1,ex-sx); out.height=Math.max(1,ey-sy);
     out.getContext('2d').drawImage(canvas,sx,sy,out.width,out.height,0,0,out.width,out.height);
     return await new Promise((resolve,reject)=>out.toBlob(b=>b?resolve(b):reject(new Error('画像トリムに失敗しました')),'image/png',1));
+  }
+
+  function measureContentBounds(surface){
+    const surfaceRect=surface.getBoundingClientRect();
+    const selectors=[
+      '.v186-export-top span','.v186-export-top b','.v186-export-top .v115-next-panel','.v186-export-top .v116-next-panel',
+      '.v176-map-pv-summary','.v127-direct-zone','.v185-front-branch','.v180-deep-group','.v180-deep-owner',
+      '.member-card','.v180-deep-empty','#treeLines path','#treeLines circle'
+    ].join(',');
+    const rects=[...surface.querySelectorAll(selectors)].map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0);
+    if(!rects.length) return {x:0,y:0,width:Math.ceil(surface.scrollWidth),height:Math.ceil(surface.scrollHeight)};
+    const pad=16;
+    const minX=Math.max(0,Math.floor(Math.min(...rects.map(r=>r.left))-surfaceRect.left-pad));
+    const minY=Math.max(0,Math.floor(Math.min(...rects.map(r=>r.top))-surfaceRect.top-pad));
+    const maxX=Math.min(surface.scrollWidth,Math.ceil(Math.max(...rects.map(r=>r.right))-surfaceRect.left+pad));
+    const maxY=Math.min(surface.scrollHeight,Math.ceil(Math.max(...rects.map(r=>r.bottom))-surfaceRect.top+pad));
+    return {x:minX,y:minY,width:Math.max(1,maxX-minX),height:Math.max(1,maxY-minY)};
+  }
+
+  function cropSvgSource(source,bounds){
+    const doc=new DOMParser().parseFromString(source,'image/svg+xml');
+    const svg=doc.documentElement;
+    if(svg.nodeName.toLowerCase()!=='svg'||doc.querySelector('parsererror')) throw new Error('SVG余白の調整に失敗しました');
+    svg.setAttribute('width',String(bounds.width));
+    svg.setAttribute('height',String(bounds.height));
+    svg.setAttribute('viewBox',`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`);
+    return new XMLSerializer().serializeToString(doc);
+  }
+
+  function redrawCaptureLines(surface){
+    const area=surface.querySelector('.map-canvas'),rows=surface.querySelector('#treeRows'),svg=surface.querySelector('#treeLines');
+    if(!area||!rows||!svg) return;
+    const areaRect=area.getBoundingClientRect(),cards={};
+    rows.querySelectorAll('.member-card[data-id]').forEach(card=>{cards[card.dataset.id]=card});
+    const width=Math.max(area.scrollWidth,rows.scrollWidth,area.offsetWidth,620);
+    const height=Math.max(area.scrollHeight,rows.scrollHeight,area.offsetHeight,240);
+    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.setAttribute('width',width);svg.setAttribute('height',height);
+    svg.style.width=width+'px';svg.style.height=height+'px';
+    let markup='';
+    try{
+      state.members.forEach(member=>{
+        const child=cards[member.id],parent=cards[member.parentId||'self'];
+        if(!child||!parent)return;
+        const pr=parent.getBoundingClientRect(),cr=child.getBoundingClientRect();
+        const x1=Math.round(pr.left-areaRect.left+pr.width/2),y1=Math.round(pr.bottom-areaRect.top);
+        const x2=Math.round(cr.left-areaRect.left+cr.width/2),y2=Math.round(cr.top-areaRect.top);
+        const mid=Math.round(y1+Math.max(12,y2-y1)*.5);
+        const branch=child.closest('.v185-front-branch')||parent.closest('.v185-front-branch');
+        const stroke=branch?.dataset.v185Color||'#8295af',d=`M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+        markup+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${x1}" cy="${y1}" r="2.6" fill="${stroke}"/><circle cx="${x2}" cy="${y2}" r="2.6" fill="${stroke}"/>`;
+      });
+    }catch(e){console.warn(`[${APP_VERSION}] capture line redraw failed`,e)}
+    svg.innerHTML=markup;
   }
 
   async function limitUploadBlob(blob){
@@ -220,20 +272,19 @@
   async function render(surface,upload=false){
     await waitImages(surface);
     await raf2();
+    redrawCaptureLines(surface);
+    await raf2();
     const w=Math.ceil(surface.scrollWidth), h=Math.ceil(surface.scrollHeight), scale=ratio(w,h,upload);
-    const sr=surface.getBoundingClientRect();
-    const owner=surface.querySelector('[data-id="self"]')?.getBoundingClientRect();
-    const ownerCenter=owner?((owner.left+owner.width/2)-sr.left)*scale:null;
     if(window.htmlToImage?.toBlob){
       try{
         const blob=await htmlToImage.toBlob(surface,{backgroundColor:'#fff',pixelRatio:scale,cacheBust:true,includeQueryParams:true,width:w,height:h,style:{width:w+'px',height:h+'px',overflow:'visible'}});
-        if(blob){ const trimmed=await trimBlob(blob,ownerCenter); return upload?await limitUploadBlob(trimmed):trimmed; }
+        if(blob){ const trimmed=await trimBlob(blob); return upload?await limitUploadBlob(trimmed):trimmed; }
       }catch(e){ console.warn(`[${APP_VERSION}] html-to-image fallback`,e); }
     }
     if(window.html2canvas){
       const canvas=await html2canvas(surface,{backgroundColor:'#fff',scale,useCORS:true,allowTaint:false,logging:false,width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
       const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG変換に失敗しました')),'image/png',1));
-      const trimmed=await trimBlob(blob,ownerCenter);
+      const trimmed=await trimBlob(blob);
       return upload?await limitUploadBlob(trimmed):trimmed;
     }
     throw new Error('画像保存ライブラリが読み込めませんでした');
@@ -261,14 +312,17 @@
       cap=buildSurface();
       await waitImages(cap.surface);
       await raf2();
+      redrawCaptureLines(cap.surface);
+      await raf2();
       if(typeof window.htmlToImage?.toSvg!=='function') throw new Error('SVG生成機能が読み込めませんでした');
       const width=Math.ceil(cap.surface.scrollWidth);
       const height=Math.ceil(cap.surface.scrollHeight);
+      const bounds=measureContentBounds(cap.surface);
       const dataUrl=await window.htmlToImage.toSvg(cap.surface,{backgroundColor:'#fff',cacheBust:true,includeQueryParams:true,width,height,style:{width:width+'px',height:height+'px',overflow:'visible'}});
       const response=await fetch(dataUrl);
       const source=await response.text();
       if(!source.includes('<svg')) throw new Error('SVGデータの作成に失敗しました');
-      return new Blob([source],{type:'image/svg+xml;charset=utf-8'});
+      return new Blob([cropSvgSource(source,bounds)],{type:'image/svg+xml;charset=utf-8'});
     }finally{
       cap?.host?.remove();
     }
@@ -356,6 +410,7 @@
     window.v135CreateUploadBlob=()=>createBlob({upload:true});
     window.v177CreateSvgBlob=createSvgBlob;
     window.v135DirectGridMetrics=directGridMetrics;
+    window.v186MeasureExportBounds=measureContentBounds;
 
     document.addEventListener('click',e=>{
       const btn=e.target.closest('#v130MobileBar [data-v130-action="save"]');
