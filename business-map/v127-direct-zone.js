@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.27';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.85';
   const previousRenderTree=window.renderTree;
   let mapPage='all';
   const MAP_PAGES=[
@@ -8,6 +8,26 @@
     {id:'group',label:'3枚目 グループマップ'},
     {id:'deep',label:'4枚目 グループマップ2'}
   ];
+  const GROUP_COLORS=[
+    ['#2563eb','#eff6ff'],['#059669','#ecfdf5'],['#d97706','#fffbeb'],['#7c3aed','#f5f3ff'],
+    ['#db2777','#fdf2f8'],['#0891b2','#ecfeff'],['#dc2626','#fef2f2'],['#4f46e5','#eef2ff']
+  ];
+
+  function groupMetaByFront(p){
+    if(p?.type!=='ABO') return null;
+    const fronts=treeChildren('self').filter(x=>x.type==='ABO');
+    const index=Math.max(0,fronts.findIndex(x=>x.id===p.id));
+    const [color,bg]=GROUP_COLORS[index%GROUP_COLORS.length];
+    return {color,bg,label:`${p.name||'名称未設定'}グループ`};
+  }
+
+  function frontGroupMeta(p,depth){return depth===1?groupMetaByFront(p):null}
+
+  function nodeAttributes(p,depth){
+    const group=frontGroupMeta(p,depth);
+    if(!group) return {className:'v109-node',style:'',label:''};
+    return {className:'v109-node v185-front-branch',style:` style="--v185-group:${group.color};--v185-group-bg:${group.bg}" data-v185-color="${group.color}"`,label:`<div class="v185-front-label">${escapeHtml(group.label)}</div>`};
+  }
 
   function filtersActive(){
     const status=document.getElementById('statusFilter')?.value || 'all';
@@ -122,7 +142,9 @@
     if(!p || (id!=='self' && !isCurrent(p))) return '';
     const kids=treeChildren(id);
     const card=id==='self' ? selfCardHtml() : renderCard(p);
-    return `<div class="v109-node" data-node-id="${escapeHtml(id)}">
+    const attrs=nodeAttributes(p,depth);
+    return `<div class="${attrs.className}" data-node-id="${escapeHtml(id)}"${attrs.style}>
+      ${attrs.label}
       ${id==='self'?'<div class="v127-self-label">MAP OWNER</div>':''}
       ${card}
       ${kids.length?`<div class="v109-children">${kids.map(c=>buildNode(c.id,depth+1)).join('')}</div>`:''}
@@ -134,7 +156,9 @@
     if(!p || (id!=='self' && !isCurrent(p))) return '';
     const kids=depth<maxDepth?treeChildren(id):[];
     const card=id==='self' ? selfCardHtml() : renderCard(p);
-    return `<div class="v109-node" data-node-id="${escapeHtml(id)}">
+    const attrs=nodeAttributes(p,depth);
+    return `<div class="${attrs.className}" data-node-id="${escapeHtml(id)}"${attrs.style}>
+      ${attrs.label}
       ${id==='self'?'<div class="v127-self-label">MAP OWNER</div>':''}
       ${card}
       ${kids.length?`<div class="v109-children">${kids.map(c=>buildNodeLimited(c.id,depth+1,maxDepth)).join('')}</div>`:''}
@@ -157,10 +181,10 @@
       groups.get(front.id).nodes.push(p);
     });
     if(!groups.size) return `<div class="v180-deep-empty">フォース以降のメンバーはまだいません</div>`;
-    return [...groups.values()].map(({front,nodes})=>`<section class="v180-deep-group">
+    return [...groups.values()].map(({front,nodes})=>{const group=groupMetaByFront(front);return `<section class="v180-deep-group v185-deep-group" style="--v185-group:${group?.color||'#1e5fae'};--v185-group-bg:${group?.bg||'#f7fbff'}">
       <div class="v180-deep-title">${escapeHtml(front.name||'名称未設定')}グループ</div>
       <div class="v180-deep-roots">${nodes.map(p=>buildNode(p.id,4)).join('')}</div>
-    </section>`).join('');
+    </section>`}).join('');
   }
 
   function pageContentsHtml(){
@@ -201,6 +225,7 @@
     const count=treeChildren('self').length;
     rows.classList.remove('v111-density-1','v111-density-2','v111-density-3','v111-density-4');
     rows.classList.add(count>=9?'v111-density-4':count>=7?'v111-density-3':count>=5?'v111-density-2':'v111-density-1');
+    rows.classList.toggle('v185-dense-tree',(state.members||[]).filter(isCurrent).length>=24);
     rows.dataset.frontCount=String(count);
   }
 

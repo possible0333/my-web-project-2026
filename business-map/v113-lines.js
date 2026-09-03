@@ -1,16 +1,14 @@
 (function(){
-  const VERSION='v1.13';
+  const VERSION='v1.85';
   let raf1=0, raf2=0, timer1=0, timer2=0;
 
   function boxInArea(el,area){
-    let x=0,y=0,node=el,guard=0;
-    while(node && node!==area && guard<40){
-      x+=node.offsetLeft||0;
-      y+=node.offsetTop||0;
-      node=node.offsetParent;
-      guard++;
-    }
-    return {x,y,w:el.offsetWidth||0,h:el.offsetHeight||0};
+    const areaRect=area.getBoundingClientRect(),rect=el.getBoundingClientRect();
+    const scaleX=area.offsetWidth?areaRect.width/area.offsetWidth:1;
+    const scaleY=area.offsetHeight?areaRect.height/area.offsetHeight:scaleX;
+    const sx=Number.isFinite(scaleX)&&scaleX>0?scaleX:1;
+    const sy=Number.isFinite(scaleY)&&scaleY>0?scaleY:sx;
+    return {x:(rect.left-areaRect.left)/sx,y:(rect.top-areaRect.top)/sy,w:rect.width/sx,h:rect.height/sy};
   }
 
   function drawLinesV113(){
@@ -30,63 +28,23 @@
     svg.style.width=width+'px';
     svg.style.height=height+'px';
 
-    const groups=new Map();
+    let markup='';
     try{
       state.members.forEach(member=>{
-        const child=cards[member.id];
-        const parentId=member.parentId||'self';
-        const parent=cards[parentId];
+        const child=cards[member.id],parent=cards[member.parentId||'self'];
         if(!child||!parent) return;
-        if(!groups.has(parentId)) groups.set(parentId,[]);
-        groups.get(parentId).push(member.id);
+        const pb=boxInArea(parent,area),cb=boxInArea(child,area);
+        if(!pb.w||!pb.h||!cb.w||!cb.h) return;
+        const x1=Math.round(pb.x+pb.w/2),y1=Math.round(pb.y+pb.h),x2=Math.round(cb.x+cb.w/2),y2=Math.round(cb.y);
+        const mid=Math.round(y1+Math.max(12,y2-y1)*.5);
+        const branch=child.closest('.v185-front-branch')||parent.closest('.v185-front-branch');
+        const stroke=branch?.dataset.v185Color||'#8295af';
+        const d=`M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+        markup+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`;
+        markup+=`<path d="${d}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round"/>`;
+        markup+=`<circle cx="${x1}" cy="${y1}" r="2.6" fill="${stroke}"/><circle cx="${x2}" cy="${y2}" r="2.6" fill="${stroke}"/>`;
       });
-    }catch(e){
-      console.warn('v1.13 line grouping failed',e);
-    }
-
-    let markup='';
-    const stroke='#9aadc6';
-    const sw=2.2;
-
-    groups.forEach((childIds,parentId)=>{
-      const parentCard=cards[parentId];
-      if(!parentCard) return;
-      const pb=boxInArea(parentCard,area);
-      const childBoxes=childIds.map(id=>({id,...boxInArea(cards[id],area)})).filter(b=>b.w>0&&b.h>0);
-      if(!childBoxes.length) return;
-
-      const parentX=Math.round(pb.x+pb.w/2);
-      const parentY=Math.round(pb.y+pb.h);
-      const childTop=Math.min(...childBoxes.map(b=>b.y));
-      const childCenters=childBoxes.map(b=>Math.round(b.x+b.w/2));
-      const gap=Math.max(10,childTop-parentY);
-      let busY=Math.round(parentY+gap*.48);
-      busY=Math.max(parentY+6,Math.min(childTop-6,busY));
-
-      if(childBoxes.length===1){
-        const cx=childCenters[0];
-        const cy=Math.round(childBoxes[0].y);
-        if(Math.abs(cx-parentX)<2){
-          markup+=`<path d="M ${parentX} ${parentY} L ${cx} ${cy}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round"/>`;
-        }else{
-          markup+=`<path d="M ${parentX} ${parentY} L ${parentX} ${busY} L ${cx} ${busY} L ${cx} ${cy}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
-        }
-        markup+=`<circle cx="${parentX}" cy="${parentY}" r="2.4" fill="${stroke}"/><circle cx="${cx}" cy="${cy}" r="2.4" fill="${stroke}"/>`;
-        return;
-      }
-
-      const minX=Math.min(...childCenters);
-      const maxX=Math.max(...childCenters);
-      markup+=`<path d="M ${parentX} ${parentY} L ${parentX} ${busY}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round"/>`;
-      markup+=`<path d="M ${minX} ${busY} L ${maxX} ${busY}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round"/>`;
-      childBoxes.forEach((b,i)=>{
-        const cx=childCenters[i];
-        const cy=Math.round(b.y);
-        markup+=`<path d="M ${cx} ${busY} L ${cx} ${cy}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round"/>`;
-        markup+=`<circle cx="${cx}" cy="${cy}" r="2.3" fill="${stroke}"/>`;
-      });
-      markup+=`<circle cx="${parentX}" cy="${parentY}" r="2.5" fill="${stroke}"/><circle cx="${parentX}" cy="${busY}" r="2.2" fill="${stroke}"/>`;
-    });
+    }catch(e){console.warn('v1.85 line drawing failed',e)}
 
     svg.innerHTML=markup;
     svg.dataset.lineVersion=VERSION;
@@ -134,6 +92,7 @@
     window.v113DrawLines=drawLinesV113;
     bindObservers();
     scheduleRedraw();
+    if(document.fonts?.ready) document.fonts.ready.then(scheduleRedraw).catch(()=>{});
     window.addEventListener('resize',scheduleRedraw);
     window.addEventListener('orientationchange',scheduleRedraw);
   }
