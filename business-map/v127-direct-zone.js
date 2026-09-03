@@ -262,8 +262,11 @@
   }
 
   function renderTreeV127(){
-    if(filtersActive() && typeof previousRenderTree==='function'){
-      return previousRenderTree.apply(this,arguments);
+    if(filtersActive()){
+      if(typeof window.v118RenderFilteredHierarchy==='function') return window.v118RenderFilteredHierarchy();
+      const rows=document.getElementById('treeRows');
+      rows?.classList.remove('v109-tree-root','v127-tree-root','v111-density-1','v111-density-2','v111-density-3','v111-density-4','v185-dense-tree');
+      if(typeof previousRenderTree==='function') return previousRenderTree.apply(this,arguments);
     }
     return renderNormalTree();
   }

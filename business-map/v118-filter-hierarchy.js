@@ -1,5 +1,5 @@
 (function(){
-  const PATCH_VERSION='v1.18';
+  const PATCH_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.87';
   let normalRenderTree=null;
 
   function filtersActive(){
@@ -47,7 +47,7 @@
     const people=filteredMembers();
     const selectedStatus=document.getElementById('statusFilter')?.value || 'all';
 
-    rows.classList.remove('v109-tree-root');
+    rows.classList.remove('v109-tree-root','v127-tree-root','v111-density-1','v111-density-2','v111-density-3','v111-density-4','v185-dense-tree');
     rows.classList.add('v118-filter-root');
     area.classList.add('v118-filter-mode');
     svg.innerHTML='';
@@ -89,6 +89,9 @@
     if(svg) svg.style.display='';
     if(typeof normalRenderTree==='function') return normalRenderTree();
   }
+
+  window.v118RenderFilteredHierarchy=renderFilteredHierarchy;
+  window.v118FiltersActive=filtersActive;
 
   function patchRenderTree(){
     if(typeof window.renderTree!=='function' || window.renderTree.__v118) return;
