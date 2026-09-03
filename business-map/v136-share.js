@@ -24,6 +24,19 @@
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
   const preferRaster=()=>window.matchMedia?.('(max-width: 720px)').matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent||'');
+  const newId=()=>globalThis.crypto&&typeof globalThis.crypto.randomUUID==='function'?globalThis.crypto.randomUUID():`bm-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  async function decodeBlob(blob){
+    if(typeof globalThis.createImageBitmap==='function'){
+      const image=await globalThis.createImageBitmap(blob);
+      return {image,width:image.width,height:image.height,close:()=>image.close?.()};
+    }
+    const url=URL.createObjectURL(blob),image=new Image();
+    try{
+      await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('共有画像の読み込みに失敗しました'));image.src=url;});
+      return {image,width:image.naturalWidth,height:image.naturalHeight,close:()=>URL.revokeObjectURL(url)};
+    }catch(error){URL.revokeObjectURL(url);throw error}
+  }
 
   function selfName(){
     try{ if(typeof state!=='undefined'&&state?.self?.name) return String(state.self.name).trim(); }catch(e){}
@@ -164,7 +177,7 @@
 
   function ownerKey(){
     let id=localStorage.getItem('businessMapShareOwnerId');
-    if(!id){ id=(crypto.randomUUID?.()||`bm-${Date.now()}-${Math.random().toString(36).slice(2)}`); localStorage.setItem('businessMapShareOwnerId',id); }
+    if(!id){ id=newId(); localStorage.setItem('businessMapShareOwnerId',id); }
     return id;
   }
 
@@ -231,7 +244,7 @@
     try{ refresh=JSON.parse(localStorage.getItem(REST_SESSION_KEY)||'null')?.refresh_token||''; }catch(e){}
     const headers={apikey:cfg.publishableKey,'Content-Type':'application/json'};
     let response=null;
-    if(refresh&&!forceNew){
+    if(refresh){
       response=await fetch(`${cfg.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers,body:JSON.stringify({refresh_token:refresh})}).catch(()=>null);
     }
     if(!response?.ok){
@@ -312,12 +325,12 @@
 
   async function ensureUploadPng(blob){
     if(blob?.type==='image/png') return blob;
-    const bitmap=await createImageBitmap(blob);
+    const bitmap=await decodeBlob(blob);
     const canvas=document.createElement('canvas');
     canvas.width=bitmap.width;
     canvas.height=bitmap.height;
-    canvas.getContext('2d').drawImage(bitmap,0,0);
-    bitmap.close?.();
+    canvas.getContext('2d').drawImage(bitmap.image,0,0);
+    bitmap.close();
     return await new Promise((resolve,reject)=>canvas.toBlob(
       value=>value?resolve(value):reject(new Error('PNG変換に失敗しました')),
       'image/png',
@@ -326,7 +339,7 @@
   }
 
   async function createUploadFallback(blob){
-    const bitmap=await createImageBitmap(blob);
+    const bitmap=await decodeBlob(blob);
     const targetBytes=5.5*1024*1024;
     let scale=Math.min(1,Math.sqrt(targetBytes/Math.max(1,blob.size))*.94);
     const encode=async()=>{
@@ -336,7 +349,7 @@
       const ctx=canvas.getContext('2d');
       ctx.imageSmoothingEnabled=true;
       ctx.imageSmoothingQuality='high';
-      ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      ctx.drawImage(bitmap.image,0,0,canvas.width,canvas.height);
       return await new Promise((resolve,reject)=>canvas.toBlob(
         value=>value?resolve(value):reject(new Error('再試行画像の作成に失敗しました')),
         'image/png',
@@ -348,7 +361,7 @@
       scale*=Math.max(.7,Math.min(.93,Math.sqrt(targetBytes/out.size)*.94));
       out=await encode();
     }
-    bitmap.close?.();
+    bitmap.close();
     return out;
   }
 

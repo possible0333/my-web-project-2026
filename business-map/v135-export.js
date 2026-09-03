@@ -6,6 +6,18 @@
   async function raf2(){ await raf(); await raf(); }
   function isMobile(){ return matchMedia('(max-width:720px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
+  async function decodeBlob(blob){
+    if(typeof globalThis.createImageBitmap==='function'){
+      const image=await globalThis.createImageBitmap(blob);
+      return {image,width:image.width,height:image.height,close:()=>image.close?.()};
+    }
+    const url=URL.createObjectURL(blob),image=new Image();
+    try{
+      await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('画像の読み込みに失敗しました'));image.src=url;});
+      return {image,width:image.naturalWidth,height:image.naturalHeight,close:()=>URL.revokeObjectURL(url)};
+    }catch(error){URL.revokeObjectURL(url);throw error}
+  }
+
   function directGridMetrics(count){
     // Use more columns for a large direct-customer/retail group so the saved
     // map stays landscape instead of becoming a fixed four-column portrait.
@@ -161,12 +173,12 @@
   }
 
   async function trimBlob(blob){
-    const bitmap=await createImageBitmap(blob);
+    const bitmap=await decodeBlob(blob);
     const canvas=document.createElement('canvas');
     canvas.width=bitmap.width; canvas.height=bitmap.height;
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
-    ctx.drawImage(bitmap,0,0);
-    bitmap.close?.();
+    ctx.drawImage(bitmap.image,0,0);
+    bitmap.close();
     const {data,width,height}=ctx.getImageData(0,0,canvas.width,canvas.height);
     let minX=width,minY=height,maxX=-1,maxY=-1;
     for(let y=0;y<height;y++){
@@ -245,7 +257,7 @@
   }
 
   async function limitUploadBlob(blob){
-    const bitmap=await createImageBitmap(blob);
+    const bitmap=await decodeBlob(blob);
     // Supabase standard uploads are most reliable below 6 MB. Reduce before
     // the first request instead of waiting for a large upload to fail.
     const maxPixels=40000000,maxSide=10000,targetBytes=5.5*1024*1024;
@@ -257,7 +269,7 @@
       const ctx=canvas.getContext('2d');
       ctx.imageSmoothingEnabled=true;
       ctx.imageSmoothingQuality='high';
-      ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      ctx.drawImage(bitmap.image,0,0,canvas.width,canvas.height);
       return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('アップロード画像の軽量化に失敗しました')),'image/png',1));
     };
     let out=await encode();
@@ -265,7 +277,7 @@
       scale*=Math.max(.65,Math.min(.94,Math.sqrt(targetBytes/out.size)*.94));
       out=await encode();
     }
-    bitmap.close?.();
+    bitmap.close();
     return out;
   }
 

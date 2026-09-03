@@ -192,8 +192,8 @@
         </div>
         ${actionBlock(p)}
         <div class="pv-box v114-pv ${goalState(p)}">
-          <div class="v114-pv-row"><span class="v114-pv-label">個人PV</span><span class="v114-pv-values"><small>目</small>${pvText(p.target,true)}<i>/</i><small>実</small>${fmt(p.actual)}</span></div>
-          <div class="v114-pv-row"><span class="v114-pv-label">GrPV</span><span class="v114-pv-values"><small>目</small>${pvText(gp.target,true)}<i>/</i><small>実</small>${fmt(gp.actual)}</span></div>
+          <div class="v114-pv-row"><span class="v114-pv-label">個人PV</span><span class="v114-pv-values"><small>計</small>${pvText(p.target,true)}<i>/</i><small>実</small>${fmt(p.actual)}</span></div>
+          <div class="v114-pv-row"><span class="v114-pv-label">GrPV</span><span class="v114-pv-values"><small>計</small>${pvText(gp.target,true)}<i>/</i><small>実</small>${fmt(gp.actual)}</span></div>
         </div>
         ${memos.length?`<div class="memo-list">${memos.map(v=>`<div class="memo-item">${escapeHtml(v)}</div>`).join('')}</div>`:''}
       </div>
