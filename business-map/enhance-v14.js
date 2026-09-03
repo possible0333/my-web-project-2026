@@ -4,7 +4,7 @@
   let rankFilter='all';
   const el=id=>document.getElementById(id);
   const typeLabel=t=>t==='ABO'?'ABO':t==='CUSTOMER'?'カスタマー':t==='RETAIL'?'小売':'プロスペ';
-  const pvState=p=>{const t=+p.target||0,a=+p.actual||0;if(t<=0)return['v12-unset','目標未設定'];if(a<=0)return['v12-zero','実績0'];if(a>=t)return['v12-achieved','達成'];return['v12-progress','進行中']};
+  const pvState=p=>{const t=+p.target||0,a=+p.actual||0;if(t<=0)return['v12-unset','計画未設定'];if(a<=0)return['v12-zero','実績0'];if(a>=t)return['v12-achieved','達成'];return['v12-progress','進行中']};
   const sponsorName=p=>p&&p.parentId?(get(p.parentId)?.name||'未設定'):'—';
 
   function ensureRetailOption(){
@@ -54,7 +54,7 @@
   if(typeof card==='function'){
     card=function(p){
       const g=p.type==='ABO'?gp(p):null,a=A[(p.avatar||0)%36],c=TYPE_COLOR[p.type]||TYPE_COLOR.ABO,[pc,ps]=pvState(p);
-      return`<div class="card" data-type="${p.type}" style="--type-color:${c}" data-id="${p.id}"><span class="rk v12-rank-${p.rank}">${p.rank}</span><img class="av" src="${a}"><div class="head"><div class="nm">${esc(p.name)}</div><div class="meta"><span class="v12-type">${typeLabel(p.type)}</span>${p.id!=='self'?`<span class="v12-sponsor">スポンサー：${esc(sponsorName(p))}</span>`:''}</div></div><div class="pv ${pc}"><b>個人PV</b><span class="v12-pvstatus">${ps}</span><br>目標 ${F(p.target)} / 実績 ${F(p.actual)}${g?`<br><b>Group PV</b> 目標 ${F(g.t)} / 実績 ${F(g.a)}`:''}</div>${p.memo?`<div class="memo">📝 ${esc(p.memo)}</div>`:''}</div>`;
+      return`<div class="card" data-type="${p.type}" style="--type-color:${c}" data-id="${p.id}"><span class="rk v12-rank-${p.rank}">${p.rank}</span><img class="av" src="${a}"><div class="head"><div class="nm">${esc(p.name)}</div><div class="meta"><span class="v12-type">${typeLabel(p.type)}</span>${p.id!=='self'?`<span class="v12-sponsor">スポンサー：${esc(sponsorName(p))}</span>`:''}</div></div><div class="pv ${pc}"><b>個人PV</b><span class="v12-pvstatus">${ps}</span><br>計画 ${F(p.target)} / 実績 ${F(p.actual)}${g?`<br><b>Group PV</b> 計画 ${F(g.t)} / 実績 ${F(g.a)}`:''}</div>${p.memo?`<div class="memo">📝 ${esc(p.memo)}</div>`:''}</div>`;
     }
   }
 

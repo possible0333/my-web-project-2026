@@ -102,7 +102,7 @@
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
-        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv"><b>目 ${fmt(p.target||0)}</b><b>実 ${fmt(p.actual||0)}</b></span></span>
+        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv"><b>計 ${fmt(p.target||0)}</b><b>実 ${fmt(p.actual||0)}</b></span></span>
         ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
       </span>
     </button>`;
@@ -124,9 +124,9 @@
     const remaining=Math.max(0,target-actual);
     const achieved=target>0&&remaining===0;
     return `<section class="v176-map-pv-summary" aria-label="今月のPV進捗">
-      <div><span>今月の目標PV</span><strong>${target?fmt(target):'未設定'}</strong></div>
+      <div><span>今月の計画PV</span><strong>${target?fmt(target):'未設定'}</strong></div>
       <div><span>現在の実績PV<br>（グループ合計）</span><strong>${fmt(actual)}</strong></div>
-      <div class="${achieved?'is-achieved':''}"><span>${achieved?'目標達成':'残りPV'}</span><strong>${target?fmt(remaining):'―'}</strong></div>
+      <div class="${achieved?'is-achieved':''}"><span>${achieved?'計画達成':'残りPV'}</span><strong>${target?fmt(remaining):'―'}</strong></div>
     </section>`;
   }
 

@@ -159,7 +159,7 @@
       <div class="v128-plan-section v128-monthly-goal">
         <div class="v128-plan-label">今月の目標</div>
         <div class="v175-goal-grid">
-          <div><span>目標PV</span><b>${monthlyTargetPv?fmt(monthlyTargetPv):'未入力'}</b></div>
+          <div><span>計画PV</span><b>${monthlyTargetPv?fmt(monthlyTargetPv):'未入力'}</b></div>
           <div><span>フロントアップ</span><b>${frontUpGoal?`${fmt(frontUpGoal)}人`:'未入力'}</b></div>
           <div><span>グループアップ</span><b>${groupUpGoal?`${fmt(groupUpGoal)}人`:'未入力'}</b></div>
         </div>

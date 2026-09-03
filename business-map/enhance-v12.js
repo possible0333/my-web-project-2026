@@ -2,7 +2,7 @@
   const TC={ABO:'#3478f6',CUSTOMER:'#22a06b',PROSPECT:'#f59e0b'};
   let branch='all', zoom=1;
   const el=id=>document.getElementById(id);
-  const pvState=p=>{const t=+p.target||0,a=+p.actual||0;if(t<=0)return['v12-unset','目標未設定'];if(a<=0)return['v12-zero','実績0'];if(a>=t)return['v12-achieved','達成'];return['v12-progress','進行中']};
+  const pvState=p=>{const t=+p.target||0,a=+p.actual||0;if(t<=0)return['v12-unset','計画未設定'];if(a<=0)return['v12-zero','実績0'];if(a>=t)return['v12-achieved','達成'];return['v12-progress','進行中']};
   const sponsor=p=>p&&p.parentId?(get(p.parentId)?.name||'未設定'):'—';
 
   function replaceEditorLabel(){
@@ -13,7 +13,7 @@
   function createTools(){
     const wrap=document.querySelector('.wrap'); if(!wrap||el('v12Branch'))return;
     const tools=document.createElement('div');tools.className='v12-tools';tools.innerHTML=`<select id="v12Branch"><option value="all">全フロントを表示</option></select><button class="btn" id="v12ZoomOut">−</button><button class="btn" id="v12Fit">全体</button><button class="btn" id="v12ZoomIn">＋</button><span class="v12-zoom" id="v12ZoomVal">100%</span>`;
-    const legend=document.createElement('div');legend.className='v12-legend';legend.innerHTML='<span><i class="v12-dot" style="background:#3478f6"></i>ABO</span><span><i class="v12-dot" style="background:#22a06b"></i>カスタマー</span><span><i class="v12-dot" style="background:#f59e0b"></i>プロスペ</span><span><i class="v12-line-sample"></i>スポンサーライン</span><span>🟢達成 / 🔴実績0 / 🟡目標未設定</span>';
+    const legend=document.createElement('div');legend.className='v12-legend';legend.innerHTML='<span><i class="v12-dot" style="background:#3478f6"></i>ABO</span><span><i class="v12-dot" style="background:#22a06b"></i>カスタマー</span><span><i class="v12-dot" style="background:#f59e0b"></i>プロスペ</span><span><i class="v12-line-sample"></i>スポンサーライン</span><span>🟢達成 / 🔴実績0 / 🟡計画未設定</span>';
     wrap.parentNode.insertBefore(tools,wrap);wrap.parentNode.insertBefore(legend,wrap);
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.id='v12Lines';svg.classList.add('v12-lines');wrap.insertBefore(svg,wrap.firstChild);
     el('v12Branch').addEventListener('change',e=>{branch=e.target.value;applyBranch();scheduleLines()});
@@ -36,7 +36,7 @@
   let raf=0;function scheduleLines(){cancelAnimationFrame(raf);raf=requestAnimationFrame(drawLines)}
 
   if(typeof card==='function'){
-    card=function(p){const g=p.type==='ABO'?gp(p):null,a=A[(p.avatar||0)%36],c=TC[p.type]||TC.ABO,[pc,ps]=pvState(p);return`<div class="card" style="--type-color:${c}" data-id="${p.id}"><span class="rk v12-rank-${p.rank}">${p.rank}</span><img class="av" src="${a}"><div class="head"><div class="nm">${esc(p.name)}</div><div class="meta"><span class="v12-type">${L(p.type)}</span>${p.id!=='self'?`<span class="v12-sponsor">スポンサー：${esc(sponsor(p))}</span>`:''}</div></div><div class="pv ${pc}"><b>個人PV</b><span class="v12-pvstatus">${ps}</span><br>目標 ${F(p.target)} / 実績 ${F(p.actual)}${g?`<br><b>Group PV</b> 目標 ${F(g.t)} / 実績 ${F(g.a)}`:''}</div>${p.memo?`<div class="memo">📝 ${esc(p.memo)}</div>`:''}</div>`}
+    card=function(p){const g=p.type==='ABO'?gp(p):null,a=A[(p.avatar||0)%36],c=TC[p.type]||TC.ABO,[pc,ps]=pvState(p);return`<div class="card" style="--type-color:${c}" data-id="${p.id}"><span class="rk v12-rank-${p.rank}">${p.rank}</span><img class="av" src="${a}"><div class="head"><div class="nm">${esc(p.name)}</div><div class="meta"><span class="v12-type">${L(p.type)}</span>${p.id!=='self'?`<span class="v12-sponsor">スポンサー：${esc(sponsor(p))}</span>`:''}</div></div><div class="pv ${pc}"><b>個人PV</b><span class="v12-pvstatus">${ps}</span><br>計画 ${F(p.target)} / 実績 ${F(p.actual)}${g?`<br><b>Group PV</b> 計画 ${F(g.t)} / 実績 ${F(g.a)}`:''}</div>${p.memo?`<div class="memo">📝 ${esc(p.memo)}</div>`:''}</div>`}
   }
   if(typeof render==='function'){
     const oldRender=render;render=function(){oldRender();replaceEditorLabel();updateTools();applyBranch();enhanceSelf();scheduleLines()}

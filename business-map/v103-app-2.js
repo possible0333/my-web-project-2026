@@ -129,7 +129,7 @@ function resetAllActualPv(){
     alert('全員の実績PVはすでに0です。');
     return;
   }
-  if(!confirm(`自分を含む全員（${people.length}人）の実績PVを0にします。\n\n目標PV・期限・やること・メモは変更されません。\nこの操作を実行しますか？`)) return;
+  if(!confirm(`自分を含む全員（${people.length}人）の実績PVを0にします。\n\n計画PV・期限・やること・メモは変更されません。\nこの操作を実行しますか？`)) return;
   people.forEach(p=>{ p.actual=0; });
   render();
   alert(`${affected}人分の実績PVをリセットしました。`);
@@ -304,7 +304,7 @@ function buildExportSurface(){
         <div class="export-box">
           <h3>チーム情報</h3>
           <div class="export-stats">
-            <div class="export-mini"><div class="l">チーム目標PV</div><div class="v">${fmt(s.teamTarget)}</div></div>
+            <div class="export-mini"><div class="l">チーム計画PV</div><div class="v">${fmt(s.teamTarget)}</div></div>
             <div class="export-mini"><div class="l">チーム実績PV</div><div class="v">${fmt(s.teamActual)}</div></div>
             <div class="export-mini"><div class="l">達成率</div><div class="v">${s.rate}%</div></div>
             <div class="export-mini"><div class="l">登録人数</div><div class="v">${s.peopleCount}人</div></div>

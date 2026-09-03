@@ -9,8 +9,8 @@
   const el=id=>document.getElementById(id);
 
   function renamePvLabels(){
-    document.querySelectorAll('#modal .f label').forEach(l=>{if(l.textContent.trim()==='目標PV')l.textContent='目標個人PV'});
-    document.querySelectorAll('#self .small').forEach(x=>{if(x.textContent.trim()==='目標PV')x.textContent='目標個人PV'});
+    document.querySelectorAll('#modal .f label').forEach(l=>{if(l.textContent.trim()==='計画PV')l.textContent='計画個人PV'});
+    document.querySelectorAll('#self .small').forEach(x=>{if(x.textContent.trim()==='計画PV')x.textContent='計画個人PV'});
   }
 
   function teamSummary(){
@@ -20,7 +20,7 @@
     const people=all(),teamTarget=people.reduce((s,p)=>s+(+p.target||0),0),teamActual=people.reduce((s,p)=>s+(+p.actual||0),0);
     const box=document.createElement('div');box.className='v13-team-kpis';
     box.innerHTML=`
-      <div class="v13-team-kpi"><div class="v13-kpi-label">チーム目標PV</div><div class="v13-kpi-value">${F(teamTarget)}</div></div>
+      <div class="v13-team-kpi"><div class="v13-kpi-label">チーム計画PV</div><div class="v13-kpi-value">${F(teamTarget)}</div></div>
       <div class="v13-team-kpi"><div class="v13-kpi-label">チーム実績PV</div><div class="v13-kpi-value">${F(teamActual)}</div></div>
       <div class="v13-team-kpi"><div class="v13-kpi-label">チーム達成率</div><div class="v13-kpi-value">${PC(teamActual,teamTarget)}%</div></div>
       <div class="v13-team-kpi"><div class="v13-kpi-label">登録人数</div><div class="v13-kpi-value">${people.length}人</div></div>`;

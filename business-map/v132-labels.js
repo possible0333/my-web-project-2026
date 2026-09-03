@@ -8,9 +8,9 @@
     root.querySelectorAll('.kpi-label').forEach(el=>{
       const t=(el.textContent||'').trim();
       const map={
-        '目標個人PV':'目 個人PV',
+        '計画個人PV':'計 個人PV',
         '実績PV':'実 個人PV',
-        'チーム目標PV':'GrPV 目',
+        'チーム計画PV':'GrPV 計',
         'チーム実績PV':'GrPV 実'
       };
       if(map[t]) setText(el,map[t]);
@@ -30,7 +30,7 @@
         let t=node.nodeValue||'';
         t=t.replace(/Group\s*PV/gi,'GrPV');
         t=t.replace(/グループ\s*PV/g,'GrPV');
-        t=t.replace(/目標(?=\s*[\d未])/g,'目');
+        t=t.replace(/計画(?=\s*[\d未])/g,'計');
         t=t.replace(/実績(?=\s*[\d未])/g,'実');
         node.nodeValue=t;
       });

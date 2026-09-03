@@ -177,13 +177,13 @@ function renderSelf(){
       <div>
         <div class="self-name">${escapeHtml(self.name||'自分')}</div>
         <div class="self-kpis">
-          <div class="self-kpi"><div class="kpi-label">目標個人PV</div><div class="kpi-value">${fmt(self.target)}</div></div>
+          <div class="self-kpi"><div class="kpi-label">計画個人PV</div><div class="kpi-value">${fmt(self.target)}</div></div>
           <div class="self-kpi"><div class="kpi-label">実績PV</div><div class="kpi-value">${fmt(self.actual)}</div></div>
           <div class="self-kpi"><div class="kpi-label">達成率</div><div class="kpi-value">${rate}%</div></div>
         </div>
         <div class="progress"><span style="width:${rate}%"></span></div>
         <div class="team-kpis">
-          <div class="team-kpi"><div class="kpi-label">チーム目標PV</div><div class="kpi-value">${fmt(s.teamTarget)}</div></div>
+          <div class="team-kpi"><div class="kpi-label">チーム計画PV</div><div class="kpi-value">${fmt(s.teamTarget)}</div></div>
           <div class="team-kpi"><div class="kpi-label">チーム実績PV</div><div class="kpi-value">${fmt(s.teamActual)}</div></div>
           <div class="team-kpi"><div class="kpi-label">チーム達成率</div><div class="kpi-value">${s.rate}%</div></div>
           <div class="team-kpi"><div class="kpi-label">登録人数</div><div class="kpi-value">${s.peopleCount}人</div></div>
@@ -229,8 +229,8 @@ function renderCard(p){
       <span class="type-badge" data-type="${p.type}">${p.type}</span>
       <div class="pv-box ${goalState(p)}">
         <div><b>個人PV</b> ${goalStateText(p)}</div>
-        <div>目標 ${fmt(p.target)} / 実績 ${fmt(p.actual)}</div>
-        ${p.type==='ABO' ? `<div class="g"><b>Group PV</b> 目標 ${fmt(gp.target)} / 実績 ${fmt(gp.actual)}</div>` : ''}
+        <div>計画 ${fmt(p.target)} / 実績 ${fmt(p.actual)}</div>
+        ${p.type==='ABO' ? `<div class="g"><b>Group PV</b> 計画 ${fmt(gp.target)} / 実績 ${fmt(gp.actual)}</div>` : ''}
       </div>
       <div class="memo-list">
         <div class="memo-item">${escapeHtml(p.memo1||'')}</div>
@@ -244,7 +244,7 @@ function goalStateText(p){
   const s = goalState(p);
   if(s==='success') return '達成';
   if(s==='zero') return '実績0';
-  if(s==='unset') return '目標未設定';
+  if(s==='unset') return '計画未設定';
   return '進捗中';
 }
 function renderFilters(){

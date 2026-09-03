@@ -143,13 +143,13 @@
       <div>
         <div class="self-name">${escapeHtml(self.name||'自分')}</div>
         <div class="self-kpis">
-          <div class="self-kpi"><div class="kpi-label">目標個人PV</div><div class="kpi-value">${fmt(self.target)}</div></div>
+          <div class="self-kpi"><div class="kpi-label">計画個人PV</div><div class="kpi-value">${fmt(self.target)}</div></div>
           <div class="self-kpi"><div class="kpi-label">実績PV</div><div class="kpi-value">${fmt(self.actual)}</div></div>
           <div class="self-kpi"><div class="kpi-label">達成率</div><div class="kpi-value">${rate}%</div></div>
         </div>
         <div class="progress"><span style="width:${rate}%"></span></div>
         <div class="team-kpis">
-          <div class="team-kpi"><div class="kpi-label">目標GrPV</div><div class="kpi-value">${fmt(s.teamTarget)}</div></div>
+          <div class="team-kpi"><div class="kpi-label">計画GrPV</div><div class="kpi-value">${fmt(s.teamTarget)}</div></div>
           <div class="team-kpi"><div class="kpi-label">実績GrPV</div><div class="kpi-value">${fmt(s.teamActual)}</div></div>
           <div class="team-kpi"><div class="kpi-label">GrPV達成率</div><div class="kpi-value">${s.rate}%</div></div>
           <div class="team-kpi"><div class="kpi-label">登録人数</div><div class="kpi-value">${s.peopleCount}人</div></div>

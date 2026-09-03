@@ -18,8 +18,8 @@
         <span class="type-badge" data-type="${p.type}">${p.type}</span>
         <div class="pv-box ${goalState(p)}">
           <div><b>個人PV</b></div>
-          <div>目 ${fmt(p.target)} / 実 ${fmt(p.actual)}</div>
-          ${p.type==='ABO' ? `<div class="g"><b>GrPV</b><br>目 ${fmt(gp.target)} / 実 ${fmt(gp.actual)}</div>` : ''}
+          <div>計 ${fmt(p.target)} / 実 ${fmt(p.actual)}</div>
+          ${p.type==='ABO' ? `<div class="g"><b>GrPV</b><br>計 ${fmt(gp.target)} / 実 ${fmt(gp.actual)}</div>` : ''}
         </div>
         <div class="memo-list">
           <div class="memo-item">${escapeHtml(p.memo1||'')}</div>

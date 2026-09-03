@@ -51,7 +51,7 @@
     const map=document.getElementById('mapCanvasArea').cloneNode(true);
     map.style.zoom='1'; map.style.transform='none'; map.style.minWidth='0'; map.style.width='auto'; map.style.paddingTop='8px';
     map.querySelectorAll('.member-card').forEach(c=>{c.style.boxShadow='0 4px 12px rgba(31,41,55,.06)';});
-    root.innerHTML=`<div class="v109-export-surface"><div class="v109-export-head"><div><div class="v109-export-title">Business Map <span style="font-size:14px;color:#3478f6">${VERSION}</span></div><div class="v109-export-date">${new Date().toLocaleString('ja-JP')}</div></div><div class="v109-export-pills"><span class="v109-export-pill">目標 <b>${fmt(s.teamTarget)}</b></span><span class="v109-export-pill">実績 <b>${fmt(s.teamActual)}</b></span><span class="v109-export-pill">達成率 <b>${s.rate}%</b></span><span class="v109-export-pill">人数 <b>${s.peopleCount}</b></span></div></div><div class="v109-export-map" id="v109ExportMap"></div></div>`;
+    root.innerHTML=`<div class="v109-export-surface"><div class="v109-export-head"><div><div class="v109-export-title">Business Map <span style="font-size:14px;color:#3478f6">${VERSION}</span></div><div class="v109-export-date">${new Date().toLocaleString('ja-JP')}</div></div><div class="v109-export-pills"><span class="v109-export-pill">計画 <b>${fmt(s.teamTarget)}</b></span><span class="v109-export-pill">実績 <b>${fmt(s.teamActual)}</b></span><span class="v109-export-pill">達成率 <b>${s.rate}%</b></span><span class="v109-export-pill">人数 <b>${s.peopleCount}</b></span></div></div><div class="v109-export-map" id="v109ExportMap"></div></div>`;
     document.getElementById('v109ExportMap').appendChild(map);
     return root;
   }
