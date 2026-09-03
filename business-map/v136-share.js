@@ -4,6 +4,7 @@
   const LOCAL_STORE='maps';
   const BUCKET='business-maps';
   const TABLE='business_maps';
+  const REST_SESSION_KEY='businessMapRestSession';
   let supa=null;
   let uploadBlob=null;
   let uploadSvgBlob=null;
@@ -22,6 +23,7 @@
     if(Number.isNaN(d.getTime())) return '更新日時不明';
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
+  const preferRaster=()=>window.matchMedia?.('(max-width: 720px)').matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent||'');
 
   function selfName(){
     try{ if(typeof state!=='undefined'&&state?.self?.name) return String(state.self.name).trim(); }catch(e){}
@@ -200,6 +202,78 @@
     return supa;
   }
 
+  function storedRestSession(){
+    try{
+      const value=JSON.parse(localStorage.getItem(REST_SESSION_KEY)||'null');
+      return value&&value.access_token&&Number(value.expires_at||0)>Math.floor(Date.now()/1000)+60?value:null;
+    }catch(e){ return null; }
+  }
+
+  function saveRestSession(value){
+    const session={
+      access_token:String(value?.access_token||''),
+      refresh_token:String(value?.refresh_token||''),
+      expires_at:Number(value?.expires_at||0)||Math.floor(Date.now()/1000)+Number(value?.expires_in||3600),
+      user_id:String(value?.user?.id||'')
+    };
+    try{ localStorage.setItem(REST_SESSION_KEY,JSON.stringify(session)); }catch(e){}
+    return session;
+  }
+
+  async function restAuthSession(forceNew=false){
+    const cfg=window.BUSINESS_MAP_SUPABASE_CONFIG;
+    if(!cfg?.url||!cfg?.publishableKey) return null;
+    if(!forceNew){
+      const saved=storedRestSession();
+      if(saved) return saved;
+    }
+    let refresh=null;
+    try{ refresh=JSON.parse(localStorage.getItem(REST_SESSION_KEY)||'null')?.refresh_token||''; }catch(e){}
+    const headers={apikey:cfg.publishableKey,'Content-Type':'application/json'};
+    let response=null;
+    if(refresh&&!forceNew){
+      response=await fetch(`${cfg.url}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers,body:JSON.stringify({refresh_token:refresh})}).catch(()=>null);
+    }
+    if(!response?.ok){
+      response=await fetch(`${cfg.url}/auth/v1/signup`,{method:'POST',headers,body:'{}'});
+    }
+    if(!response.ok) throw new Error(`共有データの認証に失敗しました (${response.status})`);
+    return saveRestSession(await response.json());
+  }
+
+  function rowsToItems(rows,userId=''){
+    return (rows||[]).map(x=>({
+      id:x.user_id,
+      name:x.name,
+      comment:x.comment||'',
+      imagePath:x.image_path||'',
+      imageUrl:x.image_url,
+      fallbackUrl:x.map_data?.assets?.pngUrl||'',
+      isSvg:x.map_data?.assets?.preferred==='svg'||/\.svg(?:\?|$)/i.test(x.image_url||''),
+      clientUpdatedAt:x.client_updated_at,
+      when:new Date(x.updated_at||x.client_updated_at||Date.now()),
+      version:x.version,
+      mapData:x.map_data||{},
+      dataSchemaVersion:x.data_schema_version||1,
+      reminderSummary:x.reminder_summary||{},
+      scheduleData:x.schedule_data||{},
+      owned:x.user_id===userId
+    }));
+  }
+
+  async function loadMapsRest(){
+    const cfg=window.BUSINESS_MAP_SUPABASE_CONFIG;
+    const columns='user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary,schedule_data';
+    let session=await restAuthSession();
+    const request=()=>fetch(`${cfg.url}/rest/v1/${TABLE}?select=${encodeURIComponent(columns)}&order=client_updated_at.desc`,{
+      headers:{apikey:cfg.publishableKey,Authorization:`Bearer ${session.access_token}`}
+    });
+    let response=await request();
+    if(response.status===401){ session=await restAuthSession(true); response=await request(); }
+    if(!response.ok) throw new Error(`共有データの取得に失敗しました (${response.status})`);
+    return {mode:'cloud',items:rowsToItems(await response.json(),session.user_id),transport:'rest'};
+  }
+
   function openDb(){
     return new Promise((resolve,reject)=>{
       const req=indexedDB.open(LOCAL_DB,1);
@@ -356,26 +430,14 @@
 
   async function loadMaps(){
     const s=await initSupabase().catch(e=>{console.warn(`[${APP_VERSION}] Supabase load failed`,e);return null;});
+    if(!s&&hasSupabaseConfig()){
+      try{ return await loadMapsRest(); }
+      catch(e){ console.warn(`[${APP_VERSION}] Supabase REST fallback failed`,e); }
+    }
     if(!s) return {mode:'local',items:await localGetAll()};
     const res=await s.client.from(TABLE).select('user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary,schedule_data').order('client_updated_at',{ascending:false});
     if(res.error) throw res.error;
-    const items=(res.data||[]).map(x=>({
-      id:x.user_id,
-      name:x.name,
-      comment:x.comment||'',
-      imagePath:x.image_path||'',
-      imageUrl:x.image_url,
-      fallbackUrl:x.map_data?.assets?.pngUrl||'',
-      isSvg:x.map_data?.assets?.preferred==='svg'||/\.svg(?:\?|$)/i.test(x.image_url||''),
-      clientUpdatedAt:x.client_updated_at,
-      when:new Date(x.updated_at||x.client_updated_at||Date.now()),
-      version:x.version,
-      mapData:x.map_data||{},
-      dataSchemaVersion:x.data_schema_version||1,
-      reminderSummary:x.reminder_summary||{},
-      scheduleData:x.schedule_data||{},
-      owned:x.user_id===s.user.id
-    }));
+    const items=rowsToItems(res.data,s.user.id);
     return {mode:'cloud',items};
   }
 
@@ -459,7 +521,7 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>{const hasJson=Array.isArray(x.mapData?.people)&&x.mapData.people.length;const branchMode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(x.id):'add';return `<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${x.isSvg?'1':'0'}"><img src="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ" loading="lazy"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(x.imageUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${x.isSvg?'1':'0'}">マップを見る</button>${hasJson?`<button class="btn dark" data-v179-add-front="${esc(x.id)}">${branchMode==='update'?'系列を更新':'フロント追加'}</button><button class="btn" data-v178-restore="${esc(x.id)}">全体読込</button>`:''}</div></div></article>`;}).join('');
+    grid.innerHTML=filtered.map(x=>{const hasJson=Array.isArray(x.mapData?.people)&&x.mapData.people.length;const branchMode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(x.id):'add';const usePng=preferRaster()&&x.fallbackUrl;const displayUrl=usePng?x.fallbackUrl:x.imageUrl;const vector=x.isSvg&&!usePng;return `<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}"><img src="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}">マップを見る</button>${hasJson?`<button class="btn dark" data-v179-add-front="${esc(x.id)}">${branchMode==='update'?'系列を更新':'フロント追加'}</button><button class="btn" data-v178-restore="${esc(x.id)}">全体読込</button>`:''}</div></div></article>`;}).join('');
     grid.querySelectorAll('img[data-v136-fallback]').forEach(img=>img.addEventListener('error',()=>{const fallback=img.dataset.v136Fallback;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true}));
   }
 
@@ -628,8 +690,9 @@
 
   function viewerPagesFor(item){
     const pages=item?.mapData?.assets?.pages;
-    if(Array.isArray(pages)&&pages.length) return pages;
-    return [{id:'all',label:'全体図',imageUrl:item?.imageUrl||'',pngUrl:item?.fallbackUrl||item?.imageUrl||'',preferred:item?.isSvg?'svg':'png'}];
+    const source=Array.isArray(pages)&&pages.length?pages:[{id:'all',label:'全体図',imageUrl:item?.imageUrl||'',pngUrl:item?.fallbackUrl||item?.imageUrl||'',preferred:item?.isSvg?'svg':'png'}];
+    if(!preferRaster()) return source;
+    return source.map(page=>({...page,imageUrl:page.pngUrl||page.imageUrl||'',preferred:'png'}));
   }
 
   function showViewerPage(index){
