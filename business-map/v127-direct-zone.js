@@ -123,7 +123,7 @@
     const remaining=Math.max(0,target-actual);
     const achieved=target>0&&remaining===0;
     return `<section class="v176-map-pv-summary" aria-label="今月のPV進捗">
-      <div><span>今月の計画PV</span><strong>${target?fmt(target):'未設定'}</strong></div>
+      <div><span>今月の目標PV</span><strong>${target?fmt(target):'未設定'}</strong></div>
       <div><span>現在の実績PV<br>（グループ合計）</span><strong>${fmt(actual)}</strong></div>
       <div class="${achieved?'is-achieved':''}"><span>${achieved?'計画達成':'残りPV'}</span><strong>${target?fmt(remaining):'―'}</strong></div>
     </section>`;
