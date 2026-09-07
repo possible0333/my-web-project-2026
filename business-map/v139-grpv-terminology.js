@@ -1,13 +1,19 @@
 (function(){
   const baseRenderCard = typeof renderCard==='function' ? renderCard : window.renderCard;
 
+  function needsWhenWhat(p){
+    return p?.id!=='self' && !String(p?.deadline||'').trim() && !String(p?.nextAction||'').trim();
+  }
+
   function simplifiedCard(p){
     if(p?.id==='self' && typeof baseRenderCard==='function') return baseRenderCard(p);
 
     const gp=groupPvFor(p.id);
     const status=currentStatusLabel(p);
-    return `<div class="member-card" data-id="${p.id}" data-type="${p.type}">
+    const missingAction=needsWhenWhat(p);
+    return `<div class="member-card${missingAction?' v193-missing-action-card':''}" data-id="${p.id}" data-type="${p.type}">
       ${p.id!=='self'&&Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved">達成</span>':''}
+      ${missingAction?'<span class="v193-action-missing-stamp" aria-label="期限と何をするか未設定">いつ何する？</span>':''}
       <div class="status-stamp" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</div>
       <div class="card-left">
         <img class="card-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">

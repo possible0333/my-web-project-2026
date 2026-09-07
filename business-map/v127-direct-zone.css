@@ -339,6 +339,41 @@
   transform:rotate(8deg);
   box-shadow:0 4px 9px rgba(185,28,28,.24),0 0 0 2px rgba(255,255,255,.94);
 }
+.v193-action-missing-stamp{
+  position:absolute;
+  right:-14px;
+  top:-12px;
+  z-index:21;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 9px;
+  border:3px solid #b45309;
+  border-radius:9px;
+  background:linear-gradient(145deg,#fffbeb,#fef3c7);
+  color:#92400e;
+  font-size:10px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:.04em;
+  white-space:nowrap;
+  transform:rotate(7deg);
+  box-shadow:0 5px 12px rgba(180,83,9,.25),0 0 0 3px rgba(255,255,255,.94);
+}
+.v193-missing-action-card{box-shadow:0 0 0 2px rgba(245,158,11,.15),0 7px 20px rgba(15,23,42,.08)!important}
+.v127-mini-card .v193-mini-action-missing{
+  right:-8px;
+  top:-8px;
+  padding:4px 5px;
+  border-width:2px;
+  border-radius:7px;
+  font-size:7.5px;
+  box-shadow:0 4px 9px rgba(180,83,9,.22),0 0 0 2px rgba(255,255,255,.94);
+}
+@media(max-width:720px){
+  .v193-action-missing-stamp{right:-9px;top:-10px;padding:5px 7px;font-size:9px}
+  .v127-mini-card .v193-mini-action-missing{right:-6px;top:-7px;padding:3px 5px;font-size:7px}
+}
 .v127-mini-card .v127-mini-action{
   margin-top:5px;
   padding:4px 5px;

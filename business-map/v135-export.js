@@ -208,7 +208,7 @@
     const selectors=[
       '.v186-export-top span','.v186-export-top b','.v186-export-top .v115-next-panel','.v186-export-top .v116-next-panel',
       '.v176-map-pv-summary','.v127-direct-zone','.v185-front-branch','.v180-deep-group','.v180-deep-owner','.v190-overdue-page','.v190-overdue-group','.v190-overdue-card',
-      '.member-card','.v180-deep-empty','#treeLines path','#treeLines circle'
+      '.member-card','.v180-deep-empty','.v193-action-missing-stamp','#treeLines path','#treeLines circle'
     ].join(',');
     const rects=[...surface.querySelectorAll(selectors)].map(el=>el.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0);
     if(!rects.length) return {x:0,y:0,width:Math.ceil(surface.scrollWidth),height:Math.ceil(surface.scrollHeight)};

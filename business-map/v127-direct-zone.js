@@ -93,11 +93,13 @@
   function miniCard(p){
     const deadline=deadlineText(p.deadline);
     const action=String(p.nextAction||'').trim();
+    const missingAction=!String(p.deadline||'').trim()&&!action;
     const actionText=[deadline?`期限 ${deadline}`:'',action].filter(Boolean).join('｜');
-    return `<button type="button" class="v127-mini-card" data-v127-id="${escapeHtml(p.id)}" data-type="${escapeHtml(p.type)}">
+    return `<button type="button" class="v127-mini-card${missingAction?' v193-missing-action-card':''}" data-v127-id="${escapeHtml(p.id)}" data-type="${escapeHtml(p.type)}">
       <span class="v127-mini-status" style="background:${currentStatusColor(p)}" title="${escapeHtml(currentStatusLabel(p))}"></span>
       ${Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved v153-mini-achieved">達成</span>':''}
       ${deadlineOverdue(p.deadline)?'<span class="v169-review-stamp v169-mini-review">要確認</span>':''}
+      ${missingAction?'<span class="v193-action-missing-stamp v193-mini-action-missing" aria-label="期限と何をするか未設定">いつ何する？</span>':''}
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
