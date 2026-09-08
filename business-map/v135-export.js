@@ -72,6 +72,7 @@
     const sourceArea=document.getElementById('mapCanvasArea');
     const legend=document.getElementById('legend');
     const next=document.getElementById('nextMonthProspects');
+    const favorites=document.querySelector('#v196FavoriteDock .v195-favorites-panel');
     if(!sourceRows||!sourceArea) throw new Error('ネットワークマップが見つかりませんでした');
 
     const directCount=sourceRows.querySelectorAll('.v127-direct-zone .v127-mini-card').length;
@@ -108,15 +109,23 @@
       .v174-export-readable .v127-mini-action{font-size:12px!important;line-height:1.45!important;max-height:2.9em!important}
       .v174-export-readable .v127-direct-head{font-size:13px!important}
       .v174-export-readable .v169-review-stamp{font-size:13px!important}
+      .v174-export-readable .v194-self-hub{align-items:stretch!important}
+      .v174-export-readable .v194-self-side,
+      .v174-export-readable .v194-self-hub .v128-self-card-content{height:100%!important;box-sizing:border-box!important}
     `;
     host.appendChild(readableStyle);
 
     const top=document.createElement('div');
     top.className='v186-export-top';
     top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';
+    if(favorites){
+      const f=favorites.cloneNode(true);
+      f.style.cssText='position:static!important;inset:auto!important;width:240px!important;max-width:240px!important;margin:0!important;padding:9px 10px!important;box-shadow:none!important;flex:0 0 240px;';
+      top.appendChild(f);
+    }
     if(legend){
       const l=legend.cloneNode(true); l.removeAttribute('id');
-      l.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1;padding:0;margin:0;font-size:11px;color:#64748b;';
+      l.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;flex:1;padding:0;margin:0;font-size:11px;color:#64748b;';
       top.appendChild(l);
     }
     if(next){
