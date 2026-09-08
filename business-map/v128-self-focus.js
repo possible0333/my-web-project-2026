@@ -1,5 +1,5 @@
 (function(){
-  const APP_VERSION='v1.28';
+  const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.96';
   let activeId=null;
   const previousRenderCard=window.renderCard;
 
@@ -12,6 +12,26 @@
         name:safe(item.name),
         reasons:Array.from({length:3},(_,reasonIndex)=>safe(Array.isArray(item.reasons)?item.reasons[reasonIndex]:''))
       };
+    });
+  }
+  function normalizeProspectPlans(value,legacy){
+    const hasPlans=Array.isArray(value);
+    const list=hasPlans?value:[];
+    const old=legacy||{};
+    return Array.from({length:3},(_,index)=>{
+      const item=list[index]||{};
+      return {
+        method:safe(item.method ?? (!hasPlans&&index===0?old.method:'')),
+        deadline:safe(item.deadline ?? (!hasPlans&&index===0?old.deadline:'')),
+        action:safe(item.action ?? (!hasPlans&&index===0?old.action:''))
+      };
+    });
+  }
+  function prospectPlansOf(p){
+    return normalizeProspectPlans(p?.prospectPlans,{
+      method:p?.prospectMethod,
+      deadline:p?.prospectDeadline,
+      action:p?.prospectAction
     });
   }
 
@@ -44,12 +64,17 @@
       <div class="v194-prospect-edit">
         <div class="v194-prospect-edit-head">
           <strong>プロスペ探し</strong>
-          <span>手段と、いつまでに何をするかを決めます。</span>
+          <span>3候補まで、手段と「いつまでに何をするか」を決められます。</span>
         </div>
         <div class="v194-prospect-inputs">
-          <div><label for="fProspectMethod">手段</label><input id="fProspectMethod" class="text-input" maxlength="80" placeholder="例：友人への連絡・イベント参加"></div>
-          <div><label for="fProspectDeadline">いつまでに</label><input id="fProspectDeadline" class="text-input" type="date"></div>
-          <div><label for="fProspectAction">何をする</label><input id="fProspectAction" class="text-input" maxlength="100" placeholder="例：候補者を10人書き出す"></div>
+          ${Array.from({length:3},(_,index)=>`<section class="v196-prospect-candidate">
+            <div class="v196-prospect-rank">候補 ${index+1}</div>
+            <div class="v196-prospect-fields">
+              <div><label for="fProspect${index+1}Method">手段</label><input id="fProspect${index+1}Method" class="text-input" maxlength="80" placeholder="例：友人への連絡・イベント参加"></div>
+              <div><label for="fProspect${index+1}Deadline">いつまでに</label><input id="fProspect${index+1}Deadline" class="text-input" type="date"></div>
+              <div><label for="fProspect${index+1}Action">何をする</label><input id="fProspect${index+1}Action" class="text-input" maxlength="100" placeholder="例：候補者を10人書き出す"></div>
+            </div>
+          </section>`).join('')}
         </div>
       </div>
       <div class="v195-favorites-edit">
@@ -84,6 +109,11 @@
     target.self.prospectMethod=String(src.prospectMethod ?? target.self.prospectMethod ?? '');
     target.self.prospectDeadline=String(src.prospectDeadline ?? target.self.prospectDeadline ?? '');
     target.self.prospectAction=String(src.prospectAction ?? target.self.prospectAction ?? '');
+    target.self.prospectPlans=normalizeProspectPlans(src.prospectPlans,{
+      method:src.prospectMethod ?? target.self.prospectMethod,
+      deadline:src.prospectDeadline ?? target.self.prospectDeadline,
+      action:src.prospectAction ?? target.self.prospectAction
+    });
     target.self.favoriteProducts=normalizeFavorites(src.favoriteProducts ?? target.self.favoriteProducts);
   }
 
@@ -108,6 +138,7 @@
     state.self.prospectMethod=String(state.self.prospectMethod||'');
     state.self.prospectDeadline=String(state.self.prospectDeadline||'');
     state.self.prospectAction=String(state.self.prospectAction||'');
+    state.self.prospectPlans=prospectPlansOf(state.self);
     state.self.favoriteProducts=normalizeFavorites(state.self.favoriteProducts);
   }
 
@@ -130,14 +161,20 @@
       fGroupUpGoal:Number(p?.groupUpGoal||0)||'',
       fFocus1:p?.focus1||'',
       fFocus2:p?.focus2||'',
-      fFocus3:p?.focus3||'',
-      fProspectMethod:p?.prospectMethod||'',
-      fProspectDeadline:p?.prospectDeadline||'',
-      fProspectAction:p?.prospectAction||''
+      fFocus3:p?.focus3||''
     };
     Object.entries(values).forEach(([id,value])=>{
       const el=document.getElementById(id);
       if(el) el.value=value;
+    });
+    prospectPlansOf(p).forEach((plan,index)=>{
+      const number=index+1;
+      const method=document.getElementById(`fProspect${number}Method`);
+      const deadline=document.getElementById(`fProspect${number}Deadline`);
+      const action=document.getElementById(`fProspect${number}Action`);
+      if(method) method.value=plan.method;
+      if(deadline) deadline.value=plan.deadline;
+      if(action) action.value=plan.action;
     });
     normalizeFavorites(p?.favoriteProducts).forEach((product,index)=>{
       const name=document.getElementById(`fFavoriteProduct${index+1}Name`);
@@ -179,9 +216,17 @@
         data.focus1=safe(document.getElementById('fFocus1')?.value);
         data.focus2=safe(document.getElementById('fFocus2')?.value);
         data.focus3=safe(document.getElementById('fFocus3')?.value);
-        data.prospectMethod=safe(document.getElementById('fProspectMethod')?.value);
-        data.prospectDeadline=safe(document.getElementById('fProspectDeadline')?.value);
-        data.prospectAction=safe(document.getElementById('fProspectAction')?.value);
+        data.prospectPlans=Array.from({length:3},(_,index)=>{
+          const number=index+1;
+          return {
+            method:safe(document.getElementById(`fProspect${number}Method`)?.value),
+            deadline:safe(document.getElementById(`fProspect${number}Deadline`)?.value),
+            action:safe(document.getElementById(`fProspect${number}Action`)?.value)
+          };
+        });
+        data.prospectMethod=data.prospectPlans[0].method;
+        data.prospectDeadline=data.prospectPlans[0].deadline;
+        data.prospectAction=data.prospectPlans[0].action;
         data.favoriteProducts=Array.from({length:5},(_,index)=>({
           name:safe(document.getElementById(`fFavoriteProduct${index+1}Name`)?.value),
           reasons:Array.from({length:3},(_,reasonIndex)=>safe(document.getElementById(`fFavoriteProduct${index+1}Reason${reasonIndex+1}`)?.value))
@@ -238,14 +283,17 @@
   }
 
   function prospectPanel(p){
-    const method=safe(p.prospectMethod),deadline=deadlineLabel(p.prospectDeadline),action=safe(p.prospectAction);
+    const plans=prospectPlansOf(p);
     return `<aside class="v194-self-side v194-prospect-panel" aria-label="プロスペ探し">
       <div class="v194-side-title">プロスペ探し</div>
-      <div class="v194-prospect-values">
-        <div><span>手段</span><b class="${method?'':'is-empty'}">${escapeHtml(method||'未入力')}</b></div>
-        <div><span>いつまでに</span><b class="${deadline?'':'is-empty'}">${escapeHtml(deadline||'未入力')}</b></div>
-        <div><span>何をする</span><b class="${action?'':'is-empty'}">${escapeHtml(action||'未入力')}</b></div>
-      </div>
+      <div class="v196-prospect-list">${plans.map((plan,index)=>{
+        const method=safe(plan.method),deadline=deadlineLabel(plan.deadline),action=safe(plan.action);
+        return `<section class="v196-prospect-candidate-view"><strong>候補 ${index+1}</strong><div class="v194-prospect-values">
+          <div><span>手段</span><b class="${method?'':'is-empty'}">${escapeHtml(method||'未入力')}</b></div>
+          <div><span>いつまでに</span><b class="${deadline?'':'is-empty'}">${escapeHtml(deadline||'未入力')}</b></div>
+          <div><span>何をする</span><b class="${action?'':'is-empty'}">${escapeHtml(action||'未入力')}</b></div>
+        </div></section>`;
+      }).join('')}</div>
     </aside>`;
   }
 

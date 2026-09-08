@@ -249,7 +249,12 @@
 
   function pageContentsHtml(){
     if(mapPage==='overdue') return overduePageHtml();
-    return `<div class="v195-map-top">${favoriteProductsHtml()}${monthlyPvSummaryHtml()}</div>${directZoneHtml()}${buildNode('self',0)}`;
+    return `<div class="v195-map-top">${monthlyPvSummaryHtml()}</div>${directZoneHtml()}${buildNode('self',0)}`;
+  }
+
+  function renderFavoriteDock(){
+    const dock=document.getElementById('v196FavoriteDock');
+    if(dock) dock.innerHTML=favoriteProductsHtml();
   }
 
   function ensurePageControls(){
@@ -310,6 +315,7 @@
     area.classList.remove('v118-filter-mode');
     svg.style.display='';
 
+    renderFavoriteDock();
     rows.innerHTML=`<div class="v127-network v180-page-${mapPage}" data-v180-current-page="${mapPage}">${pageContentsHtml()}</div>`;
     bindClicks(rows);
     applyV127Density();

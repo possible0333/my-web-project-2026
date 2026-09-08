@@ -201,6 +201,11 @@ function operationalMapToState(mapData){
     prospectMethod:String(p?.prospectMethod||''),
     prospectDeadline:String(p?.prospectDeadline||''),
     prospectAction:String(p?.prospectAction||''),
+    prospectPlans:isSelf?Array.from({length:3},(_,index)=>({
+      method:String(Array.isArray(p?.prospectPlans)?p.prospectPlans[index]?.method||'':index===0?p?.prospectMethod||'':''),
+      deadline:String(Array.isArray(p?.prospectPlans)?p.prospectPlans[index]?.deadline||'':index===0?p?.prospectDeadline||'':''),
+      action:String(Array.isArray(p?.prospectPlans)?p.prospectPlans[index]?.action||'':index===0?p?.prospectAction||'':'')
+    })):[],
     favoriteProducts:isSelf?Array.from({length:5},(_,index)=>({
       name:String(Array.isArray(p?.favoriteProducts)?p.favoriteProducts[index]?.name||'':''),
       reasons:Array.from({length:3},(_,reasonIndex)=>String(Array.isArray(p?.favoriteProducts?.[index]?.reasons)?p.favoriteProducts[index].reasons[reasonIndex]||'':''))
