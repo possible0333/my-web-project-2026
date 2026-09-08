@@ -162,7 +162,14 @@
   function forceRecalculateAndRender(){
     try{ window.groupPvFor=calculateGroupPv; groupPvFor=calculateGroupPv; }catch(e){ window.groupPvFor=calculateGroupPv; }
     try{ window.teamSummary=currentTeamSummary; teamSummary=currentTeamSummary; }catch(e){ window.teamSummary=currentTeamSummary; }
-    try{ window.renderCard=renderCardV126; renderCard=renderCardV126; }catch(e){ window.renderCard=renderCardV126; }
+    // Later enhancements extend the self card with the monthly-focus and
+    // prospect panels. Recalculation must not replace that renderer with this
+    // older base card immediately before image/upload capture.
+    const currentCardRenderer=typeof window.renderCard==='function'?window.renderCard:null;
+    const activeCardRenderer=currentCardRenderer&&currentCardRenderer!==renderCardV126
+      ? currentCardRenderer
+      : (typeof window.v128RenderCard==='function'?window.v128RenderCard:renderCardV126);
+    try{ window.renderCard=activeCardRenderer; renderCard=activeCardRenderer; }catch(e){ window.renderCard=activeCardRenderer; }
     try{ window.renderSelf=renderSelfV126; renderSelf=renderSelfV126; }catch(e){ window.renderSelf=renderSelfV126; }
 
     renderSelfV126();

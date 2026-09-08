@@ -55,6 +55,10 @@
     document.title=`Business Map ${APP_VERSION}`;
   }
 
+  function prepareCurrentMap(){
+    if(typeof window.v126Recalculate==='function') window.v126Recalculate();
+  }
+
   function waitImages(root){
     return Promise.all([...root.querySelectorAll('img')].map(img=>{
       if(img.complete&&img.naturalWidth) return Promise.resolve();
@@ -314,7 +318,7 @@
   async function createBlob(options={}){
     let cap;
     try{
-      if(typeof window.v126Recalculate==='function') window.v126Recalculate();
+      prepareCurrentMap();
       if(document.fonts?.ready) await document.fonts.ready;
       await raf2();
       cap=buildSurface();
@@ -327,7 +331,7 @@
   async function createSvgBlob(){
     let cap;
     try{
-      if(typeof window.v126Recalculate==='function') window.v126Recalculate();
+      prepareCurrentMap();
       if(document.fonts?.ready) await document.fonts.ready;
       await raf2();
       cap=buildSurface();

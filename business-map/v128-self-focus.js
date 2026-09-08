@@ -337,6 +337,7 @@
   }
 
   function rerender(){
+    window.v128RenderCard=renderCardV128;
     window.renderCard=renderCardV128;
     try{ renderCard=renderCardV128; }catch(e){}
     if(typeof window.renderTree==='function'){

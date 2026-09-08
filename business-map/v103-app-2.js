@@ -192,6 +192,7 @@ function operationalMapToState(mapData){
     memo2:String(p?.memo2??p?.memos?.[1]??''),
     memo3:String(p?.memo3??p?.memos?.[2]??''),
     avatar:Number.isFinite(Number(p?.avatar))?Number(p.avatar):0,
+    monthlyGoal:String(p?.monthlyGoal||''),
     monthlyTargetPv:Math.max(0,Number(p?.monthlyTargetPv||0)),
     frontUpGoal:Math.max(0,Number(p?.frontUpGoal||0)),
     groupUpGoal:Math.max(0,Number(p?.groupUpGoal||0)),

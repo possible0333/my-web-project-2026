@@ -76,6 +76,7 @@
       parentId:p?.parentId==null?null:String(p.parentId),
       status:String(p?.status||''),
       statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
+      customStatus:String(p?.customStatus||''),
       targetPv:Number(p?.target||0),
       actualPv:Number(p?.actual||0),
       avatar:Number.isInteger(Number(p?.avatar))&&Number(p.avatar)>=0&&Number(p.avatar)<36?Number(p.avatar):null,
@@ -90,6 +91,7 @@
       memos:[p?.memo1,p?.memo2,p?.memo3].map(v=>String(v||'')).filter(Boolean),
       deadline:due,
       nextAction:String(p?.nextAction||''),
+      monthlyGoal:String(p?.monthlyGoal||''),
       monthlyTargetPv:Number(p?.monthlyTargetPv||0),
       frontUpGoal:Number(p?.frontUpGoal||0),
       groupUpGoal:Number(p?.groupUpGoal||0),
@@ -119,7 +121,7 @@
     const reminders=people.filter(p=>p.id!=='self'&&['overdue','today','soon'].includes(p.deadline.state));
     return {
       schema:'business-map-operational',
-      schemaVersion:1,
+      schemaVersion:2,
       generatedAt:new Date().toISOString(),
       appVersion:APP_VERSION,
       owner:{id:'self',name:String(state.self?.name||'自分')},
