@@ -118,6 +118,22 @@
     </section>`;
   }
 
+  function favoriteProductsHtml(){
+    const source=Array.isArray(state.self?.favoriteProducts)?state.self.favoriteProducts:[];
+    const products=source.slice(0,5).map((item,index)=>({
+      rank:index+1,
+      name:String(item?.name||'').trim(),
+      reasons:(Array.isArray(item?.reasons)?item.reasons:[]).slice(0,3).map(v=>String(v||'').trim()).filter(Boolean)
+    })).filter(item=>item.name||item.reasons.length);
+    return `<section class="v195-favorites-panel" aria-label="今のお気に入り製品TOP5">
+      <div class="v195-favorites-head"><span>今のお気に入り製品</span><strong>TOP5</strong></div>
+      ${products.length?`<div class="v195-favorites-list">${products.map(product=>`<article>
+        <span class="v195-product-rank">${product.rank}</span>
+        <div><strong>${escapeHtml(product.name||'製品名未入力')}</strong>${product.reasons.length?`<ul>${product.reasons.map(reason=>`<li>${escapeHtml(reason)}</li>`).join('')}</ul>`:'<small>理由未入力</small>'}</div>
+      </article>`).join('')}</div>`:'<div class="v195-favorites-empty">まだ登録されていません</div>'}
+    </section>`;
+  }
+
   function monthlyPvSummaryHtml(){
     const target=Math.max(0,Number(state.self?.monthlyTargetPv||0));
     const gp=typeof groupPvFor==='function'?groupPvFor('self'):{actual:0};
@@ -233,7 +249,7 @@
 
   function pageContentsHtml(){
     if(mapPage==='overdue') return overduePageHtml();
-    return `${monthlyPvSummaryHtml()}${directZoneHtml()}${buildNode('self',0)}`;
+    return `<div class="v195-map-top">${favoriteProductsHtml()}${monthlyPvSummaryHtml()}</div>${directZoneHtml()}${buildNode('self',0)}`;
   }
 
   function ensurePageControls(){

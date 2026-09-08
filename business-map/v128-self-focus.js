@@ -4,6 +4,16 @@
   const previousRenderCard=window.renderCard;
 
   function safe(v){ return String(v||'').trim(); }
+  function normalizeFavorites(value){
+    const list=Array.isArray(value)?value:[];
+    return Array.from({length:5},(_,index)=>{
+      const item=list[index]||{};
+      return {
+        name:safe(item.name),
+        reasons:Array.from({length:3},(_,reasonIndex)=>safe(Array.isArray(item.reasons)?item.reasons[reasonIndex]:''))
+      };
+    });
+  }
 
   function ensureSelfFields(){
     if(document.getElementById('v128SelfFocusField')) return;
@@ -41,6 +51,22 @@
           <div><label for="fProspectDeadline">いつまでに</label><input id="fProspectDeadline" class="text-input" type="date"></div>
           <div><label for="fProspectAction">何をする</label><input id="fProspectAction" class="text-input" maxlength="100" placeholder="例：候補者を10人書き出す"></div>
         </div>
+      </div>
+      <div class="v195-favorites-edit">
+        <div class="v195-favorites-edit-head">
+          <strong>今のお気に入り製品 TOP5</strong>
+          <span>製品名と、お気に入りの理由を3つまで入力できます。</span>
+        </div>
+        <div class="v195-favorite-products">
+          ${Array.from({length:5},(_,index)=>`<section class="v195-favorite-product">
+            <div class="v195-favorite-rank">${index+1}位</div>
+            <label for="fFavoriteProduct${index+1}Name">製品名</label>
+            <input id="fFavoriteProduct${index+1}Name" class="text-input" maxlength="60" placeholder="お気に入り製品を入力">
+            <div class="v195-favorite-reasons">
+              ${Array.from({length:3},(_,reasonIndex)=>`<div><label for="fFavoriteProduct${index+1}Reason${reasonIndex+1}">理由 ${reasonIndex+1}</label><input id="fFavoriteProduct${index+1}Reason${reasonIndex+1}" class="text-input" maxlength="80" placeholder="お気に入りの理由"></div>`).join('')}
+            </div>
+          </section>`).join('')}
+        </div>
       </div>`;
     anchor.insertAdjacentElement('afterend',field);
   }
@@ -58,6 +84,7 @@
     target.self.prospectMethod=String(src.prospectMethod ?? target.self.prospectMethod ?? '');
     target.self.prospectDeadline=String(src.prospectDeadline ?? target.self.prospectDeadline ?? '');
     target.self.prospectAction=String(src.prospectAction ?? target.self.prospectAction ?? '');
+    target.self.favoriteProducts=normalizeFavorites(src.favoriteProducts ?? target.self.favoriteProducts);
   }
 
   function restoreFromStorage(){
@@ -81,6 +108,7 @@
     state.self.prospectMethod=String(state.self.prospectMethod||'');
     state.self.prospectDeadline=String(state.self.prospectDeadline||'');
     state.self.prospectAction=String(state.self.prospectAction||'');
+    state.self.favoriteProducts=normalizeFavorites(state.self.favoriteProducts);
   }
 
   function patchMigrate(){
@@ -110,6 +138,14 @@
     Object.entries(values).forEach(([id,value])=>{
       const el=document.getElementById(id);
       if(el) el.value=value;
+    });
+    normalizeFavorites(p?.favoriteProducts).forEach((product,index)=>{
+      const name=document.getElementById(`fFavoriteProduct${index+1}Name`);
+      if(name) name.value=product.name;
+      product.reasons.forEach((reason,reasonIndex)=>{
+        const input=document.getElementById(`fFavoriteProduct${index+1}Reason${reasonIndex+1}`);
+        if(input) input.value=reason;
+      });
     });
   }
 
@@ -146,6 +182,10 @@
         data.prospectMethod=safe(document.getElementById('fProspectMethod')?.value);
         data.prospectDeadline=safe(document.getElementById('fProspectDeadline')?.value);
         data.prospectAction=safe(document.getElementById('fProspectAction')?.value);
+        data.favoriteProducts=Array.from({length:5},(_,index)=>({
+          name:safe(document.getElementById(`fFavoriteProduct${index+1}Name`)?.value),
+          reasons:Array.from({length:3},(_,reasonIndex)=>safe(document.getElementById(`fFavoriteProduct${index+1}Reason${reasonIndex+1}`)?.value))
+        }));
       }
       return data;
     };

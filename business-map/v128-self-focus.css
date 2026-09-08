@@ -320,3 +320,62 @@
 #v126CaptureHost .v194-self-hub,#v122CaptureHost .v194-self-hub{grid-template-columns:190px 244px 190px!important;gap:12px!important}
 #v126CaptureHost .v194-self-hub .v127-self-map-card.v128-self-card-content,
 #v122CaptureHost .v194-self-hub .v127-self-map-card.v128-self-card-content{width:244px!important;min-height:190px!important;display:block!important}
+
+/* v1.95: favorite products editor and map panel */
+.v195-map-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  gap:14px;
+  width:max-content;
+  margin:0 auto 22px;
+}
+.v195-map-top .v176-map-pv-summary{flex:none;margin:0}
+.v195-favorites-panel{
+  flex:none;
+  width:250px;
+  padding:10px;
+  border:2px solid #f2c66d;
+  border-radius:17px;
+  background:linear-gradient(180deg,#fffdf6,#fff7e3);
+  box-shadow:0 7px 18px rgba(154,106,25,.13);
+  box-sizing:border-box;
+}
+.v195-favorites-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:2px 2px 7px;border-bottom:1px solid #f1ddb4;color:#815311}
+.v195-favorites-head span{font-size:11px;font-weight:1000}
+.v195-favorites-head strong{padding:3px 7px;border-radius:999px;background:#d97706;color:#fff;font-size:9px;letter-spacing:.06em}
+.v195-favorites-list{display:grid;gap:5px}
+.v195-favorites-list article{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;padding:6px;border:1px solid #f3e4c5;border-radius:9px;background:rgba(255,255,255,.9)}
+.v195-product-rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#fff0c7;color:#995d06;font-size:9px;font-weight:1000}
+.v195-favorites-list article>div{min-width:0}
+.v195-favorites-list article strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3f3424;font-size:10px;line-height:1.25}
+.v195-favorites-list ul{display:flex;flex-wrap:wrap;gap:2px 8px;margin:4px 0 0;padding:0;list-style:none}
+.v195-favorites-list li{position:relative;padding-left:7px;color:#786343;font-size:8px;line-height:1.25;font-weight:700}
+.v195-favorites-list li:before{content:"";position:absolute;left:0;top:.42em;width:3px;height:3px;border-radius:50%;background:#d97706}
+.v195-favorites-list small,.v195-favorites-empty{color:#a08b6b;font-size:8px;font-weight:700}
+.v195-favorites-empty{padding:18px 8px;text-align:center}
+.v195-favorites-edit{margin-top:14px;padding-top:14px;border-top:1px solid #c5d8f4}
+.v195-favorites-edit-head{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.v195-favorites-edit-head strong{color:#815311;font-size:13px}
+.v195-favorites-edit-head span{color:#7c6c52;font-size:10px;font-weight:700}
+.v195-favorite-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.v195-favorite-product{position:relative;min-width:0;padding:11px;border:1px solid #ecd39d;border-radius:13px;background:#fffdf8}
+.v195-favorite-rank{position:absolute;right:9px;top:9px;padding:3px 7px;border-radius:999px;background:#fff0c7;color:#995d06;font-size:9px;font-weight:1000}
+.v195-favorite-product>label{padding-right:45px}
+.v195-favorite-reasons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+
+@media(max-width:720px){
+  .v195-map-top{gap:9px;margin-bottom:15px}
+  .v195-favorites-panel{width:200px;padding:8px;border-radius:14px}
+  .v195-favorites-head span{font-size:9px}
+  .v195-favorites-list article{grid-template-columns:18px minmax(0,1fr);gap:5px;padding:5px}
+  .v195-product-rank{width:18px;height:18px;font-size:7px}
+  .v195-favorites-list article strong{font-size:8px}
+  .v195-favorites-list li{font-size:7px}
+  .v195-favorite-products{grid-template-columns:1fr}
+  .v195-favorite-reasons{grid-template-columns:1fr}
+  .v195-favorites-edit-head{align-items:flex-start;flex-direction:column;gap:3px}
+}
+
+#v126CaptureHost .v195-map-top,#v122CaptureHost .v195-map-top{gap:14px!important;margin-bottom:22px!important}
+#v126CaptureHost .v195-favorites-panel,#v122CaptureHost .v195-favorites-panel{width:250px!important}

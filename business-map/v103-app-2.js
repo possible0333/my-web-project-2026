@@ -201,6 +201,10 @@ function operationalMapToState(mapData){
     prospectMethod:String(p?.prospectMethod||''),
     prospectDeadline:String(p?.prospectDeadline||''),
     prospectAction:String(p?.prospectAction||''),
+    favoriteProducts:isSelf?Array.from({length:5},(_,index)=>({
+      name:String(Array.isArray(p?.favoriteProducts)?p.favoriteProducts[index]?.name||'':''),
+      reasons:Array.from({length:3},(_,reasonIndex)=>String(Array.isArray(p?.favoriteProducts?.[index]?.reasons)?p.favoriteProducts[index].reasons[reasonIndex]||'':''))
+    })):[],
     sharedSourceUserId:String(p?.sharedSourceUserId||''),
     sharedSourcePersonId:String(p?.sharedSourcePersonId||'')
   });

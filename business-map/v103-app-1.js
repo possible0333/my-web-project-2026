@@ -17,7 +17,7 @@ const DEFAULT_SELF = {
   status:'appointment-open',customStatus:'',memo1:'',memo2:'',memo3:'',
   age:'',job:'',hobby:'',etc:'',avatar:0,deadline:'',nextAction:'',
   monthlyGoal:'',monthlyTargetPv:0,frontUpGoal:0,groupUpGoal:0,
-  focus1:'',focus2:'',focus3:'',prospectMethod:'',prospectDeadline:'',prospectAction:'',
+  focus1:'',focus2:'',focus3:'',prospectMethod:'',prospectDeadline:'',prospectAction:'',favoriteProducts:[],
   sharedSourceUserId:'',sharedSourcePersonId:''
 };
 let state = {self:{...DEFAULT_SELF}, members:[]};
@@ -126,6 +126,10 @@ function migrate(raw){
     prospectMethod: String(p.prospectMethod || ''),
     prospectDeadline: String(p.prospectDeadline || ''),
     prospectAction: String(p.prospectAction || ''),
+    favoriteProducts: idx===0?Array.from({length:5},(_,index)=>({
+      name:String(Array.isArray(p.favoriteProducts)?p.favoriteProducts[index]?.name||'':''),
+      reasons:Array.from({length:3},(_,reasonIndex)=>String(Array.isArray(p.favoriteProducts?.[index]?.reasons)?p.favoriteProducts[index].reasons[reasonIndex]||'':''))
+    })):[],
     sharedSourceUserId: String(p.sharedSourceUserId||''),
     sharedSourcePersonId: String(p.sharedSourcePersonId||'')
   }));
