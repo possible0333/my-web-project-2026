@@ -30,6 +30,17 @@
         <div><label for="fFocus1">意識すること 1</label><input id="fFocus1" class="text-input" placeholder="例：毎日プロスペへ連絡"></div>
         <div><label for="fFocus2">意識すること 2</label><input id="fFocus2" class="text-input" placeholder="例：期限をその場で決める"></div>
         <div><label for="fFocus3">意識すること 3</label><input id="fFocus3" class="text-input" placeholder="例：フォローを翌日に持ち越さない"></div>
+      </div>
+      <div class="v194-prospect-edit">
+        <div class="v194-prospect-edit-head">
+          <strong>プロスペ探し</strong>
+          <span>手段と、いつまでに何をするかを決めます。</span>
+        </div>
+        <div class="v194-prospect-inputs">
+          <div><label for="fProspectMethod">手段</label><input id="fProspectMethod" class="text-input" maxlength="80" placeholder="例：友人への連絡・イベント参加"></div>
+          <div><label for="fProspectDeadline">いつまでに</label><input id="fProspectDeadline" class="text-input" type="date"></div>
+          <div><label for="fProspectAction">何をする</label><input id="fProspectAction" class="text-input" maxlength="100" placeholder="例：候補者を10人書き出す"></div>
+        </div>
       </div>`;
     anchor.insertAdjacentElement('afterend',field);
   }
@@ -44,6 +55,9 @@
     target.self.focus1=String(src.focus1 ?? target.self.focus1 ?? '');
     target.self.focus2=String(src.focus2 ?? target.self.focus2 ?? '');
     target.self.focus3=String(src.focus3 ?? target.self.focus3 ?? '');
+    target.self.prospectMethod=String(src.prospectMethod ?? target.self.prospectMethod ?? '');
+    target.self.prospectDeadline=String(src.prospectDeadline ?? target.self.prospectDeadline ?? '');
+    target.self.prospectAction=String(src.prospectAction ?? target.self.prospectAction ?? '');
   }
 
   function restoreFromStorage(){
@@ -64,6 +78,9 @@
     state.self.focus1=String(state.self.focus1||'');
     state.self.focus2=String(state.self.focus2||'');
     state.self.focus3=String(state.self.focus3||'');
+    state.self.prospectMethod=String(state.self.prospectMethod||'');
+    state.self.prospectDeadline=String(state.self.prospectDeadline||'');
+    state.self.prospectAction=String(state.self.prospectAction||'');
   }
 
   function patchMigrate(){
@@ -85,7 +102,10 @@
       fGroupUpGoal:Number(p?.groupUpGoal||0)||'',
       fFocus1:p?.focus1||'',
       fFocus2:p?.focus2||'',
-      fFocus3:p?.focus3||''
+      fFocus3:p?.focus3||'',
+      fProspectMethod:p?.prospectMethod||'',
+      fProspectDeadline:p?.prospectDeadline||'',
+      fProspectAction:p?.prospectAction||''
     };
     Object.entries(values).forEach(([id,value])=>{
       const el=document.getElementById(id);
@@ -123,6 +143,9 @@
         data.focus1=safe(document.getElementById('fFocus1')?.value);
         data.focus2=safe(document.getElementById('fFocus2')?.value);
         data.focus3=safe(document.getElementById('fFocus3')?.value);
+        data.prospectMethod=safe(document.getElementById('fProspectMethod')?.value);
+        data.prospectDeadline=safe(document.getElementById('fProspectDeadline')?.value);
+        data.prospectAction=safe(document.getElementById('fProspectAction')?.value);
       }
       return data;
     };
@@ -154,21 +177,36 @@
     const monthlyTargetPv=Math.max(0,Number(p.monthlyTargetPv||0));
     const frontUpGoal=Math.max(0,Number(p.frontUpGoal||0));
     const groupUpGoal=Math.max(0,Number(p.groupUpGoal||0));
-    const focus=[safe(p.focus1),safe(p.focus2),safe(p.focus3)].filter(Boolean);
-    return `<div class="v128-plan-panel">
-      <div class="v128-plan-section v128-monthly-goal">
-        <div class="v128-plan-label">今月の目標</div>
-        <div class="v175-goal-grid">
-          <div><span>計画PV</span><b>${monthlyTargetPv?fmt(monthlyTargetPv):'未入力'}</b></div>
-          <div><span>フロントアップ</span><b>${frontUpGoal?`${fmt(frontUpGoal)}人`:'未入力'}</b></div>
-          <div><span>グループアップ</span><b>${groupUpGoal?`${fmt(groupUpGoal)}人`:'未入力'}</b></div>
-        </div>
-      </div>
-      <div class="v128-plan-section v128-focus-list">
-        <div class="v128-plan-label">意識すること</div>
-        <div class="v128-focus-items">${focus.length?focus.map((v,i)=>`<div><b>${i+1}</b><span>${escapeHtml(v)}</span></div>`).join(''):'<div class="v128-focus-empty">未入力</div>'}</div>
+    return `<div class="v128-plan-section v128-monthly-goal">
+      <div class="v128-plan-label">今月の目標</div>
+      <div class="v175-goal-grid">
+        <div><span>計画PV</span><b>${monthlyTargetPv?fmt(monthlyTargetPv):'未入力'}</b></div>
+        <div><span>フロントアップ</span><b>${frontUpGoal?`${fmt(frontUpGoal)}人`:'未入力'}</b></div>
+        <div><span>グループアップ</span><b>${groupUpGoal?`${fmt(groupUpGoal)}人`:'未入力'}</b></div>
       </div>
     </div>`;
+  }
+
+  function focusPanel(p){
+    const focus=[safe(p.focus1),safe(p.focus2),safe(p.focus3)];
+    const empty=focus.every(v=>!v);
+    return `<aside class="v194-self-side v194-focus-panel" aria-label="今月意識すること">
+      ${empty?'<span class="v194-empty-stamp">未記入</span>':''}
+      <div class="v194-side-title">今月意識すること</div>
+      <div class="v128-focus-items">${focus.map((v,i)=>`<div class="${v?'':'is-empty'}"><b>${i+1}</b><span>${escapeHtml(v||'未入力')}</span></div>`).join('')}</div>
+    </aside>`;
+  }
+
+  function prospectPanel(p){
+    const method=safe(p.prospectMethod),deadline=deadlineLabel(p.prospectDeadline),action=safe(p.prospectAction);
+    return `<aside class="v194-self-side v194-prospect-panel" aria-label="プロスペ探し">
+      <div class="v194-side-title">プロスペ探し</div>
+      <div class="v194-prospect-values">
+        <div><span>手段</span><b class="${method?'':'is-empty'}">${escapeHtml(method||'未入力')}</b></div>
+        <div><span>いつまでに</span><b class="${deadline?'':'is-empty'}">${escapeHtml(deadline||'未入力')}</b></div>
+        <div><span>何をする</span><b class="${action?'':'is-empty'}">${escapeHtml(action||'未入力')}</b></div>
+      </div>
+    </aside>`;
   }
 
   function pvText(v,unset){
@@ -180,24 +218,28 @@
     const gp=groupPvFor('self');
     const status=currentStatusLabel(p);
     const memos=[p.memo1,p.memo2,p.memo3].filter(v=>safe(v));
-    return `<div class="member-card v114-card v120-card v121-card v128-self-card-content" data-id="self" data-type="${p.type}">
-      <div class="status-stamp" title="${escapeHtml(status)}" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</div>
-      <div class="v128-self-main">
-        <div class="v128-self-identity">
-          <img class="card-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
-          <div class="v128-self-namewrap">
-            <div class="card-name">${escapeHtml(p.name||'自分')}</div>
-            <div class="v121-meta-row"><span class="type-badge" data-type="${p.type}">${p.type}</span>${profileInline(p)}</div>
+    return `<div class="v194-self-hub">
+      ${focusPanel(p)}
+      <div class="member-card v114-card v120-card v121-card v128-self-card-content" data-id="self" data-type="${p.type}">
+        <div class="status-stamp" title="${escapeHtml(status)}" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</div>
+        <div class="v128-self-main">
+          <div class="v128-self-identity">
+            <img class="card-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
+            <div class="v128-self-namewrap">
+              <div class="card-name">${escapeHtml(p.name||'自分')}</div>
+              <div class="v121-meta-row"><span class="type-badge" data-type="${p.type}">${p.type}</span>${profileInline(p)}</div>
+            </div>
           </div>
+          ${actionBlock(p)}
+          <div class="pv-box v114-pv ${goalState(p)}">
+            <div class="v114-pv-row"><span class="v114-pv-label">個人PV</span><span class="v114-pv-values"><small>計</small>${pvText(p.target,true)}<i>/</i><small>実</small>${fmt(p.actual)}</span></div>
+            <div class="v114-pv-row"><span class="v114-pv-label">GrPV</span><span class="v114-pv-values"><small>計</small>${pvText(gp.target,true)}<i>/</i><small>実</small>${fmt(gp.actual)}</span></div>
+          </div>
+          ${planningBlock(p)}
+          ${memos.length?`<div class="memo-list">${memos.map(v=>`<div class="memo-item">${escapeHtml(v)}</div>`).join('')}</div>`:''}
         </div>
-        ${actionBlock(p)}
-        <div class="pv-box v114-pv ${goalState(p)}">
-          <div class="v114-pv-row"><span class="v114-pv-label">個人PV</span><span class="v114-pv-values"><small>計</small>${pvText(p.target,true)}<i>/</i><small>実</small>${fmt(p.actual)}</span></div>
-          <div class="v114-pv-row"><span class="v114-pv-label">GrPV</span><span class="v114-pv-values"><small>計</small>${pvText(gp.target,true)}<i>/</i><small>実</small>${fmt(gp.actual)}</span></div>
-        </div>
-        ${memos.length?`<div class="memo-list">${memos.map(v=>`<div class="memo-item">${escapeHtml(v)}</div>`).join('')}</div>`:''}
       </div>
-      ${planningBlock(p)}
+      ${prospectPanel(p)}
     </div>`;
   }
 

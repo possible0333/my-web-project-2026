@@ -230,3 +230,93 @@
 #v122CaptureHost .v127-self-map-card.v128-self-card-content{
   width:430px!important;
 }
+
+/* v1.94: self card hub with monthly focus and prospecting panels */
+.v194-self-hub{
+  display:grid;
+  grid-template-columns:190px 244px 190px;
+  gap:12px;
+  align-items:center;
+  width:max-content;
+  max-width:none;
+  overflow:visible;
+}
+#treeRows .v194-self-hub .v127-self-map-card.v128-self-card-content{
+  width:244px!important;
+  min-height:190px!important;
+  display:block!important;
+  padding:12px!important;
+}
+#treeRows .v194-self-hub .v128-monthly-goal{margin-top:7px}
+.v194-self-side{
+  position:relative;
+  align-self:stretch;
+  min-width:0;
+  min-height:180px;
+  padding:12px;
+  border:2px solid #cbdcf7;
+  border-radius:17px;
+  background:linear-gradient(180deg,#f9fbff,#eef5ff);
+  box-shadow:0 7px 18px rgba(35,91,169,.11);
+  box-sizing:border-box;
+}
+.v194-focus-panel{border-color:#93c5fd;background:linear-gradient(180deg,#f7fbff,#eaf4ff)}
+.v194-prospect-panel{border-color:#f5c46b;background:linear-gradient(180deg,#fffdf6,#fff6df)}
+.v194-side-title{
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(84,120,170,.2);
+  color:#173b73;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:1000;
+  text-align:center;
+}
+.v194-prospect-panel .v194-side-title{color:#8a570b;border-bottom-color:rgba(180,83,9,.2)}
+.v194-self-side .v128-focus-items{gap:7px}
+.v194-self-side .v128-focus-items>div:not(.v128-focus-empty){font-size:10px;line-height:1.35}
+.v194-self-side .v128-focus-items>div.is-empty span{color:#94a3b8;font-weight:700}
+.v194-empty-stamp{
+  position:absolute;
+  right:-9px;
+  top:-9px;
+  z-index:4;
+  padding:5px 8px;
+  border:2px solid #b45309;
+  border-radius:8px;
+  background:#fffbeb;
+  color:#92400e;
+  font-size:9px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:.08em;
+  transform:rotate(7deg);
+  box-shadow:0 4px 9px rgba(180,83,9,.22),0 0 0 2px #fff;
+}
+.v194-prospect-values{display:grid;gap:7px}
+.v194-prospect-values>div{display:grid;gap:3px;padding:7px 8px;border:1px solid #f3dfb7;border-radius:9px;background:rgba(255,255,255,.86)}
+.v194-prospect-values span{color:#9a6a19;font-size:8px;font-weight:900}
+.v194-prospect-values b{color:#3f3424;font-size:10px;line-height:1.35;font-weight:900;overflow-wrap:anywhere}
+.v194-prospect-values b.is-empty{color:#a8a29e;font-weight:700}
+.v194-prospect-edit{margin-top:13px;padding-top:13px;border-top:1px solid #c5d8f4}
+.v194-prospect-edit-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.v194-prospect-edit-head strong{color:#8a570b;font-size:13px}
+.v194-prospect-edit-head span{color:#7c6c52;font-size:10px;font-weight:700}
+.v194-prospect-inputs{display:grid;grid-template-columns:1.15fr .8fr 1.35fr;gap:8px}
+
+@media(max-width:720px){
+  .v194-self-hub{grid-template-columns:160px 214px 160px;gap:9px}
+  #treeRows .v194-self-hub .v127-self-map-card.v128-self-card-content{width:214px!important;min-height:178px!important;padding:10px!important}
+  .v194-self-side{min-height:168px;padding:9px;border-radius:14px}
+  .v194-side-title{font-size:10px;margin-bottom:8px;padding-bottom:6px}
+  .v194-self-side .v128-focus-items>div:not(.v128-focus-empty){font-size:8px}
+  .v194-prospect-values{gap:5px}
+  .v194-prospect-values>div{padding:5px 6px}
+  .v194-prospect-values b{font-size:8px}
+  .v194-prospect-inputs{grid-template-columns:1fr}
+  .v194-prospect-edit-head{align-items:flex-start;flex-direction:column;gap:3px}
+}
+
+#v126CaptureHost .v194-self-hub,#v122CaptureHost .v194-self-hub{grid-template-columns:190px 244px 190px!important;gap:12px!important}
+#v126CaptureHost .v194-self-hub .v127-self-map-card.v128-self-card-content,
+#v122CaptureHost .v194-self-hub .v127-self-map-card.v128-self-card-content{width:244px!important;min-height:190px!important;display:block!important}

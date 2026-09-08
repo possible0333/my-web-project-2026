@@ -96,6 +96,9 @@
       focus1:String(p?.focus1||''),
       focus2:String(p?.focus2||''),
       focus3:String(p?.focus3||''),
+      prospectMethod:String(p?.prospectMethod||''),
+      prospectDeadline:String(p?.prospectDeadline||''),
+      prospectAction:String(p?.prospectAction||''),
       sharedSourceUserId:String(p?.sharedSourceUserId||''),
       sharedSourcePersonId:String(p?.sharedSourcePersonId||'')
     };

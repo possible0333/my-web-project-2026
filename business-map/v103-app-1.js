@@ -17,7 +17,8 @@ const DEFAULT_SELF = {
   status:'appointment-open',customStatus:'',memo1:'',memo2:'',memo3:'',
   age:'',job:'',hobby:'',etc:'',avatar:0,deadline:'',nextAction:'',
   monthlyGoal:'',monthlyTargetPv:0,frontUpGoal:0,groupUpGoal:0,
-  focus1:'',focus2:'',focus3:'',sharedSourceUserId:'',sharedSourcePersonId:''
+  focus1:'',focus2:'',focus3:'',prospectMethod:'',prospectDeadline:'',prospectAction:'',
+  sharedSourceUserId:'',sharedSourcePersonId:''
 };
 let state = {self:{...DEFAULT_SELF}, members:[]};
 let editingId = null;
@@ -122,6 +123,9 @@ function migrate(raw){
     focus1: String(p.focus1 || ''),
     focus2: String(p.focus2 || ''),
     focus3: String(p.focus3 || ''),
+    prospectMethod: String(p.prospectMethod || ''),
+    prospectDeadline: String(p.prospectDeadline || ''),
+    prospectAction: String(p.prospectAction || ''),
     sharedSourceUserId: String(p.sharedSourceUserId||''),
     sharedSourcePersonId: String(p.sharedSourcePersonId||'')
   }));
