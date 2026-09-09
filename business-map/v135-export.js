@@ -101,7 +101,7 @@
       .v174-export-readable .v119-card-action{padding:9px 10px!important}
       .v174-export-readable .v119-k{font-size:12px!important;min-width:56px!important}
       .v174-export-readable .v119-v{font-size:13px!important;line-height:1.45!important}
-      .v174-export-readable .v139-simplified-card .v119-card-action{padding:7px 8px!important;margin:7px 0 0 8px!important}
+      .v174-export-readable .v139-simplified-card .v119-card-action{padding:7px 8px!important;margin:7px 0 0!important}
       .v174-export-readable .v139-simplified-card .v120-action-row{display:block!important;min-width:0!important}
       .v174-export-readable .v139-simplified-card .v119-k{display:block!important;min-width:0!important;margin-bottom:2px;font-size:8px!important;line-height:1.2!important}
       .v174-export-readable .v139-simplified-card .v119-v{display:block!important;width:100%!important;min-width:0!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;font-size:9px!important;line-height:1.3!important}

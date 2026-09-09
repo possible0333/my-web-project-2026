@@ -51,13 +51,44 @@
 }
 
 /* v1.100: v1.39's compact hierarchy cards also show the shared deadline/action. */
+#treeRows .member-card.v139-simplified-card{
+  display:block!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:8px!important;
+  box-sizing:border-box!important;
+}
+#treeRows .member-card.v139-simplified-card .v139-card-head{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  padding-right:70px;
+}
+#treeRows .member-card.v139-simplified-card .v139-card-title{min-width:0;flex:1}
+#treeRows .member-card.v139-simplified-card .v139-card-head .card-avatar{flex:none}
+#treeRows .member-card.v139-simplified-card .v139-meta-list{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:wrap;
+  gap:2px 7px!important;
+  width:100%;
+  margin:5px 0 0;
+  padding:4px 6px;
+  border-radius:7px;
+  background:#f8fafc;
+  box-sizing:border-box;
+}
+#treeRows .member-card.v139-simplified-card .v139-meta-list .meta-line{min-width:0;max-width:100%}
+#treeRows .member-card.v139-simplified-card .v139-meta-list .meta-value{min-width:0;-webkit-line-clamp:1}
+#treeRows .member-card.v139-simplified-card>.pv-box{width:100%;margin-top:5px;box-sizing:border-box}
+#treeRows .member-card.v139-simplified-card>.memo-list{width:100%;margin-top:5px;box-sizing:border-box}
 #treeRows .member-card.v139-simplified-card .v119-card-action{
   display:flex;
   flex-direction:column;
   gap:3px;
-  grid-column:1/-1;
   width:auto;
-  margin:6px 0 0 8px;
+  margin:6px 0 0;
   padding:6px 7px;
   border:1px solid #f0d39a;
   border-left:4px solid #f59e0b;
@@ -82,5 +113,7 @@
 #treeRows .member-card.v139-simplified-card .v121-danger .v121-urgency-label{background:#dc2626}
 
 @media(max-width:720px){
-  #treeRows .member-card.v139-simplified-card .v119-card-action{margin-left:6px;padding:5px 6px}
+  #treeRows .member-card.v139-simplified-card{padding:6px!important}
+  #treeRows .member-card.v139-simplified-card .v139-card-head{padding-right:58px;gap:5px}
+  #treeRows .member-card.v139-simplified-card .v119-card-action{padding:5px 6px}
 }
