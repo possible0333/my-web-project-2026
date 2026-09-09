@@ -49,3 +49,33 @@
   #treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v120-card-head{margin-bottom:3px!important}
   #treeRows.v127-tree-root .member-card.v120-card:not(.v128-self-card-content) .v119-card-action{padding:4px 6px!important;margin:3px 0 4px!important}
 }
+
+/* v1.100: v1.39's compact hierarchy cards also show the shared deadline/action. */
+#treeRows .member-card.v139-simplified-card .v119-card-action{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  width:100%;
+  margin:5px 0 6px;
+  padding:6px 7px;
+  border:1px solid #f0d39a;
+  border-left:4px solid #f59e0b;
+  border-radius:9px;
+  background:#fffaf0;
+  line-height:1.18;
+  box-sizing:border-box;
+}
+#treeRows .member-card.v139-simplified-card .v120-action-row{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:5px;
+  align-items:center;
+  min-width:0;
+}
+#treeRows .member-card.v139-simplified-card .v119-k{color:#9a6200;font-size:8px;font-weight:900;white-space:nowrap}
+#treeRows .member-card.v139-simplified-card .v119-v{min-width:0;color:#3f321c;font-size:9px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#treeRows .member-card.v139-simplified-card .v119-deadline{color:#c2410c;font-size:10px}
+#treeRows .member-card.v139-simplified-card .v119-card-action.v121-danger{background:#fff1f2;border-color:#fecdd3;border-left-color:#dc2626}
+#treeRows .member-card.v139-simplified-card .v119-card-action.v121-warning{background:#fff7ed;border-color:#fed7aa;border-left-color:#f97316}
+#treeRows .member-card.v139-simplified-card .v121-urgency-label{display:inline-block;margin-left:4px;padding:2px 4px;border-radius:999px;background:#f97316;color:#fff;font-size:7px;font-style:normal;line-height:1;vertical-align:1px}
+#treeRows .member-card.v139-simplified-card .v121-danger .v121-urgency-label{background:#dc2626}
