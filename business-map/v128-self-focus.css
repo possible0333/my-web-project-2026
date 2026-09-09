@@ -307,12 +307,12 @@
 .v196-prospect-rank{position:absolute;right:9px;top:8px;padding:3px 8px;border-radius:999px;background:#fff0c7;color:#995d06;font-size:9px;font-weight:1000}
 .v196-prospect-fields{display:grid;grid-template-columns:1.15fr .8fr 1.35fr;gap:8px;padding-top:20px}
 .v196-prospect-list{display:grid;gap:7px}
-.v196-prospect-candidate-view{display:grid;grid-template-columns:37px minmax(0,1fr);gap:4px;align-items:start;padding:5px;border:1px solid #efd9aa;border-radius:10px;background:rgba(255,255,255,.75)}
-.v196-prospect-candidate-view>strong{display:block;margin:0;padding-top:3px;color:#995d06;font-size:8px;line-height:1.2;font-weight:1000}
+.v196-prospect-candidate-view{display:block;padding:5px;border:1px solid #efd9aa;border-radius:10px;background:rgba(255,255,255,.75)}
+.v196-prospect-candidate-view>strong{display:block;margin:0 2px 4px;padding:1px 1px 4px;border-bottom:1px solid rgba(180,83,9,.16);color:#995d06;font-size:8px;line-height:1.2;font-weight:1000}
 .v196-prospect-candidate-view .v194-prospect-values{gap:2px}
 .v196-prospect-candidate-view .v194-prospect-values>div{display:flex;align-items:baseline;gap:5px;padding:3px 5px;border-radius:7px}
 .v196-prospect-candidate-view .v194-prospect-values span{flex:none;width:39px;font-size:7px}
-.v196-prospect-candidate-view .v194-prospect-values b{min-width:0;font-size:9px}
+.v196-prospect-candidate-view .v194-prospect-values b{min-width:0;flex:1;font-size:9px}
 
 @media(max-width:720px){
   .v194-self-hub{grid-template-columns:160px 214px 160px;gap:9px}
