@@ -66,7 +66,6 @@
       <div class="card-main">
         <div class="card-name">${escapeHtml(p.name||'名称未設定')}</div>
         <span class="type-badge" data-type="${p.type}">${p.type}</span>
-        ${actionHtml(p)}
         <div class="pv-box ${goalState(p)}">
           <div><b>個人PV</b></div>
           <div>計 ${fmt(p.target)} / 実 ${fmt(p.actual)}</div>
@@ -78,6 +77,7 @@
           <div class="memo-item">${escapeHtml(p.memo3||'')}</div>
         </div>
       </div>
+      ${actionHtml(p)}
     </div>`;
   }
 
