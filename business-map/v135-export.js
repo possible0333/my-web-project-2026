@@ -101,6 +101,11 @@
       .v174-export-readable .v119-card-action{padding:9px 10px!important}
       .v174-export-readable .v119-k{font-size:12px!important;min-width:56px!important}
       .v174-export-readable .v119-v{font-size:13px!important;line-height:1.45!important}
+      .v174-export-readable .v139-simplified-card .v119-card-action{padding:8px!important;margin:6px 0!important}
+      .v174-export-readable .v139-simplified-card .v120-action-row{display:block!important;min-width:0!important}
+      .v174-export-readable .v139-simplified-card .v119-k{display:block!important;min-width:0!important;margin-bottom:2px;font-size:9px!important;line-height:1.2!important}
+      .v174-export-readable .v139-simplified-card .v119-v{display:block!important;width:100%!important;min-width:0!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;font-size:13px!important;line-height:1.35!important}
+      .v174-export-readable .v139-simplified-card .v120-action-row+.v120-action-row{margin-top:7px!important;padding-top:6px!important;border-top:1px solid rgba(245,158,11,.24)!important}
       .v174-export-readable .v121-urgency-label{font-size:11px!important}
       .v174-export-readable .v114-pv-label{font-size:12px!important}
       .v174-export-readable .v114-pv-values{font-size:13px!important;line-height:1.35!important}
