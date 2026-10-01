@@ -1,5 +1,5 @@
 (function(){
-  const version='v1.106';
+  const version='v1.107';
   window.BUSINESS_MAP_CONFIG=Object.freeze({
     ...(window.BUSINESS_MAP_CONFIG||{}),
     version,
