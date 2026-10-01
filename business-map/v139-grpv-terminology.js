@@ -58,13 +58,15 @@
     return `<div class="member-card v139-simplified-card${missingAction?' v193-missing-action-card':''}" data-id="${p.id}" data-type="${p.type}">
       ${p.id!=='self'&&Number(p.target||0)>0&&Number(p.actual||0)>=Number(p.target||0)?'<span class="v153-achieved">達成</span>':''}
       ${missingAction?'<span class="v193-action-missing-stamp" aria-label="期限と何をするか未設定">いつ何する？</span>':''}
-      <div class="status-stamp" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</div>
       <div class="v139-card-head">
         <img class="card-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
         <div class="v139-card-title">
           <div class="card-name">${escapeHtml(p.name||'名称未設定')}</div>
-          <span class="type-badge" data-type="${p.type}">${p.type}</span>
         </div>
+      </div>
+      <div class="v139-card-badges">
+        <span class="type-badge" data-type="${p.type}">${escapeHtml(p.type)}</span>
+        <span class="status-stamp" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</span>
       </div>
       <div class="meta-list v139-meta-list">${metaLines(p)}</div>
       <div class="pv-box ${goalState(p)}">
