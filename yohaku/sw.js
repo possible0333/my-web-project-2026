@@ -1,5 +1,5 @@
 /* Build replaces the version; this worker only handles Money Mgr's own files. */
-const CACHE='money-mgr-shell-6298628e1f91bd92';
+const CACHE='money-mgr-shell-6f85e1732da3c6f3';
 const ROOT=new URL('./',self.location.href).href;
 const FILES=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable.png','apple-touch-icon.png'].map(path=>new URL(path,ROOT).href);
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)));});
