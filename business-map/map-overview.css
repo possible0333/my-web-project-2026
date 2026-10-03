@@ -1,5 +1,7 @@
-.map-overview-header{width:100%;min-width:1120px;max-width:1400px;box-sizing:border-box;margin:0 auto 18px}
-.map-overview-row{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px;align-items:start}
+.map-overview-header{width:100%;min-width:1120px;box-sizing:border-box;margin:0 auto 18px}
+.map-overview-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(740px,1040px) minmax(170px,1fr);gap:12px;align-items:start}
+.map-overview-row:before{content:""}
+.map-overview-row>[data-overview="next"]{justify-self:end;width:170px}
 .map-financial-summary{display:grid;grid-template-columns:minmax(290px,1fr) minmax(400px,1.2fr);gap:14px;align-items:center;padding:10px 12px;border:2px solid #b8d8ce;border-radius:18px;background:linear-gradient(110deg,#f5f9ff,#effbf5);box-shadow:0 6px 18px #143e3010}
 .map-financial-summary>div{min-width:0}
 .map-financial-summary .bonus-summary{border:0;border-left:1px solid #b8d8ce;border-radius:0;box-shadow:none;background:transparent;padding:0 0 0 18px}

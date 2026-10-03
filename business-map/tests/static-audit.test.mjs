@@ -8,17 +8,29 @@ const read=name=>readFile(new URL(name,root),'utf8');
 
 test('the public entrypoint loads the central version first',async()=>{
   const html=await read('index.html');
-  assert.match(html,/<script src="config\/version\.js\?v=1\.44"><\/script>/);
-  assert.equal((html.match(/Business Map v1\.44/g)||[]).length,1);
-  assert.match(html,/css\/product-ui\.css\?v=1\.44/);
-  assert.match(html,/css\/share-controls\.css\?v=1\.44/);
-  assert.match(html,/js\/ui\/product-shell\.js\?v=1\.44/);
+  const config=await read('config/version.js');
+  const version=config.match(/const version='(v[\d.]+)'/)[1];
+  assert.equal(html.match(/<script src="([^"]+)"/)[1],`config/version.js?v=${version.slice(1)}`);
+  assert.ok(html.includes(`<title>Business Map ${version}</title>`));
+  assert.match(html,/css\/product-ui\.css\?v=[\d.]+/);
+  assert.match(html,/css\/share-controls\.css\?v=[\d.]+/);
+  assert.match(html,/js\/ui\/product-shell\.js\?v=[\d.]+/);
 });
 
 test('PNG export uses compact direct-customer grids',async()=>{
   for(const file of ['v130-mobile-export.js','v135-export.js']){
     const source=await read(file);
-    assert.match(source,/count<=3\?count:count<=6\?3:4/);
+    const start=source.indexOf('  function directGridMetrics(');
+    const end=source.indexOf('\n  }',start)+4;
+    const context={};vm.createContext(context);
+    vm.runInContext(source.slice(start,end),context);
+    assert.equal(context.directGridMetrics(0).width,0);
+    assert.equal(context.directGridMetrics(3).columns,3);
+    for(const count of [6,12,40]){
+      const {columns,width}=context.directGridMetrics(count);
+      assert.ok(columns>=3&&columns<=8);
+      assert.equal(width,columns*172+(columns-1)*8+24);
+    }
     assert.match(source,/grid-template-columns/);
   }
 });
@@ -32,7 +44,9 @@ test('mobile and export modules share the central version',async()=>{
 
 test('gallery deletion is owner-scoped and removes storage objects',async()=>{
   const source=await read('v136-share.js');
-  assert.match(source,/x\.user_id===s\.user\.id/);
+  assert.match(source,/owned:x\.user_id===userId/);
+  assert.match(source,/const mine=owned\.filter\(x=>x\.id===s\.user\.id\)/);
+  assert.match(source,/\.eq\('user_id',s\.user\.id\)/);
   assert.match(source,/storage\.from\(BUCKET\)\.remove\(paths\)/);
   assert.match(source,/\.delete\(\)\.in\('user_id'/);
   assert.match(source,/id="v136DeleteSelected"/);

@@ -29,7 +29,7 @@
   }
 
   function applyZoom(next){
-    zoom=Math.max(.5,Math.min(1.5,Number(next)||1));
+    zoom=Math.max(.1,Math.min(1.5,Number.isFinite(Number(next))?Number(next):1));
     const area=document.getElementById('mapCanvasArea');
     if(!area) return;
     area.style.zoom=zoom;
@@ -58,8 +58,10 @@
     group.innerHTML='<button type="button" class="btn" id="v107ZoomOut">−</button><span class="v107-zoom-value" id="v107ZoomValue">100%</span><button type="button" class="btn" id="v107ZoomIn">＋</button><button type="button" class="btn" id="v107ZoomFit">全体</button>';
     const imageBtn=document.getElementById('mapSaveImageBtn');
     if(imageBtn&&imageBtn.nextSibling) controls.insertBefore(group,imageBtn.nextSibling); else controls.insertBefore(group,controls.firstChild);
-    document.getElementById('v107ZoomOut').onclick=()=>applyZoom(zoom-.1);
-    document.getElementById('v107ZoomIn').onclick=()=>applyZoom(zoom+.1);
+    // Auto-fit also changes the canvas zoom; always step from the visible scale.
+    const currentZoom=()=>Number(document.getElementById('mapCanvasArea')?.style.zoom)||zoom;
+    document.getElementById('v107ZoomOut').onclick=()=>applyZoom(currentZoom()-.1);
+    document.getElementById('v107ZoomIn').onclick=()=>applyZoom(currentZoom()+.1);
     document.getElementById('v107ZoomFit').onclick=fitZoom;
   }
 

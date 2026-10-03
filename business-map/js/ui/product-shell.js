@@ -3,7 +3,7 @@
   let mapObserver=null;
 
   function modalOpen(){
-    return !!document.querySelector('.modal.show,.v136-share-modal.is-open,.v136-viewer.is-open,[id$="ImageModal"][style*="display: flex"]');
+    return !!document.querySelector('.modal.show,.v156-modal.open,.v136-share-modal.is-open,.v136-viewer.is-open,[id$="ImageModal"][style*="display: flex"]');
   }
 
   function syncBodyLock(){ document.body.classList.toggle('bm-modal-open',modalOpen()); }
