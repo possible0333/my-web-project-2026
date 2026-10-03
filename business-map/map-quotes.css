@@ -1,0 +1,9 @@
+/* Stay in the map coordinate system on phones, zoom and image exports. */
+.map-top-stage>.map-quote-panel{grid-column:1;grid-row:1;justify-self:start;width:100%;max-width:320px;min-width:0;box-sizing:border-box;padding:15px 16px;border:1px solid #b9d8cc;border-top:4px solid #188365;border-radius:15px;background:#f3faf6;color:#24483b;box-shadow:0 5px 16px #143e300a}
+.map-top-stage>.map-overview-header,.map-top-stage>#nextMonthProspects{grid-row:1}
+.map-quote-heading{font-size:11px;font-weight:800;line-height:1.4;letter-spacing:.08em;color:#28785d}
+.map-quote-panel .map-quote-text{font-size:16px;font-weight:700;line-height:1.65;margin:10px 0 12px;overflow-wrap:anywhere;white-space:normal}
+.map-quote-author{font-size:12px;font-weight:700;line-height:1.5;margin:0;overflow-wrap:anywhere}
+.map-quote-kind{display:block;font-size:9px;line-height:1.5;margin-top:3px;color:#536b5e}
+.map-quote-source{display:block;font-size:9px;line-height:1.5;margin-top:7px;padding:4px 0;color:#496c5a;overflow-wrap:anywhere;text-decoration:underline;text-underline-offset:2px}
+.map-quote-source:focus-visible{outline:2px solid #188365;outline-offset:3px}

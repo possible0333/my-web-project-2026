@@ -279,6 +279,7 @@
     if(!wrap)return;
     let stage=document.getElementById('mapTopStage');
     if(!stage){stage=document.createElement('div');stage.id='mapTopStage';stage.className='map-top-stage';wrap.prepend(stage);}
+    window.MapQuotes?.mount(stage);
     let header=document.getElementById('mapOverviewHeader');
     if(!header){
       header=document.createElement('div');header.id='mapOverviewHeader';header.className='map-overview-header';
