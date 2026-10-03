@@ -12,5 +12,6 @@
 .map-overview-header .bonus-summary-values{gap:8px}
 .map-overview-header .bonus-breakdown{gap:8px;font-size:11px}
 .map-overview-header .bonus-breakdown>span{padding:7px 5px;gap:3px}
-.map-overview-legend .legend{position:static!important;display:flex;flex-wrap:wrap;justify-content:center;padding:12px 0 0!important;margin:0!important;gap:10px}
+.map-legend-footer{position:relative;clear:both;margin:18px auto 0;padding:10px 0}
+.map-legend-footer .legend{position:static!important;display:flex;flex-wrap:wrap;justify-content:center;padding:0!important;margin:0!important;gap:10px}
 .v174-export-readable .map-overview-header{margin-bottom:18px}

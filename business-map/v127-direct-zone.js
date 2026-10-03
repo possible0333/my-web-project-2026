@@ -264,7 +264,7 @@
     let header=document.getElementById('mapOverviewHeader');
     if(!header){
       header=document.createElement('div');header.id='mapOverviewHeader';header.className='map-overview-header';
-      header.innerHTML='<div class="map-overview-row"><div data-overview="favorites"></div><div data-overview="pv"></div><div data-overview="income"></div><div data-overview="next"></div></div><div class="map-overview-legend"></div>';
+      header.innerHTML='<div class="map-overview-row"><div data-overview="favorites"></div><div data-overview="pv"></div><div data-overview="income"></div><div data-overview="next"></div></div>';
       wrap.prepend(header);
     }
     const dock=document.getElementById('v196FavoriteDock');
@@ -275,7 +275,12 @@
     const next=document.getElementById('nextMonthProspects');
     if(next)header.querySelector('[data-overview="next"]').appendChild(next);
     const legend=document.getElementById('legend');
-    if(legend)header.querySelector('.map-overview-legend').appendChild(legend);
+    let footer=document.getElementById('mapLegendFooter');
+    if(!footer){
+      footer=document.createElement('div');footer.id='mapLegendFooter';footer.className='map-legend-footer';
+      document.getElementById('mapCanvasArea').insertAdjacentElement('afterend',footer);
+    }
+    if(legend)footer.appendChild(legend);
     renderFavoriteDock();
   }
 

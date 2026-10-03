@@ -133,11 +133,6 @@
       f.style.cssText='position:static!important;inset:auto!important;width:240px!important;max-width:240px!important;margin:0!important;padding:9px 10px!important;box-shadow:none!important;flex:0 0 240px;';
       top.appendChild(f);
     }
-    if(legend&&!overview){
-      const l=legend.cloneNode(true); l.removeAttribute('id');
-      l.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;flex:1;padding:0;margin:0;font-size:11px;color:#64748b;';
-      top.appendChild(l);
-    }
     if(next&&!overview){
       const n=next.cloneNode(true); n.removeAttribute('id');
       n.style.cssText='position:static!important;inset:auto!important;width:auto!important;max-width:260px!important;margin:0!important;padding:8px 10px!important;box-shadow:none!important;flex:0 0 auto;';
@@ -155,6 +150,11 @@
       if(direct) applyDirectGrid(direct);
     }
     surface.appendChild(area);
+    if(legend){
+      const footer=document.createElement('div');footer.className='map-legend-footer';
+      const l=legend.cloneNode(true);l.removeAttribute('id');
+      footer.appendChild(l);surface.appendChild(footer);
+    }
     host.appendChild(surface);
     document.body.appendChild(host);
 
@@ -225,7 +225,7 @@
   function measureContentBounds(surface){
     const surfaceRect=surface.getBoundingClientRect();
     const selectors=[
-      '.map-overview-header',
+      '.map-overview-header','.map-legend-footer',
       '.v186-export-top span','.v186-export-top b','.v186-export-top .v115-next-panel','.v186-export-top .v116-next-panel',
       '.v176-map-pv-summary','.bonus-summary','.v127-direct-zone','.v185-front-branch','.v180-deep-group','.v180-deep-owner','.v190-overdue-page','.v190-overdue-group','.v190-overdue-card',
       '.member-card','.v194-self-side','.v194-empty-stamp','.v195-favorites-panel','.v180-deep-empty','.v193-action-missing-stamp','#treeLines path','#treeLines circle'
