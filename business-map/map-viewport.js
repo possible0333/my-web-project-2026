@@ -1,6 +1,7 @@
 /* One coordinate system for the overview, network, products and legend. */
 (function(){
-  let manual=false,frame=0,pinch=null,suppressClickUntil=0;
+  // Start at 100%. Automatic fit is opt-in through the 「全体」 button.
+  let manual=true,frame=0,pinch=null,suppressClickUntil=0;
   const byId=id=>document.getElementById(id);
   const current=()=>Number(byId('mapCanvasArea')?.style.zoom)||1;
   const clamp=value=>Math.max(.02,Math.min(1.5,Number.isFinite(Number(value))?Number(value):1));
@@ -52,6 +53,7 @@
   function distance(touches){return Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);}
   function bind(){
     const wrap=document.querySelector('.map-wrap');if(!wrap)return;
+    setZoom(1,false);
     let viewportWidth=window.innerWidth;
     window.addEventListener('resize',()=>{
       // Mobile browser chrome and keyboards change height, not map width.

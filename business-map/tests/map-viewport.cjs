@@ -13,11 +13,22 @@ let bind;
 const context={window:{innerWidth:390,addEventListener:(name,fn)=>events[name]=fn},document:{readyState:'loading',addEventListener:(name,fn)=>bind=fn,getElementById:id=>nodes[id],querySelector:()=>wrap},getComputedStyle:()=>({paddingLeft:'9px',paddingRight:'9px'}),requestAnimationFrame:fn=>{fn();return 1;},cancelAnimationFrame(){},Date};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../map-viewport.js'),'utf8'),context);
+// A stale scale must not carry over into the initial view.
+nodes.mapCanvasArea.style.zoom='.03';
 bind();
 const viewport=context.window.MapViewport;
-assert.equal(Number(nodes.mapCanvasArea.style.zoom),372/2416);
+assert.equal(Number(nodes.mapCanvasArea.style.zoom),1);
+assert.equal(nodes.v107ZoomValue.textContent,'100%');
 assert.equal(nodes.mapTopStage.style.width,'2416px');
 for(const id of ['mapTopStage','v196FavoriteDock','mapLegendFooter'])assert.equal(nodes[id].style.zoom,nodes.mapCanvasArea.style.zoom);
+// Legacy initial-render and delayed mobile-fit callbacks cannot shrink the map.
+natural=12000;
+viewport.autoFit();viewport.autoFit();events.resize();
+assert.equal(Number(nodes.mapCanvasArea.style.zoom),1);
+assert.equal(nodes.v107ZoomValue.textContent,'100%');
+// Explicit 「全体」 still fits a large map.
+viewport.fit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),372/12016);
+natural=2400;
 viewport.setZoom(.52);
 events.resize(); // Height-only resize must not refit after a manual zoom.
 assert.equal(Number(nodes.mapCanvasArea.style.zoom),.52);
@@ -40,4 +51,4 @@ listeners.touchstart({touches:[{clientX:0,clientY:0}],preventDefault(){assert.fa
 viewport.setZoom(5);assert.equal(Number(nodes.mapCanvasArea.style.zoom),1.5);
 viewport.setZoom(0);assert.equal(Number(nodes.mapCanvasArea.style.zoom),.02);
 assert.match(fs.readFileSync(path.join(__dirname,'../v135-export.js'),'utf8'),/top\.style\.zoom='1'/);
-console.log('Whole-map zoom, real fit, pinch, one-finger scroll, resize preservation and export reset: passed');
+console.log('100% startup, delayed auto-fit protection, explicit fit, whole-map zoom, pinch, resize and export reset: passed');
