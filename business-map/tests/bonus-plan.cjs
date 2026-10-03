@@ -1,0 +1,69 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const B=require('../bonus-plan.js');
+const person=(id,target,type='ABO',parentId='self',extra={})=>({id,target,type,parentId,...extra});
+const run=(self,members=[])=>B.calculate({self:person('self',self.target??10000,'ABO',null,self),members});
+for(const [pv,r] of [[0,0],[29999,0],[30000,3],[89999,3],[90000,6],[180000,9],[360000,12],[600000,15],[1000000,18],[1500000,21]])assert.equal(B.rate(pv),r);
+for(let n=0;n<=12;n++){
+  const x=run({target:600000,bronze9Count:n,bronze15Count:n});
+  assert.equal(x.items.bronze9,n===12?0:5000+Math.floor(n/3)*5000);
+  assert.equal(x.items.bronze15,n===12?0:30000+Math.floor(n/3)*5000);
+}
+assert.equal(run({target:179999}).items.bronze9,0);
+assert.equal(run({target:599999}).items.bronze15,0);
+// FY2027 BSI table, tax-inclusive; direct sponsorship and personal PV only.
+for(let n=0;n<=8;n++)assert.equal(run({},Array.from({length:n},(_,i)=>person('p'+i,10000,i%2?'カスタマー':'ABO','self',{bsiEligible:true}))).items.bsi,[0,2000,4000,9000,12000,15000,18000][Math.min(n,6)]);
+assert.equal(run({target:9999},[person('p',10000,'ABO','self',{bsiEligible:true})]).items.bsi,0);
+assert.equal(run({},[person('a',0),person('b',10000,'ABO','a',{bsiEligible:true})]).items.bsi,0);
+assert.equal(run({},[person('a',9999,'ABO','self',{bsiEligible:true}),person('b',10000,'プロスペ','self',{bsiEligible:true}),person('c',10000,'カスタマー','self',{bsiEligible:true,status:'next-month'})]).items.bsi,0);
+// Contract bronze example: 180k group, 140k at 3%; actual 1.446*1.1 (not rounded 1.59).
+const example=run({target:30000},[person('a',60000),person('b',50000),person('c',30000),person('d',10000,'カスタマー','self',{bsiEligible:true})]);
+assert.equal(example.items.performance,19087);
+assert.equal(example.items.bsi,2000);assert.equal(example.items.bronze9,5000);
+assert.equal(example.totalIncome,26087);
+// Customer volume is not deducted as if the customer were an ABO.
+assert.equal(run({target:30000},[person('c',60000,'カスタマー')]).items.performance,8589);
+assert.equal(run({target:30000},[person('c',60000,'ABO')]).items.performance,5726);
+const nested=run({target:30000},[person('a',30000),person('b',60000,'ABO','a')]);
+assert.equal(nested.items.performance,2863); // deduct direct group's gross, not its net payout
+const sp1=run({target:1500000,spBonusEligible:true},[person('b',1500000)]);
+assert.equal(sp1.award,1500000);assert.equal(sp1.items.leadership,143154);assert.equal(sp1.items.monthlyQ,100000);
+const sp2=run({target:600000,spBonusEligible:true},[person('b',1500000)]);
+assert.equal(sp2.sp,'II');assert.equal(sp2.items.leadership,57262);assert.equal(sp2.items.monthlyQ,20000);
+assert.equal(run({target:600000},[person('b',1500000)]).items.monthlyQ,0);
+const sp3=run({target:100000,spBonusEligible:true},[person('a',1500000),person('b',1500000)]);
+assert.equal(sp3.sp,'III');assert.equal(sp3.items.monthlyQ,0);assert.equal(sp3.items.leadership,152698);
+const throughSps=run({target:1500000,spBonusEligible:true},[person('a',100000),person('b',1500000,'ABO','a')]);
+assert.equal(throughSps.items.leadership,152698);
+const sps=run({target:100000,spBonusEligible:true},[person('b',1500000)]);
+assert.equal(sps.items.leadership,0);assert.equal(sps.items.monthlyQ,0);
+const repeat=run({repeatOrderEligible:true,repeatOrderMonth:3});assert.equal(repeat.items.repeatOrder,1000);
+assert.equal(run({repeatOrderEligible:true,repeatOrderMonth:4}).items.repeatOrder,0);
+assert.equal(run({repeatOrderMonth:3}).items.repeatOrder,0);
+assert.equal(B.fields({bronze9Count:Infinity}).bronze9Count,0);
+assert.equal(B.fields({type:'ABO',bsiEligible:'false'}).bsiEligible,false);
+assert(run({},[person('orphan',99999,'ABO','missing')]).warnings.length);
+// Shared serializer + actual restore mapper preserve settings/checkboxes.
+const context={console,BonusPlan:B,document:{readyState:'loading',addEventListener(){}},navigator:{userAgent:''}};context.window=context;
+vm.createContext(context);
+const share=fs.readFileSync(require.resolve('../v136-share.js'),'utf8').replace(/  if\(document\.readyState==='loading'\) document\.addEventListener\('DOMContentLoaded',bind,\{once:true\}\); else bind\(\);/,'  window.sharedPerson=sharedPerson;');
+vm.runInContext(share,context);
+const src=person('self',30000,'ABO',null,{bronze9Count:4,bronze15Count:7,otherMonthlyBonus:1234,repeatOrderEligible:true,repeatOrderMonth:6,spBonusEligible:true});
+const saved=context.sharedPerson(src);
+for(const [key,value] of Object.entries(B.fields(src)))assert.equal(saved[key],value,key);
+const member=context.sharedPerson(person('m',10000,'カスタマー','self',{bsiEligible:true}));assert.equal(member.bsiEligible,true);
+const app2=fs.readFileSync(require.resolve('../v103-app-2.js'),'utf8');
+const start=app2.indexOf('function operationalMapToState('),end=app2.indexOf('\nfunction ',start+1);
+vm.runInContext(app2.slice(start,end),context);
+context.uid=()=>Math.random().toString();context.DEFAULT_SELF={};
+const restored=context.operationalMapToState({people:[saved,member]});
+for(const [key,value] of Object.entries(B.fields(src)))assert.equal(restored.self[key],value,key);
+assert.equal(restored.members[0].bsiEligible,true);
+const app1=fs.readFileSync(require.resolve('../v103-app-1.js'),'utf8');
+const migrateStart=app1.indexOf('function migrate('),migrateEnd=app1.indexOf('\nfunction ',migrateStart+1);
+context.statusMap={'appointment-open':true};
+vm.runInContext(app1.slice(migrateStart,migrateEnd),context);
+const migrated=context.migrate(restored);
+assert.equal(migrated.self.bronze9Count,4);assert.equal(migrated.members[0].bsiEligible,true);
+console.log('Bonus boundaries, BSI, tax, differential, SP, persistence: passed');

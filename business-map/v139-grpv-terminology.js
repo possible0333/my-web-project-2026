@@ -65,6 +65,7 @@
         </div>
       </div>
       <div class="v139-card-badges">
+        ${window.BonusUI?.badge(p)||''}
         <span class="type-badge" data-type="${p.type}">${escapeHtml(p.type)}</span>
         <span class="status-stamp" style="background:${currentStatusColor(p)}">${escapeHtml(status)}</span>
       </div>

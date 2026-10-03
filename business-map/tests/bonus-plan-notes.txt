@@ -1,0 +1,29 @@
+Monthly planned bonus estimate — v1.109
+
+Basis: supplied Business Support 2027 (PDF filename business_support2026_20251014 (4).pdf), printed pp.10–17.
+Official supporting contract: https://www.amwaylive.com/h_img/pdf/business/keiyakusyomen_20250801.pdf
+Contract pp.24–32: performance schedule, direct sponsor gross deduction, breakaway groups.
+Contract pp.39–42: domestic leadership 6%, minimum guarantee; pp.50–53 bronze tiers and monthly Q.
+The contract's older BSI table is superseded here by the supplied FY2027 table (maximum 18,000 yen).
+Current average BV/PV verified against https://www.amwaylive.com/psl/houtei.html : 1.446.
+
+Explicit user choices: PV estimates; no annual bonuses; disregard bronze eligibility conditions other than count.
+Bronze9/15 therefore require only corresponding planned performance rate and remaining count (0–11 previous awards).
+Both bonuses may apply simultaneously. Other actual qualification rules are NOT enforced.
+All totals are estimates, not eligibility certification or guaranteed payouts.
+
+Performance and domestic leadership use 1.446 BV/PV and the requested uniform 10% VAT.
+Actual personal-purchase rebates may use 8% on reduced-rate products; this estimate intentionally does not model product mix.
+Calculated line items are rounded to nearest yen. Fixed BSI/bronze/monthly-Q/repeat incentives are already inclusive of tax.
+Next-month card's own PV is excluded; descendants remain independently included, consistent with existing map PV calculations.
+All non-ABO planned purchases accrue to their nearest ABO (prospects assumed to purchase as customers until changed to ABO).
+Customer/retail PV must not also be included in the sponsor's entered individual PV: each card is incremental volume.
+BSI uses checked, directly sponsored ABO/customer cards with own planned PV >=10,000 and self own planned PV >=10,000.
+The checkbox is a manually confirmed 13-month eligibility marker; it does not expire automatically.
+Leadership/Q require the self SP-eligibility confirmation. Domestic descendants' SP qualification is assumed from PV structure.
+Repeat order requires manually confirmed program eligibility and current streak month; it does not advance itself.
+Ruby/depth/international/foster/SBI and other unmapped monthly incentives are NOT automatically calculated. Explicitly labeled manual tax-inclusive input exists.
+Annual, lump sum and retail profits are excluded.
+
+Test: node business-map/tests/bonus-plan.cjs
+No Supabase schema/auth/RLS/API behavior was changed: existing JSON serialization carries additional fields.

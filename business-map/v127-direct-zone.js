@@ -102,6 +102,7 @@
       ${missingAction?'<span class="v193-action-missing-stamp v193-mini-action-missing" aria-label="期限と何をするか未設定">いつ何する？</span>':''}
       <img class="v127-mini-avatar" src="${ICONS[p.avatar||0]}" alt="avatar">
       <span class="v127-mini-main">
+        ${window.BonusUI?.badge(p)||''}
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
         <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv"><b>計 ${fmt(p.target||0)}</b><b>実 ${fmt(p.actual||0)}</b></span></span>
         ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
@@ -249,7 +250,7 @@
 
   function pageContentsHtml(){
     if(mapPage==='overdue') return overduePageHtml();
-    return `<div class="v195-map-top">${monthlyPvSummaryHtml()}</div>${directZoneHtml()}${buildNode('self',0)}`;
+    return `<div class="v195-map-top">${monthlyPvSummaryHtml()}${window.BonusUI?.panel(state)||''}</div>${directZoneHtml()}${buildNode('self',0)}`;
   }
 
   function renderFavoriteDock(){

@@ -83,12 +83,14 @@ function openModal(id){
   selectedAvatar = Number.isFinite(+p.avatar) ? +p.avatar : 0;
   renderAvatarPicker();
   updateCustomStatusVisibility();
+  window.BonusUI?.fill(p);
   $('modal').classList.add('show');
 }
 function closeModal(){ $('modal').classList.remove('show'); }
 function updateCustomStatusVisibility(){ $('customStatusWrap').classList.toggle('hidden', $('fStatus').value !== 'custom'); }
 function gatherForm(){
   return {
+    ...window.BonusUI?.gather(),
     name: $('fName').value.trim() || '名称未設定',
     type: $('fType').value,
     parentId: editingId==='self' ? null : $('fSponsor').value,
@@ -179,6 +181,7 @@ function operationalMapToState(mapData){
     type:isSelf?'ABO':String(p?.type||'ABO'),
     parentId:isSelf?null:(String(p?.parentId||'self')===ownerSourceId?'self':String(p?.parentId||'self')),
     target:Math.max(0,Number(p?.targetPv??p?.target??0)),
+    ...window.BonusPlan?.fields(p),
     actual:Math.max(0,Number(p?.actualPv??p?.actual??0)),
     status:String(p?.status||'appointment-open'),
     customStatus:String(p?.customStatus||''),

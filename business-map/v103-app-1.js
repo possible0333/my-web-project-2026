@@ -98,6 +98,7 @@ function migrate(raw){
     return map[rankOrStatus] || 'appointment-open';
   };
   const migrated = people.map((p,idx)=>({
+    ...window.BonusPlan?.fields(p),
     id: p.id || (idx===0?'self':uid()),
     name: p.name || (idx===0?'自分':'名称未設定'),
     type: p.type || 'ABO',
