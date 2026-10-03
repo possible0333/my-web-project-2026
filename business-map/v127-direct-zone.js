@@ -250,12 +250,33 @@
 
   function pageContentsHtml(){
     if(mapPage==='overdue') return overduePageHtml();
-    return `<div class="v195-map-top">${monthlyPvSummaryHtml()}${window.BonusUI?.panel(state)||''}</div>${directZoneHtml()}${buildNode('self',0)}`;
+    return `${directZoneHtml()}${buildNode('self',0)}`;
   }
 
   function renderFavoriteDock(){
     const dock=document.getElementById('v196FavoriteDock');
     if(dock) dock.innerHTML=favoriteProductsHtml();
+  }
+
+  function renderMapHeader(){
+    const wrap=document.querySelector('.map-wrap');
+    if(!wrap)return;
+    let header=document.getElementById('mapOverviewHeader');
+    if(!header){
+      header=document.createElement('div');header.id='mapOverviewHeader';header.className='map-overview-header';
+      header.innerHTML='<div class="map-overview-row"><div data-overview="favorites"></div><div data-overview="pv"></div><div data-overview="income"></div><div data-overview="next"></div></div><div class="map-overview-legend"></div>';
+      wrap.prepend(header);
+    }
+    const dock=document.getElementById('v196FavoriteDock');
+    if(dock)header.querySelector('[data-overview="favorites"]').appendChild(dock);
+    header.querySelector('[data-overview="pv"]').innerHTML=monthlyPvSummaryHtml();
+    header.querySelector('[data-overview="income"]').innerHTML=window.BonusUI?.panel(state)||'';
+    window.v116RenderNextMonthPanel?.();
+    const next=document.getElementById('nextMonthProspects');
+    if(next)header.querySelector('[data-overview="next"]').appendChild(next);
+    const legend=document.getElementById('legend');
+    if(legend)header.querySelector('.map-overview-legend').appendChild(legend);
+    renderFavoriteDock();
   }
 
   function ensurePageControls(){
@@ -316,7 +337,7 @@
     area.classList.remove('v118-filter-mode');
     svg.style.display='';
 
-    renderFavoriteDock();
+    renderMapHeader();
     rows.innerHTML=`<div class="v127-network v180-page-${mapPage}" data-v180-current-page="${mapPage}">${pageContentsHtml()}</div>`;
     bindClicks(rows);
     applyV127Density();
@@ -328,6 +349,7 @@
 
   function renderTreeV127(){
     if(filtersActive()){
+      renderMapHeader();
       if(typeof window.v118RenderFilteredHierarchy==='function') return window.v118RenderFilteredHierarchy();
       const rows=document.getElementById('treeRows');
       rows?.classList.remove('v109-tree-root','v127-tree-root','v111-density-1','v111-density-2','v111-density-3','v111-density-4','v185-dense-tree');

@@ -78,6 +78,7 @@
       statusLabel:typeof currentStatusLabel==='function'?currentStatusLabel(p):String(p?.status||''),
       customStatus:String(p?.customStatus||''),
       targetPv:Number(p?.target||0),
+      cardUpdatedAt:window.ProspectActivity?.timestamp(p?.cardUpdatedAt)??Date.now(),
       ...window.BonusPlan?.fields(p),
       actualPv:Number(p?.actual||0),
       avatar:Number.isInteger(Number(p?.avatar))&&Number(p.avatar)>=0&&Number(p.avatar)<36?Number(p.avatar):null,

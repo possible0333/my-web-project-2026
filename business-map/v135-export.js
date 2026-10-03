@@ -77,6 +77,7 @@
     const legend=document.getElementById('legend');
     const next=document.getElementById('nextMonthProspects');
     const favorites=document.querySelector('#v196FavoriteDock .v195-favorites-panel');
+    const overview=document.getElementById('mapOverviewHeader');
     if(!sourceRows||!sourceArea) throw new Error('ネットワークマップが見つかりませんでした');
 
     const directCount=sourceRows.querySelectorAll('.v127-direct-zone .v127-mini-card').length;
@@ -125,20 +126,19 @@
     `;
     host.appendChild(readableStyle);
 
-    const top=document.createElement('div');
-    top.className='v186-export-top';
-    top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';
-    if(favorites){
+    const top=overview?overview.cloneNode(true):document.createElement('div');
+    if(!overview){top.className='v186-export-top';top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';}
+    if(favorites&&!overview){
       const f=favorites.cloneNode(true);
       f.style.cssText='position:static!important;inset:auto!important;width:240px!important;max-width:240px!important;margin:0!important;padding:9px 10px!important;box-shadow:none!important;flex:0 0 240px;';
       top.appendChild(f);
     }
-    if(legend){
+    if(legend&&!overview){
       const l=legend.cloneNode(true); l.removeAttribute('id');
       l.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;flex:1;padding:0;margin:0;font-size:11px;color:#64748b;';
       top.appendChild(l);
     }
-    if(next){
+    if(next&&!overview){
       const n=next.cloneNode(true); n.removeAttribute('id');
       n.style.cssText='position:static!important;inset:auto!important;width:auto!important;max-width:260px!important;margin:0!important;padding:8px 10px!important;box-shadow:none!important;flex:0 0 auto;';
       top.appendChild(n);
@@ -166,7 +166,7 @@
       network?.scrollWidth||0,
       directWidth
     ));
-    const finalWidth=Math.max(620,measuredTree+32);
+    const finalWidth=Math.max(620,measuredTree+32,overview?Math.min(1400,Math.max(1120,overview.scrollWidth))+32:0);
     host.style.width=finalWidth+'px';
     surface.style.width=finalWidth+'px';
     top.style.width=(finalWidth-32)+'px';
@@ -225,6 +225,7 @@
   function measureContentBounds(surface){
     const surfaceRect=surface.getBoundingClientRect();
     const selectors=[
+      '.map-overview-header',
       '.v186-export-top span','.v186-export-top b','.v186-export-top .v115-next-panel','.v186-export-top .v116-next-panel',
       '.v176-map-pv-summary','.bonus-summary','.v127-direct-zone','.v185-front-branch','.v180-deep-group','.v180-deep-owner','.v190-overdue-page','.v190-overdue-group','.v190-overdue-card',
       '.member-card','.v194-self-side','.v194-empty-stamp','.v195-favorites-panel','.v180-deep-empty','.v193-action-missing-stamp','#treeLines path','#treeLines circle'

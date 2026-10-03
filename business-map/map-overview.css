@@ -1,0 +1,16 @@
+.map-overview-header{width:100%;min-width:1120px;max-width:1400px;box-sizing:border-box;margin:0 auto 18px}
+.map-overview-row{display:grid;grid-template-columns:210px minmax(290px,1fr) 400px 170px;gap:12px;align-items:start}
+.map-overview-row>div{min-width:0}
+.map-overview-header #v196FavoriteDock,.map-overview-header .v196-favorite-dock,.map-overview-header #nextMonthProspects{position:static!important;inset:auto!important;transform:none!important;width:100%!important;max-width:none!important;margin:0!important;box-sizing:border-box;z-index:auto!important}
+.map-overview-header .v195-favorites-panel{width:100%!important;box-sizing:border-box}
+.map-overview-header .v195-favorites-list{grid-template-columns:1fr!important}
+.map-overview-header .v176-map-pv-summary{width:100%;max-width:none;margin:0;box-sizing:border-box;gap:5px;padding:7px}
+.map-overview-header .v176-map-pv-summary>div{min-width:0;padding:10px 4px;min-height:80px}
+.map-overview-header .v176-map-pv-summary span{font-size:10px}
+.map-overview-header .v176-map-pv-summary strong{font-size:21px}
+.map-overview-header .bonus-summary{width:100%;max-width:none;margin:0;padding:14px}
+.map-overview-header .bonus-summary-values{gap:8px}
+.map-overview-header .bonus-breakdown{gap:8px;font-size:11px}
+.map-overview-header .bonus-breakdown>span{padding:7px 5px;gap:3px}
+.map-overview-legend .legend{position:static!important;display:flex;flex-wrap:wrap;justify-content:center;padding:12px 0 0!important;margin:0!important;gap:10px}
+.v174-export-readable .map-overview-header{margin-bottom:18px}

@@ -40,6 +40,7 @@ function drawLines(){
   svg.innerHTML = paths;
 }
 function render(){
+  window.ProspectActivity?.sweep(state);
   save();
   renderLegend(); renderSelf(); renderStatusSummary(); renderTypeSummary(); renderTree();
 }
@@ -67,6 +68,7 @@ function openModal(id){
   $('sponsorField').style.display = id==='self' ? 'none' : '';
   $('fName').value = p.name || '';
   $('fType').value = p.type || 'ABO';
+  updateProspectActivityNote(p);
   buildSponsorOptions(id);
   if(id!=='self') $('fSponsor').value = p.parentId || 'self';
   $('fTarget').value = p.target ?? 0;
@@ -87,9 +89,22 @@ function openModal(id){
   $('modal').classList.add('show');
 }
 function closeModal(){ $('modal').classList.remove('show'); }
+function updateProspectActivityNote(p){
+  let note=$('prospectActivityNote');
+  if(!note){
+    note=document.createElement('div');note.id='prospectActivityNote';note.className='field full';
+    note.style.cssText='font-size:11px;line-height:1.6;color:#64748b';
+    $('fType').parentElement.insertAdjacentElement('afterend',note);
+  }
+  note.hidden=editingId==='self'||$('fType').value!=='プロスペ';
+  const updated=p?.cardUpdatedAt;
+  const date=updated?new Date(updated).toLocaleDateString('ja-JP',{timeZone:'Asia/Tokyo'}):'今回の保存から';
+  note.textContent=`最終更新：${date}。保存せずに21日経つと、次回の起動・表示確認時に「来月以降」へ自動移動します。開くだけでは更新されません。`;
+}
 function updateCustomStatusVisibility(){ $('customStatusWrap').classList.toggle('hidden', $('fStatus').value !== 'custom'); }
 function gatherForm(){
   return {
+    cardUpdatedAt:Date.now(),
     ...window.BonusUI?.gather(),
     name: $('fName').value.trim() || '名称未設定',
     type: $('fType').value,
@@ -132,7 +147,7 @@ function resetAllActualPv(){
     return;
   }
   if(!confirm(`自分を含む全員（${people.length}人）の実績PVを0にします。\n\n計画PV・期限・やること・メモは変更されません。\nこの操作を実行しますか？`)) return;
-  people.forEach(p=>{ p.actual=0; });
+  people.forEach(p=>{ if(Number(p.actual||0)!==0)p.cardUpdatedAt=Date.now(); p.actual=0; });
   render();
   alert(`${affected}人分の実績PVをリセットしました。`);
 }
@@ -181,6 +196,7 @@ function operationalMapToState(mapData){
     type:isSelf?'ABO':String(p?.type||'ABO'),
     parentId:isSelf?null:(String(p?.parentId||'self')===ownerSourceId?'self':String(p?.parentId||'self')),
     target:Math.max(0,Number(p?.targetPv??p?.target??0)),
+    cardUpdatedAt:window.ProspectActivity?.timestamp(p?.cardUpdatedAt)??Date.now(),
     ...window.BonusPlan?.fields(p),
     actual:Math.max(0,Number(p?.actualPv??p?.actual??0)),
     status:String(p?.status||'appointment-open'),
@@ -369,6 +385,7 @@ $('saveImageBtn').onclick = saveImage;
 $('statusFilter').onchange = renderTree;
 $('typeFilter').onchange = renderTree;
 $('fStatus').onchange = updateCustomStatusVisibility;
+$('fType').addEventListener('change',()=>updateProspectActivityNote(editingId?getPerson(editingId):null));
 $('deleteBtnTop').onclick = $('deleteBtnBottom').onclick = deleteCurrent;
 document.querySelectorAll('.save-action').forEach(el=>el.onclick = saveForm);
 document.querySelectorAll('.close-action').forEach(el=>el.onclick = closeModal);
@@ -381,3 +398,13 @@ $('modal').addEventListener('click', e=>{ if(e.target.id==='modal') closeModal()
     document.body.innerHTML = `<div style="padding:24px;font-family:sans-serif;color:#b91c1c"><h2>読み込みエラー</h2><pre>${escapeHtml(e.message||String(e))}</pre></div>`;
   }
 })();
+
+// Check while open, and immediately on returning to the app. Do not change a
+// member's status underneath an open editor; saving/closing runs the next check.
+function checkInactiveProspects(){
+  if(document.hidden||$('modal')?.classList.contains('show'))return;
+  if(window.ProspectActivity?.sweep(state))render();
+}
+setInterval(checkInactiveProspects,60000);
+document.addEventListener('visibilitychange',checkInactiveProspects);
+window.addEventListener('focus',checkInactiveProspects);
