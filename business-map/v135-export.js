@@ -127,6 +127,7 @@
     host.appendChild(readableStyle);
 
     const top=overview?overview.cloneNode(true):document.createElement('div');
+    top.style.zoom='1';
     if(!overview){top.className='v186-export-top';top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';}
     if(next&&!overview){
       const n=next.cloneNode(true); n.removeAttribute('id');

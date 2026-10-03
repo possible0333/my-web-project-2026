@@ -39,6 +39,7 @@
     svg.innerHTML=paths;
   }
   function fitCurrent(){
+    if(window.MapViewport)return window.MapViewport.fit();
     const area=document.getElementById('mapCanvasArea'), wrap=area?.closest('.map-wrap'); if(!area||!wrap) return;
     area.style.zoom=1; const natural=Math.max(rowsWidth(),900), usable=Math.max(320,wrap.clientWidth-24);
     const z=Math.max(.45,Math.min(1,usable/natural)); area.style.zoom=z;

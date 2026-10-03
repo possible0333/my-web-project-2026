@@ -262,15 +262,15 @@
   function syncOverviewWidth(){
     cancelAnimationFrame(overviewLayoutFrame);
     overviewLayoutFrame=requestAnimationFrame(()=>{
+      if(window.MapViewport)return window.MapViewport.syncLayout();
       const stage=document.getElementById('mapTopStage'),wrap=document.querySelector('.map-wrap'),area=document.getElementById('mapCanvasArea');
       if(!stage||!wrap||!area)return;
-      const mobile=matchMedia('(max-width:720px)').matches;
       const style=getComputedStyle(wrap);
       const available=wrap.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
       // Use the visible canvas size (including zoom), not the summary's width.
       const rows=document.getElementById('treeRows');
       const network=rows?.querySelector('.v127-network')||rows;
-      const width=mobile?'100%':Math.ceil(Math.max(1120,available,area.getBoundingClientRect().width,network?.getBoundingClientRect().width||0))+'px';
+      const width=Math.ceil(Math.max(1120,available,area.getBoundingClientRect().width,network?.getBoundingClientRect().width||0))+'px';
       if(stage.style.width!==width)stage.style.width=width;
     });
   }

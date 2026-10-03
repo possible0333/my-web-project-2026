@@ -34,8 +34,9 @@ assert(selector.includes('.v156-modal.open'));
 
 const css=read('mobile-polish.css');
 assert.match(css,/#prospectActivityNote\[hidden\]\{display:none!important\}/);
-assert.match(css,/\.app \.map-overview-header\{[^}]*min-width:0/);
-assert.match(css,/\.app \.map-favorites-footer \.v195-favorites-list\{[^}]*overflow-x:auto/);
+assert.doesNotMatch(css,/\.map-top-stage[^}]*grid-template-columns:minmax\(0,1fr\)/);
+assert.doesNotMatch(css,/#nextMonthProspects[^}]*grid-row:1/);
+assert.match(css,/touch-action:pan-x pan-y/);
 
 // Chronological rendering must be stable and must not mutate saved schedule order.
 const schedule=read('v156-schedule.js');
@@ -54,12 +55,12 @@ const stage={style:{}};
 const wrap={clientWidth:1300};
 const area={getBoundingClientRect:()=>({width:canvasWidth})};
 const rows={querySelector:()=>({getBoundingClientRect:()=>({width:networkWidth})})};
-const layoutContext={document:{getElementById:id=>({mapTopStage:stage,mapCanvasArea:area,treeRows:rows})[id],querySelector:()=>wrap},matchMedia:()=>({matches:mobile}),getComputedStyle:()=>({paddingLeft:'14',paddingRight:'14'}),cancelAnimationFrame(){},requestAnimationFrame(fn){fn();return 1;}};
+const layoutContext={window:{},document:{getElementById:id=>({mapTopStage:stage,mapCanvasArea:area,treeRows:rows})[id],querySelector:()=>wrap},getComputedStyle:()=>({paddingLeft:'14',paddingRight:'14'}),cancelAnimationFrame(){},requestAnimationFrame(fn){fn();return 1;}};
 vm.createContext(layoutContext);vm.runInContext('let overviewLayoutFrame=0;'+sync,layoutContext);
 layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'3600px');
 canvasWidth=1000;networkWidth=900;
 layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'1272px');
-mobile=true;layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'100%');
+wrap.clientWidth=390;layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'1120px');
 assert.match(layout,/if\(next\)stage\.appendChild\(next\)/);
 assert.match(read('v135-export.js'),/getElementById\('mapTopStage'\)/);
 console.log('Independent right-edge dock: wide map, shrink, mobile and export source: passed');

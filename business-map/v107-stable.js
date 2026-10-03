@@ -29,6 +29,7 @@
   }
 
   function applyZoom(next){
+    if(window.MapViewport)return window.MapViewport.setZoom(next);
     zoom=Math.max(.1,Math.min(1.5,Number.isFinite(Number(next))?Number(next):1));
     const area=document.getElementById('mapCanvasArea');
     if(!area) return;
@@ -39,6 +40,7 @@
   }
 
   function fitZoom(){
+    if(window.MapViewport)return window.MapViewport.fit();
     const area=document.getElementById('mapCanvasArea');
     const wrap=area?.closest('.map-wrap');
     if(!area||!wrap) return;

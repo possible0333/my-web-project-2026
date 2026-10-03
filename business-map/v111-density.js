@@ -27,6 +27,7 @@
   }
 
   function fitForFronts(){
+    if(window.MapViewport)return window.MapViewport.fit();
     const area=document.getElementById('mapCanvasArea');
     const wrap=area?.closest('.map-wrap');
     const rows=document.getElementById('treeRows');
@@ -49,7 +50,7 @@
     raf=requestAnimationFrame(()=>{
       applyDensity();
       requestAnimationFrame(()=>{
-        if(autoFit) fitForFronts();
+        if(autoFit){if(window.MapViewport)window.MapViewport.autoFit();else fitForFronts();}
       });
     });
   }
@@ -93,7 +94,7 @@
     patchFitButton();
     patchExport();
     refresh(true);
-    window.addEventListener('resize',()=>refresh(true));
+    window.addEventListener('resize',()=>refresh(!window.MapViewport));
   }
 
   window.v111ApplyDensity=applyDensity;

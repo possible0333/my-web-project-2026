@@ -83,8 +83,9 @@
   function mobileInitialFit(){
     if(!isMobile() || fittedOnce) return;
     fittedOnce=true;
-    setTimeout(fitMap,260);
-    setTimeout(fitMap,760);
+    const initialFit=()=>window.MapViewport?window.MapViewport.autoFit():fitMap();
+    setTimeout(initialFit,260);
+    setTimeout(initialFit,760);
   }
 
   function waitForImages(root){
@@ -420,9 +421,9 @@
     window.addEventListener('business-map-tab-change',ensureMobileBar);
     window.addEventListener('resize',()=>{
       ensureMobileBar();
-      if(isMobile()) setTimeout(fitMap,160);
+      if(isMobile()&&!window.MapViewport) setTimeout(fitMap,160);
     });
-    window.addEventListener('orientationchange',()=>{ if(isMobile()) setTimeout(fitMap,260); });
+    window.addEventListener('orientationchange',()=>{ if(isMobile()&&!window.MapViewport) setTimeout(fitMap,260); });
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true});
