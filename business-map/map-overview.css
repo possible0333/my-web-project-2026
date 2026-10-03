@@ -1,5 +1,10 @@
 .map-overview-header{width:100%;min-width:1120px;max-width:1400px;box-sizing:border-box;margin:0 auto 18px}
-.map-overview-row{display:grid;grid-template-columns:210px minmax(290px,1fr) 400px 170px;gap:12px;align-items:start}
+.map-overview-row{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:12px;align-items:start}
+.map-financial-summary{display:grid;grid-template-columns:minmax(290px,1fr) minmax(400px,1.2fr);gap:18px;align-items:center;padding:16px;border:2px solid #b8d8ce;border-radius:22px;background:linear-gradient(110deg,#f5f9ff,#effbf5);box-shadow:0 6px 18px #143e3010}
+.map-financial-summary>div{min-width:0}
+.map-financial-summary .bonus-summary{border:0;border-left:1px solid #b8d8ce;border-radius:0;box-shadow:none;background:transparent;padding:0 0 0 18px}
+.bonus-plan-total{margin:8px 0;color:#176b54;font-size:14px}
+.bonus-plan-total strong{font-size:18px}
 .map-overview-row>div{min-width:0}
 .map-overview-header #v196FavoriteDock,.map-overview-header .v196-favorite-dock,.map-overview-header #nextMonthProspects{position:static!important;inset:auto!important;transform:none!important;width:100%!important;max-width:none!important;margin:0!important;box-sizing:border-box;z-index:auto!important}
 .map-overview-header .v195-favorites-panel{width:100%!important;box-sizing:border-box}
@@ -15,3 +20,10 @@
 .map-legend-footer{position:relative;clear:both;margin:18px auto 0;padding:10px 0}
 .map-legend-footer .legend{position:static!important;display:flex;flex-wrap:wrap;justify-content:center;padding:0!important;margin:0!important;gap:10px}
 .v174-export-readable .map-overview-header{margin-bottom:18px}
+.map-favorites-footer{position:static!important;inset:auto!important;transform:none!important;width:100%!important;min-width:1120px;max-width:1400px!important;margin:22px auto 0!important;box-sizing:border-box;z-index:auto!important}
+.map-favorites-footer .v195-favorites-panel{width:100%!important;box-sizing:border-box;padding:14px!important}
+.map-favorites-footer .v195-favorites-list{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important}
+.map-favorites-footer .v195-favorites-list article{padding:10px!important}
+.map-favorites-footer .v195-favorites-list article strong{white-space:normal;overflow-wrap:anywhere;font-size:12px!important}
+.map-favorites-footer .v195-favorites-list ul{display:grid;gap:6px!important;margin-top:8px!important}
+.map-favorites-footer .v195-favorites-list li{font-size:11px!important;line-height:1.5!important;overflow-wrap:anywhere}

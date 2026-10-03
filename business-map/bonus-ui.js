@@ -50,6 +50,7 @@
     const r=BonusPlan.calculate(state);
     const names={performance:'成績別',bsi:`BSI（${r.bsiCount}組）`,bronze9:'ブロンズ9',bronze15:'ブロンズ15',leadership:'リーダーシップ',monthlyQ:'月次Q強化',repeatOrder:'リピート・オーダー',other:'その他（手入力）'};
     return `<section class="bonus-summary" aria-label="計画上の収入（ボーナス）"><div class="bonus-summary-head"><span>計画上の収入（ボーナス）<small>月次・税込の参考試算</small></span></div>
+      <div class="bonus-plan-total">計画合計 <strong>${r.total.toLocaleString('ja-JP')}PV</strong></div>
       <div class="bonus-summary-values"><strong>現在${r.percent}％</strong><strong>${money(r.totalIncome)}</strong></div>
       <div class="bonus-breakdown">${['performance','bsi','bronze9','bronze15'].map(k=>`<span>${names[k]}<b>${money(r.items[k])}</b></span>`).join('')}</div></section>`;
   }

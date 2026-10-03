@@ -264,11 +264,10 @@
     let header=document.getElementById('mapOverviewHeader');
     if(!header){
       header=document.createElement('div');header.id='mapOverviewHeader';header.className='map-overview-header';
-      header.innerHTML='<div class="map-overview-row"><div data-overview="favorites"></div><div data-overview="pv"></div><div data-overview="income"></div><div data-overview="next"></div></div>';
+      header.innerHTML='<div class="map-overview-row"><section class="map-financial-summary"><div data-overview="pv"></div><div data-overview="income"></div></section><div data-overview="next"></div></div>';
       wrap.prepend(header);
     }
     const dock=document.getElementById('v196FavoriteDock');
-    if(dock)header.querySelector('[data-overview="favorites"]').appendChild(dock);
     header.querySelector('[data-overview="pv"]').innerHTML=monthlyPvSummaryHtml();
     header.querySelector('[data-overview="income"]').innerHTML=window.BonusUI?.panel(state)||'';
     window.v116RenderNextMonthPanel?.();
@@ -280,6 +279,7 @@
       footer=document.createElement('div');footer.id='mapLegendFooter';footer.className='map-legend-footer';
       document.getElementById('mapCanvasArea').insertAdjacentElement('afterend',footer);
     }
+    if(dock){dock.classList.add('map-favorites-footer');footer.before(dock);}
     if(legend)footer.appendChild(legend);
     renderFavoriteDock();
   }

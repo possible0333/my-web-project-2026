@@ -128,11 +128,6 @@
 
     const top=overview?overview.cloneNode(true):document.createElement('div');
     if(!overview){top.className='v186-export-top';top.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;';}
-    if(favorites&&!overview){
-      const f=favorites.cloneNode(true);
-      f.style.cssText='position:static!important;inset:auto!important;width:240px!important;max-width:240px!important;margin:0!important;padding:9px 10px!important;box-shadow:none!important;flex:0 0 240px;';
-      top.appendChild(f);
-    }
     if(next&&!overview){
       const n=next.cloneNode(true); n.removeAttribute('id');
       n.style.cssText='position:static!important;inset:auto!important;width:auto!important;max-width:260px!important;margin:0!important;padding:8px 10px!important;box-shadow:none!important;flex:0 0 auto;';
@@ -150,6 +145,10 @@
       if(direct) applyDirectGrid(direct);
     }
     surface.appendChild(area);
+    if(favorites){
+      const dock=document.createElement('aside');dock.className='v196-favorite-dock map-favorites-footer';
+      dock.appendChild(favorites.cloneNode(true));surface.appendChild(dock);
+    }
     if(legend){
       const footer=document.createElement('div');footer.className='map-legend-footer';
       const l=legend.cloneNode(true);l.removeAttribute('id');
