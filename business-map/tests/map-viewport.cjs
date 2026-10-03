@@ -26,8 +26,9 @@ natural=12000;
 viewport.autoFit();viewport.autoFit();events.resize();
 assert.equal(Number(nodes.mapCanvasArea.style.zoom),1);
 assert.equal(nodes.v107ZoomValue.textContent,'100%');
-// Explicit 「全体」 still fits a large map.
-viewport.fit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),372/12016);
+// Explicit 「全体」 respects the 40% floor even for very large maps.
+viewport.fit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),.4);
+assert.equal(nodes.v107ZoomValue.textContent,'40%');
 natural=2400;
 viewport.setZoom(.52);
 events.resize(); // Height-only resize must not refit after a manual zoom.
@@ -35,7 +36,7 @@ assert.equal(Number(nodes.mapCanvasArea.style.zoom),.52);
 viewport.autoFit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),.52);
 context.window.innerWidth=844;wrap.clientWidth=844;events.resize();
 assert.equal(Number(nodes.mapCanvasArea.style.zoom),.52);
-viewport.fit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),826/2416);
+viewport.fit();assert.equal(Number(nodes.mapCanvasArea.style.zoom),.4);
 natural=600;viewport.fit();assert.equal(nodes.mapTopStage.style.width,'1120px');
 assert.equal(Number(nodes.mapCanvasArea.style.zoom),826/1120);
 viewport.setZoom(.5);
@@ -49,6 +50,12 @@ listeners.touchend({touches:[]});listeners.touchmove(touch(0,400));
 assert.equal(Number(nodes.mapCanvasArea.style.zoom),1);
 listeners.touchstart({touches:[{clientX:0,clientY:0}],preventDefault(){assert.fail('single-finger scrolling blocked');}});
 viewport.setZoom(5);assert.equal(Number(nodes.mapCanvasArea.style.zoom),1.5);
-viewport.setZoom(0);assert.equal(Number(nodes.mapCanvasArea.style.zoom),.02);
+viewport.setZoom(0);assert.equal(Number(nodes.mapCanvasArea.style.zoom),.4);
+for(let i=0;i<20;i++)viewport.setZoom(Number(nodes.mapCanvasArea.style.zoom)-.1);
+assert.equal(nodes.v107ZoomValue.textContent,'40%');
+listeners.touchstart(touch(0,200));listeners.touchmove(touch(90,110));
+assert.equal(Number(nodes.mapCanvasArea.style.zoom),.4);
+listeners.touchend({touches:[]});
+for(const id of ['mapTopStage','v196FavoriteDock','mapLegendFooter'])assert.equal(nodes[id].style.zoom,'0.4');
 assert.match(fs.readFileSync(path.join(__dirname,'../v135-export.js'),'utf8'),/top\.style\.zoom='1'/);
 console.log('100% startup, delayed auto-fit protection, explicit fit, whole-map zoom, pinch, resize and export reset: passed');

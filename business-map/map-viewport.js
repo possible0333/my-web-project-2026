@@ -4,7 +4,7 @@
   let manual=true,frame=0,pinch=null,suppressClickUntil=0;
   const byId=id=>document.getElementById(id);
   const current=()=>Number(byId('mapCanvasArea')?.style.zoom)||1;
-  const clamp=value=>Math.max(.02,Math.min(1.5,Number.isFinite(Number(value))?Number(value):1));
+  const clamp=value=>Math.max(.4,Math.min(1.5,Number.isFinite(Number(value))?Number(value):1));
   function metrics(){
     const wrap=document.querySelector('.map-wrap'),area=byId('mapCanvasArea'),rows=byId('treeRows');
     if(!wrap||!area||!rows||!wrap.clientWidth)return null;
