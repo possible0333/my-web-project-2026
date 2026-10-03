@@ -8,7 +8,8 @@
       <section id="bonusSelf"><h3>計画上の収入（ボーナス）</h3><div class="bonus-input-grid">
       <label>ブロンズ9 過去の獲得回数<input class="number-input" id="fBronze9Count" type="number" min="0" max="12" step="1"></label>
       <label>ブロンズ15 過去の獲得回数<input class="number-input" id="fBronze15Count" type="number" min="0" max="12" step="1"></label></div>
-      <small>今月分を含めず入力。0回なら次は1回目、12回で受給終了。9％／15％到達と回数だけで試算し、系列数・個人PV・期間・過去資格の条件は判定しません。</small>
+      <small>今月分を含めず入力。0回なら次は1回目、12回で受給終了。ブロンズ9：自分9％以上＋直下ABOの3％以上が3系列。ブロンズ15：自分15％以上＋直下ABOの6％以上が3系列。いずれも自分の個人計画1万PV以上。期間・過去資格条件は判定しません。</small>
+      <small>成績別はグループ総額から直下ABO各系列の配分総額（その下のABO分を含む）を引いた自分の取り分です。PV→BVは1.446、消費税は一律10％、円単位四捨五入。BSI・ブロンズ等の定額は税込なので再加算しません。収入合計には、設定したその他の月次ボーナスも含みます。</small>
       <label class="bonus-check"><input type="checkbox" id="fSpBonusEligible"> SPの資格条件を満たす前提でリーダーシップ・月次Q強化を試算する</label>
       <small>国内系列のPV構成からSPタイプを判定。本人・系列下位の資格審査等は別途確認が必要です。</small>
       <details><summary>その他の月次ボーナス設定</summary>
@@ -48,11 +49,9 @@
   function panel(state){
     const r=BonusPlan.calculate(state);
     const names={performance:'成績別',bsi:`BSI（${r.bsiCount}組）`,bronze9:'ブロンズ9',bronze15:'ブロンズ15',leadership:'リーダーシップ',monthlyQ:'月次Q強化',repeatOrder:'リピート・オーダー',other:'その他（手入力）'};
-    return `<section class="bonus-summary" aria-label="計画上の収入（ボーナス）"><div class="bonus-summary-head"><span>計画上の収入（ボーナス）<small>月次・税込の参考試算</small></span><strong>${money(r.totalIncome)}</strong></div>
-      <div class="bonus-breakdown">${Object.entries(r.items).filter(([k,v])=>v||['performance','bsi','bronze9','bronze15'].includes(k)).map(([k,v])=>`<span>${names[k]}<b>${money(v)}</b></span>`).join('')}</div>
-      <p>計画PVから試算／成績別 ${r.percent}％／PV→BV 1.446 × 消費税10％（一律・円単位四捨五入）<br>BSI・ブロンズ等の定額は税込のため再加算なし。ブロンズは％・回数のみで判定。BSIは自分・対象先とも個人計画1万PV以上。</p>
-      <p>年次・一時金・小売利益は対象外。ルビー・デプス・海外等は自動計算対象外（自分カードから手入力）。</p>
-      ${r.warnings.map(w=>`<p class="bonus-warning">${w}</p>`).join('')}</section>`;
+    return `<section class="bonus-summary" aria-label="計画上の収入（ボーナス）"><div class="bonus-summary-head"><span>計画上の収入（ボーナス）<small>月次・税込の参考試算</small></span></div>
+      <div class="bonus-summary-values"><strong>現在${r.percent}％</strong><strong>${money(r.totalIncome)}</strong></div>
+      <div class="bonus-breakdown">${['performance','bsi','bronze9','bronze15'].map(k=>`<span>${names[k]}<b>${money(r.items[k])}</b></span>`).join('')}</div></section>`;
   }
   window.BonusUI={fill,gather,badge,panel};
 })();

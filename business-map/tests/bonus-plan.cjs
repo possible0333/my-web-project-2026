@@ -6,12 +6,21 @@ const person=(id,target,type='ABO',parentId='self',extra={})=>({id,target,type,p
 const run=(self,members=[])=>B.calculate({self:person('self',self.target??10000,'ABO',null,self),members});
 for(const [pv,r] of [[0,0],[29999,0],[30000,3],[89999,3],[90000,6],[180000,9],[360000,12],[600000,15],[1000000,18],[1500000,21]])assert.equal(B.rate(pv),r);
 for(let n=0;n<=12;n++){
-  const x=run({target:600000,bronze9Count:n,bronze15Count:n});
+  const x=run({target:300000,bronze9Count:n,bronze15Count:n},[person('a',100000),person('b',100000),person('c',100000)]);
   assert.equal(x.items.bronze9,n===12?0:5000+Math.floor(n/3)*5000);
   assert.equal(x.items.bronze15,n===12?0:30000+Math.floor(n/3)*5000);
 }
 assert.equal(run({target:179999}).items.bronze9,0);
 assert.equal(run({target:599999}).items.bronze15,0);
+assert.equal(run({target:600000}).items.bronze9,0);
+assert.equal(run({target:300000},[person('a',100000),person('b',100000)]).items.bronze9,0);
+assert.equal(run({target:300000},[person('a',100000),person('b',100000),person('c',29999)]).items.bronze9,0);
+assert.equal(run({target:300000},[person('a',100000),person('b',100000),person('c',89999)]).items.bronze15,0);
+assert.equal(run({target:300000},[person('a',100000),person('b',100000),person('c',100000,'カスタマー')]).items.bronze9,0);
+assert.equal(run({target:300000},[person('a',100000),person('b',100000,'ABO','a'),person('c',100000,'ABO','a')]).items.bronze9,0);
+assert.equal(run({target:9999},[person('a',200000),person('b',200000),person('c',200000)]).items.bronze15,0);
+assert.equal(run({target:600000},[person('a',100000),person('b',100000),person('c',100000,'ABO','self',{status:'next-month'})]).items.bronze9,0);
+assert.equal(run({target:10000},[person('a',0),person('a1',200000,'ABO','a'),person('b',200000),person('c',200000)]).items.bronze15,30000);
 // FY2027 BSI table, tax-inclusive; direct sponsorship and personal PV only.
 for(let n=0;n<=8;n++)assert.equal(run({},Array.from({length:n},(_,i)=>person('p'+i,10000,i%2?'カスタマー':'ABO','self',{bsiEligible:true}))).items.bsi,[0,2000,4000,9000,12000,15000,18000][Math.min(n,6)]);
 assert.equal(run({target:9999},[person('p',10000,'ABO','self',{bsiEligible:true})]).items.bsi,0);
@@ -20,6 +29,8 @@ assert.equal(run({},[person('a',9999,'ABO','self',{bsiEligible:true}),person('b'
 // Contract bronze example: 180k group, 140k at 3%; actual 1.446*1.1 (not rounded 1.59).
 const example=run({target:30000},[person('a',60000),person('b',50000),person('c',30000),person('d',10000,'カスタマー','self',{bsiEligible:true})]);
 assert.equal(example.items.performance,19087);
+assert.equal(Math.round(example.performanceGross),25768);
+assert.equal(Math.round(example.performanceDistributed),6681);
 assert.equal(example.items.bsi,2000);assert.equal(example.items.bronze9,5000);
 assert.equal(example.totalIncome,26087);
 // Customer volume is not deducted as if the customer were an ABO.
@@ -66,4 +77,8 @@ context.statusMap={'appointment-open':true};
 vm.runInContext(app1.slice(migrateStart,migrateEnd),context);
 const migrated=context.migrate(restored);
 assert.equal(migrated.self.bronze9Count,4);assert.equal(migrated.members[0].bsiEligible,true);
+vm.runInContext(fs.readFileSync(require.resolve('../bonus-ui.js'),'utf8'),context);
+const html=context.BonusUI.panel({self:person('self',180000),members:[]});
+assert(html.includes('現在9％'));assert(!html.includes('<p'));assert(!html.includes('PV→BV'));
+assert.equal((html.match(/<b>/g)||[]).length,4);
 console.log('Bonus boundaries, BSI, tax, differential, SP, persistence: passed');

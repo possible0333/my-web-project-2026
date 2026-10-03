@@ -1,4 +1,4 @@
-Monthly planned bonus estimate — v1.109
+Monthly planned bonus estimate — v1.110
 
 Basis: supplied Business Support 2027 (PDF filename business_support2026_20251014 (4).pdf), printed pp.10–17.
 Official supporting contract: https://www.amwaylive.com/h_img/pdf/business/keiyakusyomen_20250801.pdf
@@ -7,8 +7,9 @@ Contract pp.39–42: domestic leadership 6%, minimum guarantee; pp.50–53 bronz
 The contract's older BSI table is superseded here by the supplied FY2027 table (maximum 18,000 yen).
 Current average BV/PV verified against https://www.amwaylive.com/psl/houtei.html : 1.446.
 
-Explicit user choices: PV estimates; no annual bonuses; disregard bronze eligibility conditions other than count.
-Bronze9/15 therefore require only corresponding planned performance rate and remaining count (0–11 previous awards).
+Explicit user choices: PV estimates; no annual bonuses; disregard historical bronze eligibility conditions.
+v1.110 reinstates monthly bronze conditions: own planned PV >=10,000; own rate >=9%/15%; three DIRECT ABO legs >=3%/6%; remaining count (0–11 previous awards).
+Nested ABOs in a single leg do not count as multiple direct legs. Customers and next-month direct ABOs do not qualify as legs.
 Both bonuses may apply simultaneously. Other actual qualification rules are NOT enforced.
 All totals are estimates, not eligibility certification or guaranteed payouts.
 
