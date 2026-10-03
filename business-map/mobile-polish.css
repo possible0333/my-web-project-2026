@@ -2,10 +2,9 @@
 #prospectActivityNote[hidden]{display:none!important}
 @media(max-width:720px){
   .app .map-wrap{max-height:none;min-height:0;overscroll-behavior:auto;-webkit-overflow-scrolling:touch}
-  .app .map-overview-header{position:sticky;left:0;min-width:0;width:100%;margin-bottom:14px}
-  .app .map-overview-row{grid-template-columns:minmax(0,1fr);gap:8px}
-  .app .map-overview-row:before{display:none}
-  .app .map-overview-row>[data-overview="next"]{grid-row:1;width:min(170px,100%);justify-self:end}
+  .app .map-top-stage{position:sticky;left:0;min-width:0;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:14px}
+  .app .map-overview-header{grid-column:1;min-width:0;width:100%;margin:0}
+  .app .map-top-stage>#nextMonthProspects{grid-column:1;grid-row:1;justify-self:end}
   .app .map-financial-summary{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px;border-radius:15px}
   .app .map-financial-summary .bonus-summary{border-left:0;border-top:1px solid #b8d8ce;padding:8px 0 0}
   .app .map-overview-header .v176-map-pv-summary{padding:4px;gap:4px;border-radius:12px}

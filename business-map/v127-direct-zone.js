@@ -258,21 +258,47 @@
     if(dock) dock.innerHTML=favoriteProductsHtml();
   }
 
+  let overviewLayoutFrame=0,overviewLayoutBound=false;
+  function syncOverviewWidth(){
+    cancelAnimationFrame(overviewLayoutFrame);
+    overviewLayoutFrame=requestAnimationFrame(()=>{
+      const stage=document.getElementById('mapTopStage'),wrap=document.querySelector('.map-wrap'),area=document.getElementById('mapCanvasArea');
+      if(!stage||!wrap||!area)return;
+      const mobile=matchMedia('(max-width:720px)').matches;
+      const style=getComputedStyle(wrap);
+      const available=wrap.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
+      // Use the visible canvas size (including zoom), not the summary's width.
+      const rows=document.getElementById('treeRows');
+      const network=rows?.querySelector('.v127-network')||rows;
+      const width=mobile?'100%':Math.ceil(Math.max(1120,available,area.getBoundingClientRect().width,network?.getBoundingClientRect().width||0))+'px';
+      if(stage.style.width!==width)stage.style.width=width;
+    });
+  }
   function renderMapHeader(){
     const wrap=document.querySelector('.map-wrap');
     if(!wrap)return;
+    let stage=document.getElementById('mapTopStage');
+    if(!stage){stage=document.createElement('div');stage.id='mapTopStage';stage.className='map-top-stage';wrap.prepend(stage);}
     let header=document.getElementById('mapOverviewHeader');
     if(!header){
       header=document.createElement('div');header.id='mapOverviewHeader';header.className='map-overview-header';
-      header.innerHTML='<div class="map-overview-row"><section class="map-financial-summary"><div data-overview="pv"></div><div data-overview="income"></div></section><div data-overview="next"></div></div>';
-      wrap.prepend(header);
+      header.innerHTML='<div class="map-overview-row"><section class="map-financial-summary"><div data-overview="pv"></div><div data-overview="income"></div></section></div>';
+      stage.appendChild(header);
     }
     const dock=document.getElementById('v196FavoriteDock');
     header.querySelector('[data-overview="pv"]').innerHTML=monthlyPvSummaryHtml();
     header.querySelector('[data-overview="income"]').innerHTML=window.BonusUI?.panel(state)||'';
     window.v116RenderNextMonthPanel?.();
     const next=document.getElementById('nextMonthProspects');
-    if(next)header.querySelector('[data-overview="next"]').appendChild(next);
+    if(next)stage.appendChild(next);
+    if(!overviewLayoutBound){
+      overviewLayoutBound=true;
+      const area=document.getElementById('mapCanvasArea');
+      if(window.ResizeObserver){const observer=new ResizeObserver(syncOverviewWidth);observer.observe(area);observer.observe(document.getElementById('treeRows'));observer.observe(wrap);}
+      new MutationObserver(syncOverviewWidth).observe(area,{attributes:true,attributeFilter:['style']});
+      window.addEventListener('resize',syncOverviewWidth,{passive:true});
+    }
+    syncOverviewWidth();
     const legend=document.getElementById('legend');
     let footer=document.getElementById('mapLegendFooter');
     if(!footer){

@@ -1,7 +1,7 @@
-.map-overview-header{width:100%;min-width:1120px;box-sizing:border-box;margin:0 auto 18px}
-.map-overview-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(740px,1040px) minmax(170px,1fr);gap:12px;align-items:start}
-.map-overview-row:before{content:""}
-.map-overview-row>[data-overview="next"]{justify-self:end;width:170px}
+.map-top-stage{display:grid;grid-template-columns:minmax(170px,1fr) minmax(740px,1040px) minmax(170px,1fr);gap:20px;align-items:start;min-width:1120px;margin:0 0 18px;box-sizing:border-box}
+.map-overview-header{grid-column:2;width:100%;min-width:0;box-sizing:border-box;margin:0}
+.map-overview-row{display:block}
+.map-top-stage>#nextMonthProspects{grid-column:3;justify-self:end;position:static!important;inset:auto!important;transform:none!important;width:170px!important;max-width:170px!important;margin:0!important;box-sizing:border-box}
 .map-financial-summary{display:grid;grid-template-columns:minmax(290px,1fr) minmax(400px,1.2fr);gap:14px;align-items:center;padding:10px 12px;border:2px solid #b8d8ce;border-radius:18px;background:linear-gradient(110deg,#f5f9ff,#effbf5);box-shadow:0 6px 18px #143e3010}
 .map-financial-summary>div{min-width:0}
 .map-financial-summary .bonus-summary{border:0;border-left:1px solid #b8d8ce;border-radius:0;box-shadow:none;background:transparent;padding:0 0 0 18px}
@@ -27,7 +27,7 @@
 .map-overview-header .bonus-breakdown b{font-size:12px}
 .map-legend-footer{position:relative;clear:both;margin:18px auto 0;padding:10px 0}
 .map-legend-footer .legend{position:static!important;display:flex;flex-wrap:wrap;justify-content:center;padding:0!important;margin:0!important;gap:10px}
-.v174-export-readable .map-overview-header{margin-bottom:18px}
+.v174-export-readable .map-overview-header{margin-bottom:0}
 .map-favorites-footer{position:static!important;inset:auto!important;transform:none!important;width:100%!important;min-width:1120px;max-width:1400px!important;margin:22px auto 0!important;box-sizing:border-box;z-index:auto!important}
 .map-favorites-footer .v195-favorites-panel{width:100%!important;box-sizing:border-box;padding:14px!important}
 .map-favorites-footer .v195-favorites-list{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important}

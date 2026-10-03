@@ -45,3 +45,21 @@ const input=[{start:'18:00',id:1},{start:'',id:2},{start:'09:00',id:3},{start:'0
 assert.deepEqual(Array.from(sorter.chronologicalPlans(input),p=>p.id),[3,4,1,2]);
 assert.deepEqual(input.map(p=>p.id),[1,2,3,4]);
 console.log('Zoom after auto-fit, modal scroll lock, mobile scope, hidden note, schedule ordering: passed');
+
+// The next-month dock tracks the whole visible map, including wide and zoomed trees.
+const layout=read('v127-direct-zone.js');
+const sync=layout.slice(layout.indexOf('  function syncOverviewWidth(){'),layout.indexOf('  function renderMapHeader(){'));
+let canvasWidth=3000,networkWidth=3600,mobile=false;
+const stage={style:{}};
+const wrap={clientWidth:1300};
+const area={getBoundingClientRect:()=>({width:canvasWidth})};
+const rows={querySelector:()=>({getBoundingClientRect:()=>({width:networkWidth})})};
+const layoutContext={document:{getElementById:id=>({mapTopStage:stage,mapCanvasArea:area,treeRows:rows})[id],querySelector:()=>wrap},matchMedia:()=>({matches:mobile}),getComputedStyle:()=>({paddingLeft:'14',paddingRight:'14'}),cancelAnimationFrame(){},requestAnimationFrame(fn){fn();return 1;}};
+vm.createContext(layoutContext);vm.runInContext('let overviewLayoutFrame=0;'+sync,layoutContext);
+layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'3600px');
+canvasWidth=1000;networkWidth=900;
+layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'1272px');
+mobile=true;layoutContext.syncOverviewWidth();assert.equal(stage.style.width,'100%');
+assert.match(layout,/if\(next\)stage\.appendChild\(next\)/);
+assert.match(read('v135-export.js'),/getElementById\('mapTopStage'\)/);
+console.log('Independent right-edge dock: wide map, shrink, mobile and export source: passed');

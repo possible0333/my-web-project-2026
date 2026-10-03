@@ -77,7 +77,7 @@
     const legend=document.getElementById('legend');
     const next=document.getElementById('nextMonthProspects');
     const favorites=document.querySelector('#v196FavoriteDock .v195-favorites-panel');
-    const overview=document.getElementById('mapOverviewHeader');
+    const overview=document.getElementById('mapTopStage')||document.getElementById('mapOverviewHeader');
     if(!sourceRows||!sourceArea) throw new Error('ネットワークマップが見つかりませんでした');
 
     const directCount=sourceRows.querySelectorAll('.v127-direct-zone .v127-mini-card').length;
@@ -224,7 +224,7 @@
   function measureContentBounds(surface){
     const surfaceRect=surface.getBoundingClientRect();
     const selectors=[
-      '.map-overview-header','.map-legend-footer',
+      '.map-top-stage','.map-overview-header','.map-legend-footer',
       '.v186-export-top span','.v186-export-top b','.v186-export-top .v115-next-panel','.v186-export-top .v116-next-panel',
       '.v176-map-pv-summary','.bonus-summary','.v127-direct-zone','.v185-front-branch','.v180-deep-group','.v180-deep-owner','.v190-overdue-page','.v190-overdue-group','.v190-overdue-card',
       '.member-card','.v194-self-side','.v194-empty-stamp','.v195-favorites-panel','.v180-deep-empty','.v193-action-missing-stamp','#treeLines path','#treeLines circle'
