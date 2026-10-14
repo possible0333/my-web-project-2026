@@ -303,20 +303,42 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   if(!normalized) throw new Error('追加できるMAP JSONがありません');
   const sourceKey=String(sourceUserId||mapData?.owner?.name||'shared-map');
   const existingRoot=state.members.find(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')==='self');
-  const backup={schema:'business-map-before-front-merge',createdAt:new Date().toISOString(),state};
-  localStorage.setItem('business_map_before_front_merge',JSON.stringify(backup));
-
-  let rootId=existingRoot?.id||uid();
-  if(existingRoot){
-    const removeIds=new Set([existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]);
-    state.members=state.members.filter(p=>!removeIds.has(p.id));
+  // Identity is the source map + source person, never the name or current parent.
+  const incoming=new Map([['self',normalized.self]]);
+  for(const p of normalized.members){
+    const key=String(p.id||'');
+    if(!key||incoming.has(key)) throw new Error('共有マップのメンバーIDが重複または未設定です');
+    incoming.set(key,p);
   }
-  const idMap=new Map([['self',rootId]]);
-  normalized.members.forEach(p=>idMap.set(String(p.id),uid()));
+  for(const [key,p] of incoming){
+    if(key==='self')continue;
+    const seen=new Set([key]);let parent=String(p.parentId||'self');
+    while(parent!=='self'){
+      if(!incoming.has(parent)||seen.has(parent)) throw new Error('共有マップのスポンサー関係を確認してください');
+      seen.add(parent);parent=String(incoming.get(parent).parentId||'self');
+    }
+  }
+  const oldBranch=new Set(existingRoot?[existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]:[]);
+  const usedIds=new Set(['self',...state.members.map(p=>p.id)]);
+  const freshId=()=>{let id;do{id=uid();}while(usedIds.has(id));usedIds.add(id);return id;};
+  const idMap=new Map(),replacedIds=new Set(),redirects=new Map();
+  for(const key of incoming.keys()){
+    const matches=state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')===key);
+    const preferred=matches.find(p=>oldBranch.has(p.id))||matches[0];
+    const id=preferred?.id||freshId();idMap.set(key,id);
+    for(const p of matches){replacedIds.add(p.id);redirects.set(p.id,id);}
+  }
+  const rootId=idMap.get('self');
   const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});
   const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
   const branch=normalized.members.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
-  state.members.push(root,...branch);
+  // Preserve unrelated/local cards, including children attached to a duplicate.
+  // People absent from this upload are not silently deleted.
+  const retained=state.members.filter(p=>!replacedIds.has(p.id)).map(p=>
+    redirects.has(p.parentId)?{...p,parentId:redirects.get(p.parentId)}:p);
+  const backup={schema:'business-map-before-front-merge',createdAt:new Date().toISOString(),state};
+  localStorage.setItem('business_map_before_front_merge',JSON.stringify(backup));
+  state.members=[...retained,root,...branch];
   render();
   return {mode:existingRoot?'update':'add',rootName:root.name||'名称未設定',peopleCount:1+branch.length};
 };
