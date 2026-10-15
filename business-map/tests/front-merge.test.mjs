@@ -15,7 +15,7 @@ function setup(members=[]){
  ctx.api.set({self:{id:'self',name:'Owner'},members});ctx.storage=storage;return ctx;
 }
 const member=(id,person,parentId='self',extra={})=>({id,name:person,type:'カスタマー',parentId,sharedSourceUserId:'source-a',sharedSourcePersonId:person,...extra});
-const incoming={people:[{id:'self',name:'Front',type:'ABO'},{id:'abo',name:'ABO',type:'ABO',parentId:'self'},{id:'customer',name:'Customer',type:'カスタマー',parentId:'abo',targetPv:10000}]};
+const incoming={people:[{id:'self',name:'Front',type:'ABO'},{id:'abo',name:'ABO',type:'ABO',parentId:'self',status:'appointment-set'},{id:'customer',name:'Customer',type:'カスタマー',parentId:'abo',targetPv:10000,status:'ordered'}]};
 test('reimports consolidate detached duplicates, preserve branch IDs and sponsors',()=>{
  const initial=[member('front','self','self',{type:'ABO'}),member('abo-old','abo','front',{type:'ABO'}),member('detached','customer'),member('correct','customer','abo-old'),{id:'local',name:'Local',type:'カスタマー',parentId:'detached'},member('absent','absent','front'),member('other','customer','self',{sharedSourceUserId:'other-source'})];
  const ctx=setup(initial);ctx.v179MergeSharedFront('source-a',incoming);
@@ -52,4 +52,28 @@ test('invalid incoming relationships and duplicate source IDs fail before mutati
 test('backup failure does not partially mutate the map',()=>{
  const ctx=setup([member('original','customer')]);const before=JSON.stringify(ctx.api.get());ctx.localStorage.setItem=()=>{throw Error('quota')};
  assert.throws(()=>ctx.v179MergeSharedFront('source-a',incoming));assert.equal(JSON.stringify(ctx.api.get()),before);
+});
+test('unreachable members and all descendants are excluded without changing sponsors',()=>{
+ const ctx=setup();
+ const data={people:[...incoming.people,
+  {id:'blocked',parentId:'self',status:'appointment-open'},
+  {id:'child',parentId:'blocked',status:'ordered'},
+  {id:'grandchild',parentId:'child',status:'appointment-set'},
+  {id:'later',parentId:'self',status:'next-month'},
+  {id:'friend',parentId:'self',status:'befriend'}]};
+ for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',data);
+ const list=ctx.api.get().members;
+ assert.equal(list.length,5);
+ for(const id of ['blocked','child','grandchild'])assert.ok(!list.some(p=>p.sharedSourcePersonId===id));
+ assert.equal(list.find(p=>p.sharedSourcePersonId==='customer').parentId,list.find(p=>p.sharedSourcePersonId==='abo').id);
+});
+test('excluded source cards do not delete existing local data',()=>{
+ const ctx=setup([member('existing','blocked')]);
+ ctx.v179MergeSharedFront('source-a',{people:[...incoming.people,{id:'blocked',parentId:'self',status:'appointment-open'}]});
+ assert.equal(ctx.api.get().members.filter(p=>p.sharedSourcePersonId==='blocked').length,1);
+ assert.ok(ctx.api.get().members.some(p=>p.id==='existing'));
+});
+test('legacy appointment-open status displays the new label',()=>{
+ const ctx=setup();
+ assert.equal(vm.runInContext("currentStatusLabel({status:'appointment-open'})",ctx),'連絡不通');
 });

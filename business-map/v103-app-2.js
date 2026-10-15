@@ -318,6 +318,20 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
       seen.add(parent);parent=String(incoming.get(parent).parentId||'self');
     }
   }
+  // Keep the map owner as the front; exclude unreachable members and their subtree.
+  // Do not reparent their children to another sponsor or delete existing local cards.
+  const excluded=new Set();
+  for(const key of incoming.keys()){
+    if(key==='self')continue;
+    let cursor=key;
+    while(cursor!=='self'){
+      const person=incoming.get(cursor);
+      if(person.status==='appointment-open'){excluded.add(key);break;}
+      cursor=String(person.parentId||'self');
+    }
+  }
+  const importMembers=normalized.members.filter(p=>!excluded.has(String(p.id)));
+  for(const key of excluded)incoming.delete(key);
   const oldBranch=new Set(existingRoot?[existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]:[]);
   const usedIds=new Set(['self',...state.members.map(p=>p.id)]);
   const freshId=()=>{let id;do{id=uid();}while(usedIds.has(id));usedIds.add(id);return id;};
@@ -331,7 +345,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const rootId=idMap.get('self');
   const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});
   const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
-  const branch=normalized.members.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
+  const branch=importMembers.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
   // Preserve unrelated/local cards, including children attached to a duplicate.
   // People absent from this upload are not silently deleted.
   const retained=state.members.filter(p=>!replacedIds.has(p.id)).map(p=>

@@ -6,7 +6,7 @@ const STATUS_OPTIONS = [
   {id:'ordered', label:'発注済み', color:'#16a34a'},
   {id:'forecast', label:'発注見込み', color:'#0ea5a8'},
   {id:'appointment-set', label:'アポ確定', color:'#7c3aed'},
-  {id:'appointment-open', label:'アポ未定', color:'#64748b'},
+  {id:'appointment-open', label:'連絡不通', color:'#64748b'},
   {id:'prospecting', label:'アポ取り中', color:'#2563eb'},
   {id:'befriend', label:'仲良くなる', color:'#f59e0b'},
   {id:'next-month', label:'来月以降', color:'#ef4444'},
