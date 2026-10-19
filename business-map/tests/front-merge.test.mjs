@@ -67,11 +67,29 @@ test('unreachable members and all descendants are excluded without changing spon
  for(const id of ['blocked','child','grandchild'])assert.ok(!list.some(p=>p.sharedSourcePersonId===id));
  assert.equal(list.find(p=>p.sharedSourcePersonId==='customer').parentId,list.find(p=>p.sharedSourcePersonId==='abo').id);
 });
-test('excluded source cards do not delete existing local data',()=>{
- const ctx=setup([member('existing','blocked')]);
+test('updates remove existing excluded copies and their subtree, with a backup',()=>{
+ const initial=[member('existing','blocked'),member('duplicate','blocked'),member('child','child','existing'),{id:'local-child',parentId:'child'},member('other','blocked','self',{sharedSourceUserId:'other-source'}),{id:'unrelated',parentId:'self'}];
+ const ctx=setup(initial);
+ const data={people:[...incoming.people,{id:'blocked',parentId:'self',status:'appointment-open'},{id:'child',parentId:'blocked',status:'ordered'}]};
+ ctx.v179MergeSharedFront('source-a',data);
+ assert.equal(JSON.parse(ctx.storage.get('business_map_before_front_merge')).state.members.length,initial.length);
+ for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',data);
+ const list=ctx.api.get().members;
+ for(const id of ['existing','duplicate','child','local-child'])assert.ok(!list.some(p=>p.id===id));
+ for(const id of ['other','unrelated'])assert.ok(list.some(p=>p.id===id));
+ assert.equal(list.length,5);
+ assert.ok(list.every(p=>p.parentId==='self'||list.some(parent=>parent.id===p.parentId)));
+ // A person made reachable again can be imported normally.
+ data.people.find(p=>p.id==='blocked').status='appointment-set';
+ ctx.v179MergeSharedFront('source-a',data);
+ assert.equal(ctx.api.get().members.length,7);
+});
+test('latest source parent rescues a person moved out of an excluded subtree',()=>{
+ const ctx=setup([member('blocked-local','blocked'),member('customer-local','customer','blocked-local')]);
  ctx.v179MergeSharedFront('source-a',{people:[...incoming.people,{id:'blocked',parentId:'self',status:'appointment-open'}]});
- assert.equal(ctx.api.get().members.filter(p=>p.sharedSourcePersonId==='blocked').length,1);
- assert.ok(ctx.api.get().members.some(p=>p.id==='existing'));
+ const list=ctx.api.get().members;
+ assert.ok(!list.some(p=>p.id==='blocked-local'));
+ assert.equal(list.find(p=>p.id==='customer-local').parentId,list.find(p=>p.sharedSourcePersonId==='abo').id);
 });
 test('legacy appointment-open status displays the new label',()=>{
  const ctx=setup();

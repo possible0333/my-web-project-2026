@@ -319,7 +319,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
     }
   }
   // Keep the map owner as the front; exclude unreachable members and their subtree.
-  // Do not reparent their children to another sponsor or delete existing local cards.
+  // Do not reparent excluded children to another sponsor.
   const excluded=new Set();
   for(const key of incoming.keys()){
     if(key==='self')continue;
@@ -331,6 +331,15 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
     }
   }
   const importMembers=normalized.members.filter(p=>!excluded.has(String(p.id)));
+  // An update must also remove previously imported copies, even if detached.
+  // Remove their local subtree as well, rather than leaving orphaned children.
+  // Included people are rebuilt below using the latest source relationships.
+  const excludedLocalIds=new Set();
+  for(const p of state.members){
+    if(String(p.sharedSourceUserId||'')!==sourceKey||!excluded.has(String(p.sharedSourcePersonId||'')))continue;
+    excludedLocalIds.add(p.id);
+    for(const child of descendants(p.id))excludedLocalIds.add(child.id);
+  }
   for(const key of excluded)incoming.delete(key);
   const oldBranch=new Set(existingRoot?[existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]:[]);
   const usedIds=new Set(['self',...state.members.map(p=>p.id)]);
@@ -347,8 +356,8 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
   const branch=importMembers.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
   // Preserve unrelated/local cards, including children attached to a duplicate.
-  // People absent from this upload are not silently deleted.
-  const retained=state.members.filter(p=>!replacedIds.has(p.id)).map(p=>
+  // Unrelated people absent from this upload are not silently deleted.
+  const retained=state.members.filter(p=>!replacedIds.has(p.id)&&!excludedLocalIds.has(p.id)).map(p=>
     redirects.has(p.parentId)?{...p,parentId:redirects.get(p.parentId)}:p);
   const backup={schema:'business-map-before-front-merge',createdAt:new Date().toISOString(),state};
   localStorage.setItem('business_map_before_front_merge',JSON.stringify(backup));
