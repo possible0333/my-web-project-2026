@@ -218,6 +218,7 @@ function operationalMapToState(mapData){
     focus1:String(p?.focus1||''),
     focus2:String(p?.focus2||''),
     focus3:String(p?.focus3||''),
+    focusReview:window.FocusReview?.normalize(p?.focusReview),
     prospectMethod:String(p?.prospectMethod||''),
     prospectDeadline:String(p?.prospectDeadline||''),
     prospectAction:String(p?.prospectAction||''),

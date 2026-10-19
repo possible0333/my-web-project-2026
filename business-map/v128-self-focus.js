@@ -61,6 +61,11 @@
         <div><label for="fFocus2">意識すること 2</label><input id="fFocus2" class="text-input" placeholder="例：期限をその場で決める"></div>
         <div><label for="fFocus3">意識すること 3</label><input id="fFocus3" class="text-input" placeholder="例：フォローを翌日に持ち越さない"></div>
       </div>
+      <div class="focus-review-edit">
+        <strong>週1回の自己採点 <span id="focusReviewWeek"></span></strong>
+        <p>月曜〜日曜（日本時間）。「まだできていない」も採点済みです。保存ボタンで確定します。</p>
+        ${[1,2,3].map(i=>`<label for="fFocusReview${i}">意識すること ${i}<select id="fFocusReview${i}" class="text-input"><option value="">未採点</option><option value="yes">できている</option><option value="no">まだできていない</option></select></label>`).join('')}
+      </div>
       <div class="v194-prospect-edit">
         <div class="v194-prospect-edit-head">
           <strong>プロスペ探し</strong>
@@ -94,6 +99,10 @@
         </div>
       </div>`;
     anchor.insertAdjacentElement('afterend',field);
+    for(const i of [1,2,3])document.getElementById(`fFocus${i}`).addEventListener('input',()=>{
+      const select=document.getElementById(`fFocusReview${i}`);
+      select.value='';select.disabled=!safe(document.getElementById(`fFocus${i}`).value);
+    });
   }
 
   function copySelfPlanning(target,raw){
@@ -106,6 +115,7 @@
     target.self.focus1=String(src.focus1 ?? target.self.focus1 ?? '');
     target.self.focus2=String(src.focus2 ?? target.self.focus2 ?? '');
     target.self.focus3=String(src.focus3 ?? target.self.focus3 ?? '');
+    target.self.focusReview=window.FocusReview.normalize(src.focusReview ?? target.self.focusReview);
     target.self.prospectMethod=String(src.prospectMethod ?? target.self.prospectMethod ?? '');
     target.self.prospectDeadline=String(src.prospectDeadline ?? target.self.prospectDeadline ?? '');
     target.self.prospectAction=String(src.prospectAction ?? target.self.prospectAction ?? '');
@@ -155,6 +165,13 @@
   }
 
   function fillSelfFields(p){
+    const review=window.FocusReview.assess(p);
+    const week=document.getElementById('focusReviewWeek');
+    if(week){week.textContent=review.label;week.dataset.period=review.key;}
+    review.items.forEach((item,i)=>{
+      const select=document.getElementById(`fFocusReview${i+1}`);
+      if(select){select.value=item.answer;select.disabled=!item.text;}
+    });
     const values={
       fMonthlyTargetPv:Number(p?.monthlyTargetPv||0)||'',
       fFrontUpGoal:Number(p?.frontUpGoal||0)||'',
@@ -216,6 +233,11 @@
         data.focus1=safe(document.getElementById('fFocus1')?.value);
         data.focus2=safe(document.getElementById('fFocus2')?.value);
         data.focus3=safe(document.getElementById('fFocus3')?.value);
+        const period=window.FocusReview.period();
+        const current=document.getElementById('focusReviewWeek')?.dataset.period===period.key;
+        data.focusReview=window.FocusReview.normalize({period:period.key,items:[1,2,3].map(i=>({
+          text:data[`focus${i}`],answer:current&&data[`focus${i}`]?document.getElementById(`fFocusReview${i}`)?.value:''
+        }))});
         data.prospectPlans=Array.from({length:3},(_,index)=>{
           const number=index+1;
           return {
@@ -275,10 +297,12 @@
   function focusPanel(p){
     const focus=[safe(p.focus1),safe(p.focus2),safe(p.focus3)];
     const empty=focus.every(v=>!v);
+    const review=window.FocusReview.assess(p);
     return `<aside class="v194-self-side v194-focus-panel" aria-label="今月意識すること">
       ${empty?'<span class="v194-empty-stamp">未記入</span>':''}
       <div class="v194-side-title">今月意識すること</div>
-      <div class="v128-focus-items">${focus.map((v,i)=>`<div class="${v?'':'is-empty'}"><b>${i+1}</b><span>${escapeHtml(v||'未入力')}</span></div>`).join('')}</div>
+      ${empty?'':`<div class="focus-review-summary"><span>${escapeHtml(review.label)} ${review.count}/${review.total}採点</span><strong class="focus-review-stamp ${review.needed?'is-due':'is-done'}">${review.needed?'要採点':'採点済み'}</strong></div>`}
+      <div class="v128-focus-items">${focus.map((v,i)=>`<div class="${v?'':'is-empty'}"><b>${i+1}</b><span>${escapeHtml(v||'未入力')}${v?`<small class="focus-review-result">${review.items[i].answer==='yes'?'○ できている':review.items[i].answer==='no'?'△ まだできていない':'未採点'}</small>`:''}</span></div>`).join('')}</div>
     </aside>`;
   }
 
@@ -362,6 +386,13 @@
     try{ save(); }catch(e){}
     try{ if(typeof renderSelf==='function') renderSelf(); }catch(e){ console.warn('[v1.75] monthly summary rerender failed',e); }
     rerender();
+    let reviewPeriod=window.FocusReview.period().key;
+    const refreshReviewPeriod=()=>{
+      const next=window.FocusReview.period().key;
+      if(next!==reviewPeriod){reviewPeriod=next;rerender();}
+    };
+    document.addEventListener('visibilitychange',refreshReviewPeriod);
+    window.setInterval(refreshReviewPeriod,60000);
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true});
