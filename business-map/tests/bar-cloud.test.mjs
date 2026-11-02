@@ -54,3 +54,16 @@ test('Bar-only rows stay out of the existing maps and schedule gallery',async()=
  const source=await readFile(new URL('v136-share.js',base),'utf8');vm.runInContext(source.slice(source.indexOf('  function rowsToItems('),source.indexOf('  async function loadMapsRest(')),ctx);
  assert.equal(ctx.rowsToItems([row('a',[event('2026-11-07')]),{user_id:'map',map_data:{},name:'Map'}]).length,1);
 });
+
+test('same-day cancellation round-trips without losing slots or reinterpreting legacy arrival',()=>{
+ const db=M.empty();M.pair(db,'2026-11-07');const p=M.person(db,{name:'Cancelled',kind:'prospect',sponsor:'Owner'});M.add(db,db.events[0].id,p.id);
+ const e=db.entries[0];M.change(db,e.id,{status:'yes',slots:['A','D'],cancelled:true});
+ const roundtrip=C.aggregate([row('device',[C.snapshot(db,e.eventId,'Owner')])]).db;
+ assert.equal(roundtrip.entries[0].cancelled,true);assert.equal(roundtrip.entries[0].slots.join(','),'A,D');
+ assert.equal(M.summary(roundtrip.entries).confirmed,0);assert.equal(M.summary(roundtrip.entries).cancelled,1);assert.equal(M.summary(roundtrip.entries).slots.A,0);
+ assert.equal(M.past(roundtrip,'2026-11-08','Owner',true).length,0);
+ M.change(db,e.id,{cancelled:false});assert.equal(M.summary(db.entries).confirmed,1);assert.equal(M.past(db,'2026-11-08','Owner',true).length,1);
+ const legacy=C.aggregate([row('old',[event('2026-11-07')])]).db.entries[0];assert.equal(legacy.arrived,true);assert.equal(legacy.cancelled,undefined);
+ const patch={uploader_id:'device',event_date:'2026-11-07',person_id:p.id,patch:{name:'Admin renamed',status:'yes',arrived:false}};
+ M.change(db,e.id,{cancelled:true});assert.equal(C.aggregate([row('device',[C.snapshot(db,e.eventId,'Owner')])],[patch]).db.entries[0].cancelled,true);
+});

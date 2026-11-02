@@ -38,7 +38,7 @@
   if(!db.events.some(e=>e.id===eventId))throw Error('開催回を選んでください');
   const p=db.people.find(p=>p.id===personId);if(!p)throw Error('参加者が見つかりません');
   if(db.entries.some(e=>e.eventId===eventId&&e.personId===personId))throw Error('この人は今回すでに登録されています');
-  db.entries.push({id:id(),eventId,personId,name:p.name,kind:p.kind,sponsor:p.sponsor,group:p.group,status:'pending',slots:[],note:'',arrived:false});
+  db.entries.push({id:id(),eventId,personId,name:p.name,kind:p.kind,sponsor:p.sponsor,group:p.group,status:'pending',slots:[],note:'',arrived:false,cancelled:false});
  }
  function selfPerson(db,owner,mapPerson,create=false){
   if(!owner)return null;
@@ -58,7 +58,7 @@
   const p=selfPerson(db,owner,mapPerson,true);
   let entry=db.entries.find(e=>e.eventId===eventId&&e.personId===p.id);
   if(!entry){add(db,eventId,p.id);entry=db.entries.at(-1);}
-  change(db,entry.id,values.status==='no'?{...values,slots:[],arrived:false}:values);
+  change(db,entry.id,values.status==='no'?{...values,slots:[],arrived:false,cancelled:false}:values);
   entry.kind='member';
   return entry;
  }
@@ -66,15 +66,17 @@
   const entry=db.entries.find(e=>e.id===entryId);if(!entry)throw Error('参加者が見つかりません');
   if(values.status!==undefined){if(!['yes','pending','no'].includes(values.status))throw Error('出欠が不正です');entry.status=values.status;}
   if(values.slots!==undefined)entry.slots=['A','B','C','D'].filter(s=>values.slots.includes(s));
+  if(values.cancelled!==undefined){entry.cancelled=values.cancelled===true;if(entry.cancelled)entry.arrived=false;}
   if(values.note!==undefined)entry.note=String(values.note).slice(0,300);
   if(values.arrived!==undefined)entry.arrived=!!values.arrived;
  }
  function summary(entries,goal=0,prospectGoal=0){
   const active=entries.filter(e=>e.name.trim());
-  const yes=active.filter(e=>e.status==='yes'),prospects=yes.filter(e=>e.kind==='prospect');
-  return {confirmed:yes.length,prospects:prospects.length,pending:active.filter(e=>e.status==='pending').length,
-   pendingProspects:active.filter(e=>e.status==='pending'&&e.kind==='prospect').length,
+  const yes=active.filter(e=>e.status==='yes'&&!e.cancelled),prospects=yes.filter(e=>e.kind==='prospect');
+  return {confirmed:yes.length,prospects:prospects.length,pending:active.filter(e=>!e.cancelled&&e.status==='pending').length,
+   pendingProspects:active.filter(e=>!e.cancelled&&e.status==='pending'&&e.kind==='prospect').length,
    remaining:Math.max(0,goal-yes.length),prospectRemaining:Math.max(0,prospectGoal-prospects.length),
+   cancelled:active.filter(e=>e.cancelled===true).length,
    arrived:active.filter(e=>e.arrived).length,
    slots:Object.fromEntries(['A','B','C','D'].map(s=>[s,yes.filter(e=>e.slots.includes(s)).length])),
    part1:yes.filter(e=>e.slots.some(s=>s==='A'||s==='B')).length,part2:yes.filter(e=>e.slots.some(s=>s==='C'||s==='D')).length,
@@ -84,7 +86,7 @@
   const dates=new Map(db.events.map(e=>[e.id,e.date]));const people=new Map();
   for(const e of db.entries){
    const date=dates.get(e.eventId);
-   if(!e.arrived||e.kind!=='prospect'||!date||date>=before||(!all&&e.sponsor!==owner))continue;
+   if(!(e.arrived||('cancelled' in e&&e.status==='yes'&&!e.cancelled))||e.cancelled||e.kind!=='prospect'||!date||date>=before||(!all&&e.sponsor!==owner))continue;
    const p=people.get(e.personId)||{...e,count:0,last:date};
    p.count++;if(date>p.last){p.last=date;p.name=e.name;p.sponsor=e.sponsor;p.group=e.group;}
    people.set(e.personId,p);
