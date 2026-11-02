@@ -16,6 +16,7 @@
  let messageTimer;
  function message(s){$('message').textContent=s;clearTimeout(messageTimer);messageTimer=setTimeout(()=>$('message').textContent='',5000);}
  function loadMap(){
+  mapPeople=[];
   const keys=['business_map_v1_03','business_map_v1_02','business_map_v1_01','business_map_v1','business_map_v8_clean_icons'];
   for(const key of keys){
    const text=localStorage.getItem(key);if(!text)continue;
@@ -23,7 +24,7 @@
    const all=[{...map.self,id:'self'},...map.members],byId=new Map(all.map(p=>[p.id,p]));
    mapPeople=all.filter(p=>String(p.name||'').trim()).map(p=>{
     let front=p,seen=new Set();while(front.parentId&&front.parentId!=='self'&&byId.has(front.parentId)&&!seen.has(front.id)){seen.add(front.id);front=byId.get(front.parentId);}
-    return {name:p.name,kind:p.type==='プロスペ'?'prospect':'member',sponsor:p.id==='self'?p.name:byId.get(p.parentId)?.name||map.self.name||'',group:p.id==='self'||p.parentId==='self'&&p.type!=='ABO'?`${map.self.name}パーソナル`:`${front.name}Gr`,source:`map:${p.sharedSourceUserId||'local'}:${p.sharedSourcePersonId||p.id}`};
+    return {isFront:p.id!=='self'&&p.parentId==='self',mapType:p.type||'',name:p.name,kind:p.type==='プロスペ'?'prospect':'member',sponsor:p.id==='self'?p.name:byId.get(p.parentId)?.name||map.self.name||'',group:p.id==='self'||p.parentId==='self'&&p.type!=='ABO'?`${map.self.name}パーソナル`:`${front.name}Gr`,source:`map:${p.sharedSourceUserId||'local'}:${p.sharedSourcePersonId||p.id}`};
    });
    if(!owner)$('owner').value=map.self.name||'';break;
   }
@@ -112,10 +113,10 @@
  };
  $('fromMap').onclick=()=>guard(()=>{
   needEvent();loadMap();
-  modal('自分のマップから追加','<p class="muted">同じブラウザに保存されたマップを読み取ります。マップの内容は変更しません。分類は追加前に確認できます。</p>'+mapPeople.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)} ／ ${esc(p.sponsor)}</label><label>イベントの分類<select id="kind${i}"><option value="member" ${p.kind==='member'?'selected':''}>メンバー</option><option value="prospect" ${p.kind==='prospect'?'selected':''}>プロスペ</option></select></label></div>`).join(''),()=>{
+  const candidates=mapPeople.filter(p=>p.isFront);
+  modal('自分のフロントラインから追加','<p class="muted">自分に直接つながる人だけを表示します。分類はマップから自動設定します。</p>'+(candidates.length?candidates.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)}<span class="badge">${esc(p.mapType||'メンバー')}</span></label><p class="muted">${esc(p.sponsor)} ／ イベント：${p.kind==='prospect'?'プロスペ':'メンバー'}</p></div>`).join(''):'<p class="empty">追加できるフロントラインがありません。同じブラウザの自分のマップを確認してください。</p>'),()=>{
    const picked=[...document.querySelectorAll('[name=mapPick]:checked')].map(el=>Number(el.value));if(!picked.length)throw Error('追加する人を選んでください');
-   const kinds=new Map(picked.map(i=>[i,$('kind'+i).value]));
-   commit('マップから参加者を追加',d=>{for(const i of picked){const p=M.person(d,{...mapPeople[i],kind:kinds.get(i)});if(!d.entries.some(e=>e.eventId===selected&&e.personId===p.id)){M.add(d,selected,p.id);d.entries.at(-1).kind=kinds.get(i);}}});
+   commit('マップから参加者を追加',d=>{for(const i of picked){const candidate=candidates[i],p=M.person(d,candidate);p.kind=candidate.kind;let entry=d.entries.find(e=>e.eventId===selected&&e.personId===p.id);if(!entry){M.add(d,selected,p.id);entry=d.entries.at(-1);}entry.kind=candidate.kind;}});
   });
  });
  $('manual').onclick=()=>guard(()=>{
