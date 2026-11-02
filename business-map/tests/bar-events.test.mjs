@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {webcrypto} from 'node:crypto';
+const ctx={crypto:webcrypto};vm.createContext(ctx);vm.runInContext(await readFile(new URL('../bar-events/model.js',import.meta.url),'utf8'),ctx);const M=ctx.BarModel;
+function setup(){const db=M.empty();M.pair(db,'2026-11-07');return db;}
+test('first Saturday candidates and 14-day pair do not duplicate',()=>{
+ const db=setup();M.pair(db,'2026-11-07');assert.equal(db.events.length,2);assert.equal(db.events[1].date,'2026-11-21');
+ assert.throws(()=>M.pair(db,'2026-11-10'));assert.throws(()=>M.pair(db,'2026-02-30'));
+ assert.equal(M.candidates('2026-08').length,2);
+});
+test('repeated map imports use identity; names alone are not merged',()=>{
+ const db=setup(),p=M.person(db,{name:'Test',source:'map:a',sponsor:'Owner'});
+ assert.equal(M.person(db,{name:'Test',source:'map:a'}).id,p.id);
+ assert.notEqual(M.person(db,{name:'Test',source:'map:b'}).id,p.id);
+ M.add(db,db.events[0].id,p.id);assert.throws(()=>M.add(db,db.events[0].id,p.id));
+});
+test('only confirmed entries count in slots; overall and part1 counts are unique',()=>{
+ const db=setup();for(const status of ['yes','pending','no']){const p=M.person(db,{name:status,kind:'prospect'});M.add(db,db.events[0].id,p.id);M.change(db,db.entries.at(-1).id,{status,slots:['A','B','C','A'],arrived:status==='yes'});}
+ const s=M.summary(db.entries,3,2);assert.equal(s.confirmed,1);assert.equal(s.prospects,1);assert.equal(s.part1,1);assert.equal(s.part2,1);assert.equal(s.slots.A,1);assert.equal(s.pending,1);assert.equal(s.remaining,2);assert.equal(s.arrived,1);
+});
+test('past prospects require actual arrival and honor owner/date filters',()=>{
+ const db=setup();for(const [name,sponsor,arrived,kind] of [['one','Me',true,'prospect'],['two','Other',true,'prospect'],['three','Me',false,'prospect'],['four','Me',true,'member']]){const p=M.person(db,{name,sponsor,kind});M.add(db,db.events[0].id,p.id);M.change(db,db.entries.at(-1).id,{arrived});}
+ assert.equal(M.past(db,'2026-11-21','Me').length,1);assert.equal(M.past(db,'2026-11-21','Me',true).length,2);assert.equal(M.past(db,'2026-11-07','Me',true).length,0);
+ const p=db.people[0];M.add(db,db.events[1].id,p.id);assert.equal(db.entries.at(-1).status,'pending');assert.equal(db.entries.at(-1).slots.length,0);assert.equal(db.entries.at(-1).arrived,false);
+});
