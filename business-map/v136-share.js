@@ -272,7 +272,7 @@
   }
 
   function rowsToItems(rows,userId=''){
-    return (rows||[]).map(x=>({
+    return (rows||[]).filter(x=>x.map_data?.schema!=='bar-events-upload-v1').map(x=>({
       id:x.user_id,
       name:x.name,
       comment:x.comment||'',
