@@ -21,9 +21,9 @@ Supabaseの設定・RLS・スキーマは変更しない。自分の匿名IDの�
 ## 復元ポイント
 
 - 元の安定版タグ：backup-before-bar-v1.125-20261102（ff896d6）
-- **共有開始後の推奨復元タグ：rollback-bar-compatible-v1.125**
+- **共有開始後の推奨復元タグ：rollback-bar-compatible-v1.125-r2**
   - 元のv1.125にBar専用行をギャラリーから除外する互換修正のみ追加。
-  - work/business-map-rollback-compatible-v1.125.zip にも同じ内容を保存。
+  - work/business-map-rollback-compatible-v1.125-r2.zip にも同じ内容を保存。公開先の最新変更 ef02d84 も含む。
 - 復元時はこのタグの business-map フォルダーのみを新しいコミットで反映してデプロイする。他アプリまで巻き戻さない。
 - 端末内データと共有済みBar行は削除しない。元の画面に戻しても記録は保持される。
 - 当初の work/business-map-before-bar-v1.125.zip も保持しているが、共有開始後は互換版を使う。
