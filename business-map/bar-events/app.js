@@ -22,6 +22,7 @@
  function commit(label,fn){
   if(blocked)throw Error('保存データを読み込めません。既存データを保護するため編集を停止しています');
   if(!owner){$('identityPanel').open=true;$('owner').focus();throw Error('入力する場合だけ、担当者の名前を設定してください');}
+  if(selected&&event()?.date<today()){render();throw Error('開催日が過ぎたため次回表示に切り替えました。内容を確認して再操作してください');}
   if(localStorage.getItem(KEY)!==raw)throw Error('別タブで更新されています。再読み込みしてから操作してください');
   const next=M.clone(db);fn(next);
   next.history=[{at:new Date().toISOString(),actor:owner,label},...next.history].slice(0,20);
@@ -37,9 +38,9 @@
  function modal(title,html,fn){$('dialogTitle').textContent=title;$('fields').innerHTML=html;submit=fn;$('dialog').showModal();}
  function needEvent(){if(!event())throw Error('開催回を先に作成してください');}
  function render(){
-  if(!db.events.some(e=>e.id===selected))selected=db.events.find(e=>e.date>=today())?.id||db.events.at(-1)?.id||'';
-  $('event').innerHTML=db.events.map(e=>`<option value="${esc(e.id)}">${esc(e.date)}（土）</option>`).join('')||'<option>開催回がありません</option>';
-  $('event').value=selected;
+  const next=M.upcoming(db.events,today());selected=next?.id||'';
+  $('eventDate').textContent=next?`${Number(next.date.slice(5,7))}月${Number(next.date.slice(8,10))}日（土）`:'次回の開催日を登録してください';
+  $('eventDate').dataset.date=next?.date||'';
   const ev=event(),sum=M.summary(entries(),ev?.goal,ev?.prospectGoal);
   $('totals').innerHTML=[['参加確定',sum.confirmed,`目標 ${ev?.goal||0} ／ あと ${sum.remaining}`],['うちプロスペ',sum.prospects,`目標 ${ev?.prospectGoal||0} ／ あと ${sum.prospectRemaining}`],['未確定',sum.pending,`うちプロスペ ${sum.pendingProspects}`],['実際の来場',sum.arrived,'来場チェック済み']].map(([label,note,sub])=>`<div class="stat">${label}<b>${note}<small>人</small></b><small>${sub}</small></div>`).join('');
   $('times').textContent=`確定者の入場枠：A ${sum.slots.A}人 ／ B ${sum.slots.B}人 ／ C ${sum.slots.C}人｜1部 ${sum.part1}人・2部 ${sum.part2}人｜時間未定 ${sum.missingTime}人`;
@@ -73,12 +74,12 @@
   commit('参加者を追加',d=>{const p=same?d.people.find(p=>p.id===same.id):M.person(d,{name,kind,sponsor:owner,group});M.add(d,selected,p.id);d.entries.at(-1).kind=kind;});
   $('quickName').value='';$('quickName').focus();
  });};
- $('event').onchange=()=>{selected=$('event').value;render();};$('scope').onchange=render;$('search').oninput=render;
+ $('scope').onchange=render;$('search').oninput=render;
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
  $('close').onclick=()=>$('dialog').close();
  $('form').onsubmit=e=>{e.preventDefault();guard(()=>{submit();$('dialog').close();});};
  $('newEvent').onclick=()=>{
-  modal('月2回の開催回を作る','<label>開催月<input id="month" type="month" value="'+today().slice(0,7)+'" required></label><label>初回（土曜・10日より前）<select id="first"></select></label><p class="muted" id="second"></p>',()=>{const first=$('first').value;commit('開催回を作成',d=>M.pair(d,first));selected=db.events.find(e=>e.date===first).id;render();});
+  modal('開催日の設定','<label>開催月<input id="month" type="month" value="'+today().slice(0,7)+'" required></label><label>初回（土曜・10日より前）<select id="first"></select></label><p class="muted" id="second"></p><p class="muted">登録した日程のうち、今日以降で最も近い開催回だけを表示します。過去の参加記録は残ります。</p>',()=>{const first=$('first').value;commit('開催回を作成',d=>M.pair(d,first));});
   const update=()=>{$('first').innerHTML=M.candidates($('month').value).map(d=>`<option>${d}</option>`).join('');next();};
   const next=()=>{$('second').textContent=$('first').value?'2回目：'+M.plus($('first').value,14):'開催月を選択してください';};$('month').onchange=update;$('first').onchange=next;update();
  };

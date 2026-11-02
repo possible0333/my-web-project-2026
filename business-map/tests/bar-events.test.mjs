@@ -5,6 +5,15 @@ import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 const ctx={crypto:webcrypto};vm.createContext(ctx);vm.runInContext(await readFile(new URL('../bar-events/model.js',import.meta.url),'utf8'),ctx);const M=ctx.BarModel;
 function setup(){const db=M.empty();M.pair(db,'2026-11-07');return db;}
+test('show only the nearest upcoming event, including today; never fall back to past',()=>{
+ const db=setup(),before=JSON.stringify(db);
+ assert.equal(M.upcoming([...db.events].reverse(),'2026-11-02').date,'2026-11-07');
+ assert.equal(M.upcoming(db.events,'2026-11-07').date,'2026-11-07');
+ assert.equal(M.upcoming(db.events,'2026-11-08').date,'2026-11-21');
+ assert.equal(M.upcoming(db.events,'2026-11-22'),null);
+ assert.equal(M.upcoming([],'2026-11-02'),null);
+ assert.equal(JSON.stringify(db),before);
+});
 test('first Saturday candidates and 14-day pair do not duplicate',()=>{
  const db=setup();M.pair(db,'2026-11-07');assert.equal(db.events.length,2);assert.equal(db.events[1].date,'2026-11-21');
  assert.throws(()=>M.pair(db,'2026-11-10'));assert.throws(()=>M.pair(db,'2026-02-30'));

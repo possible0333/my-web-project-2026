@@ -9,6 +9,7 @@
   return Array.from({length:9},(_,i)=>month+'-'+String(i+1).padStart(2,'0')).filter(d=>new Date(d+'T00:00:00Z').getUTCDay()===6);
  }
  function empty(){return {schema:1,people:[],events:[],entries:[],history:[]};}
+ function upcoming(events,today){return events.filter(e=>dateOK(e.date)&&e.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;}
  function pair(db,first){
   if(!dateOK(first)||!candidates(first.slice(0,7)).includes(first))throw Error('10日より前の土曜日を選んでください');
   for(const date of [first,plus(first,14)])if(!db.events.some(e=>e.date===date))db.events.push({id:id(),date,goal:0,prospectGoal:0,groups:{}});
@@ -55,5 +56,5 @@
   }
   return [...people.values()].sort((a,b)=>b.last.localeCompare(a.last));
  }
- root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus};
+ root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming};
 })(globalThis);
