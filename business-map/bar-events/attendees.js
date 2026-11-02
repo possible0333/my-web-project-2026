@@ -1,6 +1,8 @@
 (function(){
  'use strict';
  const $=id=>document.getElementById(id);
+ const integrated=$('communityParticipants')?.dataset.integrated==='true';
+ let activeDate=integrated?$('eventDate')?.dataset.date:'';
  let data=BarModel.empty(),uploads=[],busy=false,lastLoaded='',loadError='';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const labels={A:'A｜1部 17:30〜18:30',B:'B｜1部 18:30〜20:30',C:'C｜2部 21:00〜22:00'};
@@ -9,7 +11,7 @@
   try{
    if(data.schema!==1||!Array.isArray(data.events)||!Array.isArray(data.entries))throw Error('参加者データを読み取れません');
    const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);
-   const event=BarModel.upcoming(data.events,today);
+   const event=integrated&&activeDate?(data.events.find(e=>e.date===activeDate)||{id:activeDate,date:activeDate}):BarModel.nextEvent(data.events,today);
    $('viewDate').textContent=event?`${Number(event.date.slice(5,7))}月${Number(event.date.slice(8,10))}日（土）`:'次回の開催日が未登録です';
    const confirmed=event?data.entries.filter(e=>e.eventId===event.id&&e.status==='yes'&&String(e.name||'').trim()):[];
    const query=$('viewSearch').value.trim().toLocaleLowerCase('ja-JP');
@@ -33,6 +35,14 @@
   finally{busy=false;$('viewRefresh').disabled=false;render();}
  }
  $('viewSearch').oninput=render;$('viewRefresh').onclick=refresh;
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
- window.setInterval(()=>{if(!document.hidden)refresh();},60000);refresh();
+ if(integrated){
+  $('viewRefresh').onclick=()=>window.dispatchEvent(new Event('bar-refresh-request'));
+  window.addEventListener('bar-active-date',e=>{activeDate=e.detail;render();});
+  window.addEventListener('bar-shared-ready',e=>{data=e.detail.db;uploads=e.detail.uploads;loadError='';lastLoaded=new Date().toLocaleString('ja-JP');render();});
+  window.addEventListener('bar-shared-error',e=>{loadError=e.detail;render();});
+  render();
+ }else{
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+  window.setInterval(()=>{if(!document.hidden){render();refresh();}},60000);render();refresh();
+ }
 })();

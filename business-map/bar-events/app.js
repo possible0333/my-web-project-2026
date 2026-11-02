@@ -47,11 +47,14 @@
  function modal(title,html,fn){$('dialogTitle').textContent=title;$('fields').innerHTML=html;submit=fn;$('dialog').showModal();}
  function needEvent(){if(!event())throw Error('開催回を先に作成してください');}
  function render(){
-  const next=M.upcoming(db.events,today());selected=next?.id||'';
+  const next=M.nextEvent(db.events,today());
+  if(!db.events.some(e=>e.id===next.id))db.events.push(next);
+  selected=next.id;
   uploadStatus();
   $('scope').options[0].textContent=tab==='past'?'全体プロスペ（共有分）':'この端末の登録分';
   $('eventDate').textContent=next?`${Number(next.date.slice(5,7))}月${Number(next.date.slice(8,10))}日（土）`:'次回の開催日を登録してください';
   $('eventDate').dataset.date=next?.date||'';
+  window.dispatchEvent(new CustomEvent('bar-active-date',{detail:next.date}));
   const ev=event(),sum=M.summary(entries(),ev?.goal,ev?.prospectGoal);
   $('totals').innerHTML=[['参加確定',sum.confirmed,`目標 ${ev?.goal||0} ／ あと ${sum.remaining}`],['うちプロスペ',sum.prospects,`目標 ${ev?.prospectGoal||0} ／ あと ${sum.prospectRemaining}`],['未確定',sum.pending,`うちプロスペ ${sum.pendingProspects}`],['実際の来場',sum.arrived,'来場チェック済み']].map(([label,note,sub])=>`<div class="stat">${label}<b>${note}<small>人</small></b><small>${sub}</small></div>`).join('');
   $('times').textContent=`確定者の入場枠：A ${sum.slots.A}人 ／ B ${sum.slots.B}人 ／ C ${sum.slots.C}人｜1部 ${sum.part1}人・2部 ${sum.part2}人｜時間未定 ${sum.missingTime}人`;
@@ -147,10 +150,12 @@
    const missing=sharedDb.events.filter(e=>e.date>=today()&&!db.events.some(x=>x.date===e.date));
    render();if(missing.length)commit('共有された開催日を追加',d=>{d.events.push(...missing.map(e=>({...e,id:M.id()})));d.events.sort((a,b)=>a.date.localeCompare(b.date));},true);
    $('sharedState').textContent=`共有データ取得済み：${result.uploads.length}件の開催回別アップロード`;render();
-  }catch(e){$('sharedState').textContent='共有データを取得できませんでした：'+e.message;}
+   window.dispatchEvent(new CustomEvent('bar-shared-ready',{detail:result}));
+  }catch(e){$('sharedState').textContent='共有データを取得できませんでした：'+e.message;window.dispatchEvent(new CustomEvent('bar-shared-error',{detail:e.message}));}
   finally{sharedBusy=false;$('refreshShared').disabled=false;}
  }
  $('refreshShared').onclick=refreshShared;
+ window.addEventListener('bar-refresh-request',refreshShared);
  $('uploadBar').onclick=async()=>{
   if(uploadBusy)return;
   try{
@@ -169,5 +174,10 @@
   owner=localStorage.getItem(OWNER)||'';$('owner').value=owner;loadMap();
   $('ownerNames').innerHTML=[...new Set(mapPeople.map(p=>p.name))].map(n=>`<option value="${esc(n)}"></option>`).join('');render();
  }catch(e){blocked=true;message('データを保護するため編集を停止しました：'+e.message);}
- if(!blocked)refreshShared();
+ if(!blocked){
+  refreshShared();let displayedDay=today();
+  const updateDay=()=>{if(!document.hidden&&displayedDay!==today()&&!$('dialog').open){displayedDay=today();render();}};
+  document.addEventListener('visibilitychange',()=>{updateDay();if(!document.hidden)refreshShared();});
+  window.setInterval(()=>{updateDay();if(!document.hidden)refreshShared();},60000);
+ }
 })();

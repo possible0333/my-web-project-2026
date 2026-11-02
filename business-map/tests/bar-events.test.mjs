@@ -5,6 +5,18 @@ import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 const ctx={crypto:webcrypto};vm.createContext(ctx);vm.runInContext(await readFile(new URL('../bar-events/model.js',import.meta.url),'utf8'),ctx);const M=ctx.BarModel;
 function setup(){const db=M.empty();M.pair(db,'2026-11-07');return db;}
+test('automatic schedule works with no uploads and crosses midnight/month/year',()=>{
+ assert.equal(M.nextEvent([],'2026-11-02').date,'2026-11-07');
+ assert.equal(M.nextEvent([],'2026-11-07').date,'2026-11-07');
+ assert.equal(M.nextEvent([],'2026-11-08').date,'2026-11-21');
+ assert.equal(M.nextEvent([],'2026-11-21').date,'2026-11-21');
+ assert.equal(M.nextEvent([],'2026-11-22').date,'2026-12-05');
+ assert.equal(M.nextEvent([],'2026-12-31').date,'2027-01-02');
+ const db=setup();assert.equal(M.nextEvent(db.events,'2026-11-02').id,db.events[0].id);
+ const custom={id:'custom',date:'2026-08-08'};
+ assert.equal(M.nextEvent([custom],'2026-08-01').id,'custom');
+ assert.equal(M.nextEvent([custom],'2026-08-09').date,'2026-08-22');
+});
 test('show only the nearest upcoming event, including today; never fall back to past',()=>{
  const db=setup(),before=JSON.stringify(db);
  assert.equal(M.upcoming([...db.events].reverse(),'2026-11-02').date,'2026-11-07');

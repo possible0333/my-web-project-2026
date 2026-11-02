@@ -10,6 +10,19 @@
  }
  function empty(){return {schema:1,people:[],events:[],entries:[],history:[]};}
  function upcoming(events,today){return events.filter(e=>dateOK(e.date)&&e.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;}
+ function nextEvent(events,today){
+  if(!dateOK(today))throw Error('日付が不正です');
+  const dates=[];
+  for(let offset=0;offset<2;offset++){
+   const month=new Date(today+'T00:00:00Z');month.setUTCDate(1);month.setUTCMonth(month.getUTCMonth()+offset);
+   const key=month.toISOString().slice(0,7),options=candidates(key);
+   const configured=events.map(e=>e.date).filter(d=>options.includes(d)).sort()[0];
+   const first=configured||options[0];dates.push(first,plus(first,14));
+  }
+  const automatic=dates.filter(d=>d>=today).sort()[0],registered=upcoming(events,today);
+  if(registered&&registered.date<=automatic)return registered;
+  return {id:automatic,date:automatic,goal:0,prospectGoal:0,groups:{}};
+ }
  function pair(db,first){
   if(!dateOK(first)||!candidates(first.slice(0,7)).includes(first))throw Error('10日より前の土曜日を選んでください');
   for(const date of [first,plus(first,14)])if(!db.events.some(e=>e.date===date))db.events.push({id:id(),date,goal:0,prospectGoal:0,groups:{}});
@@ -56,5 +69,5 @@
   }
   return [...people.values()].sort((a,b)=>b.last.localeCompare(a.last));
  }
- root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming};
+ root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming,nextEvent};
 })(globalThis);
