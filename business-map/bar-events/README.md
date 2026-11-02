@@ -1,3 +1,13 @@
+# 管理者モード（v1.132）
+
+- 既存の admin_verify_business_maps を利用。パスワードはブラウザのメモリー内のみ、15分でモード終了。書き込みRPCで毎回再認証。
+- public.bar_attendance_overrides は authenticated の共有閲覧のみ。直接書き込み権限は付与しない。匿名サインインによる共有閲覧は既存 business_maps と同じ要件。
+- public.bar_admin_moderate は SECURITY INVOKER。非公開 bar_private.moderate が auth.uid・既存認証・Barスキーマ・元更新時刻・修正番号・フィールドを検証。
+- 管理者修正は日付＋端末ID＋元personId単位。本人の再アップロードより優先。削除は非表示フラグで復元可能。元の端末データ・マップ・スケジュールは更新しない。操作履歴は非公開 bar_private.audit に保存。
+- BAR_ADMIN_SETUP.sql はダッシュボードSQL Editorで適用済み。CLI/MCP管理接続が使えないため、CLI生成migrationではない。
+- 検証：ロールバック付きSQLで認証・編集・競合・削除・復元・権限チェック。本番認証APIで閲覧、管理者認証、直接書込拒否、存在しない対象のRPC拒否を確認。実在の参加者の変更は残していない。
+- Security Advisor：Errors 0。共有閲覧の Anonymous Sign-Ins Allowed は要件に基づく。既存認証関数などの警告は別機能のため変更しない。
+
 # 一括アップロード（v1.131）
 
 - マップ・スケジュール・Bar動員のアップロードは共通の確認画面を使用。Barからはマップ画面へ遷移し、全件成功後にBarへ戻る。

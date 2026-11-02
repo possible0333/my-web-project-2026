@@ -47,7 +47,10 @@
   };
   return navigator.locks?navigator.locks.request('business-map-bar-upload',run):run();
  }
- function aggregate(rows){
+ function aggregate(rows,overrides=[]){
+  const overrideKey=(uid,date,id)=>JSON.stringify([uid,date,id]);
+  const corrections=new Map(overrides.map(o=>[overrideKey(o.uploader_id,o.event_date,o.person_id),o]));
+  const deletedEntries=[];
   const db=BarModel.empty(),events=new Map(),people=new Map(),uploads=[];
   for(const row of rows){
    if(row.map_data?.schema!==SCHEMA)continue;
@@ -56,18 +59,21 @@
     if(!events.has(date))events.set(date,{id:date,date,goal:0,prospectGoal:0,groups:{}});
     uploads.push({date,owner:text(event.owner),uploadedAt:text(event.uploadedAt),userId:row.user_id,count:event.entries.length});
     const seen=new Set();
-    for(const raw of event.entries){
-     const personId=text(raw?.personId);if(!personId||!text(raw.name)||seen.has(personId))continue;seen.add(personId);
+    for(const original of event.entries){
+     const personId=text(original?.personId);if(!personId||!text(original.name)||seen.has(personId))continue;seen.add(personId);
+     const correction=corrections.get(overrideKey(row.user_id,date,personId));
+     const raw={...original,...correction?.patch};
      const id=String(row.user_id)+':'+personId;
      const p={id,name:text(raw.name).slice(0,80),sponsor:text(raw.sponsor).slice(0,80),group:text(raw.group).slice(0,80),kind:raw.kind==='prospect'?'prospect':'member',source:'bar:'+id};people.set(id,p);
-     db.entries.push({...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:['A','B','C','D'].filter(s=>raw.slots?.includes(s)),arrived:raw.arrived===true,note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id});
+     const entry={...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:['A','B','C','D'].filter(s=>raw.slots?.includes(s)),arrived:raw.arrived===true,note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id,sourcePersonId:personId,sourceUpdatedAt:row.updated_at,adminRevision:correction?.revision||0,adminDeleted:!!correction?.deleted};
+     if(entry.adminDeleted)deletedEntries.push(entry);else db.entries.push(entry);
     }
    }
   }
   db.events=[...events.values()].sort((a,b)=>a.date.localeCompare(b.date));db.people=[...people.values()];
   const counts=new Map();for(const e of db.entries){const k=[e.eventId,e.name.normalize('NFKC').toLowerCase(),e.sponsor.normalize('NFKC').toLowerCase()].join('|');counts.set(k,(counts.get(k)||0)+1);}
   for(const e of db.entries){const k=[e.eventId,e.name.normalize('NFKC').toLowerCase(),e.sponsor.normalize('NFKC').toLowerCase()].join('|');e.duplicate=counts.get(k)>1;}
-  return {db,uploads};
+  return {db,uploads,deletedEntries};
  }
  async function load(){
   const {client}=await connect(),rows=[];
@@ -75,7 +81,17 @@
    const result=await client.from(TABLE).select('user_id,map_data,schedule_data,updated_at').eq('map_data->>schema',SCHEMA).order('user_id').range(offset,offset+499);
    if(result.error)throw result.error;rows.push(...result.data);if(result.data.length<500)break;
   }
-  return aggregate(rows);
+  const overrides=[];
+  for(let offset=0;;offset+=500){
+   const result=await client.from('bar_attendance_overrides').select('uploader_id,event_date,person_id,patch,deleted,revision').order('uploader_id').order('event_date').order('person_id').range(offset,offset+499);
+   if(result.error)throw result.error;overrides.push(...result.data);if(result.data.length<500)break;
+  }
+  return aggregate(rows,overrides);
  }
- window.BarCloud={connect,snapshot,upload,load,aggregate,schema:SCHEMA};
+ async function verifyAdmin(password){const {client}=await connect();const r=await client.rpc('admin_verify_business_maps',{p_password:password});if(r.error)throw r.error;return r.data===true;}
+ async function moderate(password,entry,action,patch={}){
+  const {client}=await connect();const r=await client.rpc('bar_admin_moderate',{p_password:password,p_uploader_id:entry.uploaderId,p_event_date:entry.eventId,p_person_id:entry.sourcePersonId,p_expected_updated_at:entry.sourceUpdatedAt,p_revision:entry.adminRevision||0,p_action:action,p_patch:patch});
+  if(r.error)throw r.error;if(!r.data?.ok)throw Error(r.data?.error||'管理者操作に失敗しました');return r.data;
+ }
+ window.BarCloud={connect,snapshot,upload,load,aggregate,verifyAdmin,moderate,schema:SCHEMA};
 })();

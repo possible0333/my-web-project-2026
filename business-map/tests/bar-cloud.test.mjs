@@ -9,6 +9,19 @@ vm.runInContext(await readFile(new URL('bar-events/cloud.js',base),'utf8'),ctx);
 const M=ctx.BarModel,C=ctx.BarCloud;
 const row=(uid,events)=>({user_id:uid,map_data:{schema:C.schema},schedule_data:{barEvents:{schema:C.schema,events}}});
 const event=(date,name='同名')=>({date,owner:'担当者',uploadedAt:'2026-11-02T00:00:00Z',entries:[{personId:'p',name,sponsor:'Sponsor',kind:'prospect',status:'yes',slots:['A','C'],arrived:true}]});
+test('admin corrections survive reupload, stay scoped, and deletion can be restored',()=>{
+ const rows=[row('a',[event('2026-11-07'),event('2026-11-21')]),row('b',[event('2026-11-07')])];
+ const correction={uploader_id:'a',event_date:'2026-11-07',person_id:'p',patch:{name:'変更後',kind:'member',slots:['D']},deleted:false,revision:1};
+ const changed=C.aggregate(rows,[correction]);
+ assert.equal(changed.db.entries.find(e=>e.id==='2026-11-07:a:p').name,'変更後');
+ assert.equal(changed.db.entries.find(e=>e.id==='2026-11-07:b:p').name,'同名');
+ assert.equal(changed.db.entries.find(e=>e.id==='2026-11-21:a:p').name,'同名');
+ rows[0].schedule_data.barEvents.events[0].entries[0].name='再アップロード';
+ assert.equal(C.aggregate(rows,[correction]).db.entries[0].name,'変更後');
+ correction.deleted=true;const removed=C.aggregate(rows,[correction]);
+ assert.equal(removed.db.entries.length,2);assert.equal(removed.deletedEntries.length,1);
+ correction.deleted=false;assert.equal(C.aggregate(rows,[correction]).db.entries.length,3);
+});
 test('D survives upload snapshot and shared aggregation',()=>{
  const db=M.empty();M.pair(db,'2026-11-07');
  M.setSelf(db,db.events[0].id,'Me',null,{status:'yes',slots:['C','D']});

@@ -163,6 +163,7 @@
    const missing=sharedDb.events.filter(e=>e.date>=today()&&!db.events.some(x=>x.date===e.date));
    render();if(missing.length)commit('共有された開催日を追加',d=>{d.events.push(...missing.map(e=>({...e,id:M.id()})));d.events.sort((a,b)=>a.date.localeCompare(b.date));},true);
    $('sharedState').textContent=`共有データ取得済み：${result.uploads.length}件の開催回別アップロード`;render();
+   window.BarSharedSnapshot=result;
    window.dispatchEvent(new CustomEvent('bar-shared-ready',{detail:result}));
   }catch(e){$('sharedState').textContent='共有データを取得できませんでした：'+e.message;window.dispatchEvent(new CustomEvent('bar-shared-error',{detail:e.message}));}
   finally{sharedBusy=false;$('refreshShared').disabled=false;$('viewRefresh').disabled=false;}
