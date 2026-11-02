@@ -4,6 +4,15 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const today=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
  let db=M.empty(),raw=null,owner='',tab='list',selected='',mapPeople=[],blocked=false,submit=null;
+ let sharedDb=M.empty(),uploadBusy=false,sharedBusy=false;
+ const RECEIPTS=KEY+'_receipts';
+ function uploadStatus(){
+  if(!event()){$('uploadState').textContent='開催日を登録してください';return;}
+  try{const receipt=JSON.parse(localStorage.getItem(RECEIPTS)||'{}')[event().date];
+   const current=JSON.stringify(BarCloud.snapshot(db,selected,owner));
+   $('uploadState').textContent=receipt?.fingerprint===current?`アップロード済み：${new Date(receipt.uploadedAt).toLocaleString('ja-JP')}`:'未アップロードの変更があります';
+  }catch(e){$('uploadState').textContent='担当者名を設定してアップロードしてください';}
+ }
  let messageTimer;
  function message(s){$('message').textContent=s;clearTimeout(messageTimer);messageTimer=setTimeout(()=>$('message').textContent='',5000);}
  function loadMap(){
@@ -19,13 +28,13 @@
    if(!owner)$('owner').value=map.self.name||'';break;
   }
  }
- function commit(label,fn){
+ function commit(label,fn,system=false){
   if(blocked)throw Error('保存データを読み込めません。既存データを保護するため編集を停止しています');
-  if(!owner){$('identityPanel').open=true;$('owner').focus();throw Error('入力する場合だけ、担当者の名前を設定してください');}
+  if(!owner&&!system){$('identityPanel').open=true;$('owner').focus();throw Error('入力する場合だけ、担当者の名前を設定してください');}
   if(selected&&event()?.date<today()){render();throw Error('開催日が過ぎたため次回表示に切り替えました。内容を確認して再操作してください');}
   if(localStorage.getItem(KEY)!==raw)throw Error('別タブで更新されています。再読み込みしてから操作してください');
   const next=M.clone(db);fn(next);
-  next.history=[{at:new Date().toISOString(),actor:owner,label},...next.history].slice(0,20);
+  next.history=[{at:new Date().toISOString(),actor:system?'共有受信':owner,label},...next.history].slice(0,20);
   const nextRaw=JSON.stringify(next);
   // Write the rollback copy before the primary data; do not mutate memory on failure.
   localStorage.setItem(UNDO,JSON.stringify({expected:nextRaw,before:db}));
@@ -39,6 +48,8 @@
  function needEvent(){if(!event())throw Error('開催回を先に作成してください');}
  function render(){
   const next=M.upcoming(db.events,today());selected=next?.id||'';
+  uploadStatus();
+  $('scope').options[0].textContent=tab==='past'?'全体プロスペ（共有分）':'この端末の登録分';
   $('eventDate').textContent=next?`${Number(next.date.slice(5,7))}月${Number(next.date.slice(8,10))}日（土）`:'次回の開催日を登録してください';
   $('eventDate').dataset.date=next?.date||'';
   const ev=event(),sum=M.summary(entries(),ev?.goal,ev?.prospectGoal);
@@ -50,8 +61,9 @@
   document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));
   $('history').innerHTML=db.history.map(h=>`<li>${esc(new Date(h.at).toLocaleString('ja-JP'))} ${esc(h.actor)}：${esc(h.label)}</li>`).join('');
   if(tab==='past'){
-   const people=M.past(db,ev?.date||today(),owner,$('scope').value==='all').filter(match);
-   $('content').innerHTML='<p class="muted">選択中の開催日より前に、来場チェックが付いたプロスペのみ。現在の端末に保存された履歴です。</p>'+people.map(p=>`<article class="card"><h3>${esc(p.name)}</h3><p class="muted">${esc(p.sponsor)} ／ ${esc(p.group)}<br>最終参加 ${esc(p.last)} ／ ${p.count}回</p><button data-past="${esc(p.personId)}" ${entries().some(e=>e.personId===p.personId)?'disabled':''}>${entries().some(e=>e.personId===p.personId)?'今回登録済み':'今回に追加'}</button></article>`).join('');
+   const all=$('scope').value==='all',people=M.past(all?sharedDb:db,ev?.date||today(),owner,all).filter(match);
+   const registered=p=>entries().some(e=>e.personId===p.personId||db.people.find(x=>x.id===e.personId)?.source==='bar:'+p.personId);
+   $('content').innerHTML='<p class="muted">開催日より前に来場チェックが付いたプロスペ。全体はアップロード済みの履歴、自分はこの端末の履歴です。</p>'+people.map(p=>`<article class="card"><h3>${esc(p.name)}</h3><p class="muted">${esc(p.sponsor)} ／ ${esc(p.group)}<br>最終参加 ${esc(p.last)} ／ ${p.count}回</p><button data-past="${esc(p.personId)}" data-shared="${all}" ${registered(p)?'disabled':''}>${registered(p)?'今回登録済み':'今回に追加'}</button></article>`).join('');
    if(!people.length)$('content').innerHTML+='<p class="empty">該当する過去参加者はいません</p>';
   }else if(tab==='summary'){
    const data=entries().filter(match),groups=[...new Set(data.map(e=>e.group||'未設定'))];
@@ -101,7 +113,7 @@
  });
  $('content').onclick=e=>guard(()=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.past){needEvent();commit('過去参加者を追加',d=>M.add(d,selected,b.dataset.past));return;}
+  if(b.dataset.past){needEvent();commit('過去参加者を追加',d=>{const remote=b.dataset.shared==='true'?sharedDb.people.find(p=>p.id===b.dataset.past):null;const id=remote?M.person(d,{...remote,source:'bar:'+remote.id}).id:b.dataset.past;M.add(d,selected,id);});return;}
   if(b.id==='targets'){
    needEvent();const ev=event(),groups=[...new Set(entries().map(e=>e.group||'未設定'))];
    modal('動員目標','<label>全体目標<input id="goal" type="number" min="0" step="1" value="'+ev.goal+'" required></label><label>うちプロスペ目標<input id="pGoal" type="number" min="0" step="1" value="'+ev.prospectGoal+'" required></label>'+groups.map((g,i)=>`<label>${esc(g)} の目標<input id="g${i}" type="number" min="0" step="1" value="${ev.groups[g]?.goal||0}" required></label>`).join(''),()=>{
@@ -128,9 +140,34 @@
   const next=JSON.stringify(prev.before);localStorage.setItem(KEY,next);db=prev.before;raw=next;localStorage.removeItem(UNDO);render();message('直前の変更を取り消しました');
  });
  $('backup').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='bar-events-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+ async function refreshShared(){
+  if(sharedBusy)return;sharedBusy=true;$('refreshShared').disabled=true;
+  try{
+   const result=await BarCloud.load();sharedDb=result.db;
+   const missing=sharedDb.events.filter(e=>e.date>=today()&&!db.events.some(x=>x.date===e.date));
+   render();if(missing.length)commit('共有された開催日を追加',d=>{d.events.push(...missing.map(e=>({...e,id:M.id()})));d.events.sort((a,b)=>a.date.localeCompare(b.date));},true);
+   $('sharedState').textContent=`共有データ取得済み：${result.uploads.length}件の開催回別アップロード`;render();
+  }catch(e){$('sharedState').textContent='共有データを取得できませんでした：'+e.message;}
+  finally{sharedBusy=false;$('refreshShared').disabled=false;}
+ }
+ $('refreshShared').onclick=refreshShared;
+ $('uploadBar').onclick=async()=>{
+  if(uploadBusy)return;
+  try{
+   needEvent();if(!owner)throw Error('入力担当者を設定してください');
+   if(!confirm(`${event().date}の参加予定を共有します。名前・スポンサー・所属・出欠・時間帯・来場記録が他の利用者に表示されます。備考は送信しません。同じ端末の同じ開催回は今回の内容に更新されます。よろしいですか？`))return;
+   uploadBusy=true;$('uploadBar').disabled=true;$('uploadState').textContent='アップロード中…';
+   const connection=await BarCloud.connect(),receipts=JSON.parse(localStorage.getItem(RECEIPTS)||'{}');
+   if(Object.values(receipts).some(r=>r.userId&&r.userId!==connection.userId))throw Error('端末の共有IDが変わっています。二重登録防止のため、旧データの確認を管理者に依頼してください');
+   const result=await BarCloud.upload(M.clone(db),selected,owner);receipts[result.date]=result;
+   localStorage.setItem(RECEIPTS,JSON.stringify(receipts));uploadStatus();message('参加予定をアップロードしました');await refreshShared();
+  }catch(e){$('uploadState').textContent='アップロードできませんでした：'+e.message;}
+  finally{uploadBusy=false;$('uploadBar').disabled=false;}
+ };
  try{
   raw=localStorage.getItem(KEY);if(raw){const stored=JSON.parse(raw);if(stored.schema!==1||!['people','events','entries','history'].every(k=>Array.isArray(stored[k])))throw Error('形式不明のイベントデータがあります');db=stored;}
   owner=localStorage.getItem(OWNER)||'';$('owner').value=owner;loadMap();
   $('ownerNames').innerHTML=[...new Set(mapPeople.map(p=>p.name))].map(n=>`<option value="${esc(n)}"></option>`).join('');render();
  }catch(e){blocked=true;message('データを保護するため編集を停止しました：'+e.message);}
+ if(!blocked)refreshShared();
 })();
