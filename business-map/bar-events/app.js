@@ -29,9 +29,14 @@
    if(!owner)$('owner').value=map.self.name||'';break;
   }
  }
+ function ensureOwner(){
+  const name=$('owner').value.trim();
+  if(!name){$('identityPanel').open=true;$('owner').focus();throw Error('自分の名前を入力してください');}
+  localStorage.setItem(OWNER,name);owner=name;
+ }
  function commit(label,fn,system=false){
   if(blocked)throw Error('保存データを読み込めません。既存データを保護するため編集を停止しています');
-  if(!owner&&!system){$('identityPanel').open=true;$('owner').focus();throw Error('入力する場合だけ、担当者の名前を設定してください');}
+  if(!system)ensureOwner();
   if(selected&&event()?.date<today()){render();throw Error('開催日が過ぎたため次回表示に切り替えました。内容を確認して再操作してください');}
   if(localStorage.getItem(KEY)!==raw)throw Error('別タブで更新されています。再読み込みしてから操作してください');
   const next=M.clone(db);fn(next);
@@ -41,7 +46,7 @@
   localStorage.setItem(UNDO,JSON.stringify({expected:nextRaw,before:db}));
   localStorage.setItem(KEY,nextRaw);db=next;raw=nextRaw;render();message(label+'しました');
  }
- function guard(fn){try{fn();}catch(e){message(e.message||String(e));}}
+ function guard(fn){try{fn();}catch(e){if(!blocked)render();const msg=e.message||String(e);message(msg);if($('dialog').open){let error=$('dialogError');if(!error){error=document.createElement('p');error.id='dialogError';error.setAttribute('role','alert');$('fields').prepend(error);}error.textContent=msg;}}}
  function event(){return db.events.find(e=>e.id===selected);}
  function entries(){return db.entries.filter(e=>e.eventId===selected);}
  function match(p){const q=$('search').value.trim().toLowerCase();return (!q||[p.name,p.sponsor,p.group].some(x=>String(x).toLowerCase().includes(q)))&&($('scope').value==='all'||p.sponsor===owner);}
@@ -93,7 +98,7 @@
  $('selfUpload').onclick=()=>$('uploadBar').click();
  $('remember').onclick=()=>guard(()=>{const name=$('owner').value.trim();if(!name)throw Error('名前を入力してください');localStorage.setItem(OWNER,name);owner=name;$('identityPanel').open=false;render();});
  $('quickAdd').onsubmit=e=>{e.preventDefault();guard(()=>{
-  needEvent();const name=$('quickName').value.trim(),kind=$('quickKind').value;
+  needEvent();ensureOwner();const name=$('quickName').value.trim(),kind=$('quickKind').value;
   if(!name)throw Error('名前を入力してください');
   const same=db.people.find(p=>p.name===name&&p.sponsor===owner);
   if(same&&entries().some(e=>e.personId===same.id))throw Error('同じ名前・スポンサーが今回登録済みです。別人の場合は「スポンサーを指定して追加」から登録してください');
@@ -112,11 +117,12 @@
   const next=()=>{$('second').textContent=$('first').value?'2回目：'+M.plus($('first').value,14):'開催月を選択してください';};$('month').onchange=update;$('first').onchange=next;update();
  };
  $('fromMap').onclick=()=>guard(()=>{
-  needEvent();loadMap();
+  needEvent();loadMap();ensureOwner();
   const candidates=mapPeople.filter(p=>p.isFront);
-  modal('自分のフロントラインから追加','<p class="muted">自分に直接つながる人だけを表示します。分類はマップから自動設定します。</p>'+(candidates.length?candidates.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)}<span class="badge">${esc(p.mapType||'メンバー')}</span></label><p class="muted">${esc(p.sponsor)} ／ イベント：${p.kind==='prospect'?'プロスペ':'メンバー'}</p></div>`).join(''):'<p class="empty">追加できるフロントラインがありません。同じブラウザの自分のマップを確認してください。</p>'),()=>{
+  modal('マップからまとめて参加','<div class="batch-times"><strong>参加時間（複数選択可）</strong><p class="muted">選んだ人を参加確定にします。時間を選ばない場合は登録済みの時間を保ちます。</p><div class="checks time-chips">'+[['A','17:30〜18:30'],['B','18:30〜20:30'],['C','21:00〜22:00'],['D','22:00〜23:00']].map(([key,time])=>`<label><input type="checkbox" name="batchSlot" value="${key}"><span><b>${key}</b><small>${time}</small></span></label>`).join('')+'</div></div><p class="muted">自分に直接つながる人だけを表示します。分類はマップから自動設定します。</p>'+(candidates.length?candidates.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)}<span class="badge">${esc(p.mapType||'メンバー')}</span></label><p class="muted">${esc(p.sponsor)} ／ イベント：${p.kind==='prospect'?'プロスペ':'メンバー'}</p></div>`).join(''):'<p class="empty">追加できるフロントラインがありません。同じブラウザの自分のマップを確認してください。</p>'),()=>{
    const picked=[...document.querySelectorAll('[name=mapPick]:checked')].map(el=>Number(el.value));if(!picked.length)throw Error('追加する人を選んでください');
-   commit('マップから参加者を追加',d=>{for(const i of picked){const candidate=candidates[i],p=M.person(d,candidate);p.kind=candidate.kind;let entry=d.entries.find(e=>e.eventId===selected&&e.personId===p.id);if(!entry){M.add(d,selected,p.id);entry=d.entries.at(-1);}entry.kind=candidate.kind;}});
+   const slots=[...$('fields').querySelectorAll('[name=batchSlot]:checked')].map(el=>el.value);
+   commit('マップから参加を登録',d=>{for(const i of picked){const candidate=candidates[i],p=M.person(d,candidate);p.kind=candidate.kind;let entry=d.entries.find(e=>e.eventId===selected&&e.personId===p.id);if(!entry){M.add(d,selected,p.id);entry=d.entries.at(-1);}entry.kind=candidate.kind;M.change(d,entry.id,{status:'yes',...(slots.length?{slots}:{})});}});
   });
  });
  $('manual').onclick=()=>guard(()=>{
@@ -174,7 +180,7 @@
 
  try{
   raw=localStorage.getItem(KEY);if(raw){const stored=JSON.parse(raw);if(stored.schema!==1||!['people','events','entries','history'].every(k=>Array.isArray(stored[k])))throw Error('形式不明のイベントデータがあります');db=stored;}
-  owner=localStorage.getItem(OWNER)||'';$('owner').value=owner;loadMap();
+  owner=localStorage.getItem(OWNER)||'';$('owner').value=owner;loadMap();if(!owner&&$('owner').value.trim())ensureOwner();
   $('ownerNames').innerHTML=[...new Set(mapPeople.map(p=>p.name))].map(n=>`<option value="${esc(n)}"></option>`).join('');render();
  }catch(e){blocked=true;message('データを保護するため編集を停止しました：'+e.message);}
  if(!blocked){
