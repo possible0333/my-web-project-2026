@@ -1,6 +1,6 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Barイベント｜試用版</title><link rel="stylesheet" href="style.css"><script src="model.js" defer></script><script src="app.js" defer></script></head>
 <body><main>
- <header><div><p class="eyebrow">BUSINESS MAP / BAR EVENTS</p><h1>Barイベント</h1></div><a class="button" href="../index.html">マップに戻る</a></header>
+ <header><div><p class="eyebrow">BUSINESS MAP / BAR EVENTS</p><h1>Barイベント</h1></div><div class="row"><a class="button" href="attendees.html">参加者一覧を見る</a><a class="button" href="../index.html">マップに戻る</a></div></header>
  <aside class="notice"><strong>端末内で試せるプレビュー版</strong><br>まだ他の人とは共有されません。「全体」はこの端末の登録分です。本番の共有接続は準備中。マップや既存の採点データは変更しません。</aside>
  <details class="panel" id="identityPanel"><summary id="ownerState">入力担当者を設定（閲覧だけなら不要）</summary><div class="identity"><label>自分（担当者）<input id="owner" list="ownerNames" placeholder="初回だけ自分の名前を設定"><datalist id="ownerNames"></datalist></label><button id="remember">この名前で使う</button></div></details>
  <section class="panel"><div class="row"><div class="grow"><span class="muted">直近の開催日</span><h2 id="eventDate"></h2></div><details><summary>開催日の設定</summary><button id="newEvent">開催日を登録</button></details></div><div id="totals" class="stats"></div><p id="times" class="muted"></p></section>
