@@ -4,7 +4,8 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const today=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
  let db=M.empty(),raw=null,owner='',tab='list',selected='',mapPeople=[],blocked=false,submit=null;
- function message(s){$('message').textContent=s;}
+ let messageTimer;
+ function message(s){$('message').textContent=s;clearTimeout(messageTimer);messageTimer=setTimeout(()=>$('message').textContent='',5000);}
  function loadMap(){
   const keys=['business_map_v1_03','business_map_v1_02','business_map_v1_01','business_map_v1','business_map_v8_clean_icons'];
   for(const key of keys){
@@ -20,7 +21,7 @@
  }
  function commit(label,fn){
   if(blocked)throw Error('保存データを読み込めません。既存データを保護するため編集を停止しています');
-  if(!owner)throw Error('最初に自分（担当者）の名前を設定してください');
+  if(!owner){$('identityPanel').open=true;$('owner').focus();throw Error('入力する場合だけ、担当者の名前を設定してください');}
   if(localStorage.getItem(KEY)!==raw)throw Error('別タブで更新されています。再読み込みしてから操作してください');
   const next=M.clone(db);fn(next);
   next.history=[{at:new Date().toISOString(),actor:owner,label},...next.history].slice(0,20);
@@ -42,7 +43,8 @@
   const ev=event(),sum=M.summary(entries(),ev?.goal,ev?.prospectGoal);
   $('totals').innerHTML=[['参加確定',sum.confirmed,`目標 ${ev?.goal||0} ／ あと ${sum.remaining}`],['うちプロスペ',sum.prospects,`目標 ${ev?.prospectGoal||0} ／ あと ${sum.prospectRemaining}`],['未確定',sum.pending,`うちプロスペ ${sum.pendingProspects}`],['実際の来場',sum.arrived,'来場チェック済み']].map(([label,note,sub])=>`<div class="stat">${label}<b>${note}<small>人</small></b><small>${sub}</small></div>`).join('');
   $('times').textContent=`確定者の入場枠：A ${sum.slots.A}人 ／ B ${sum.slots.B}人 ／ C ${sum.slots.C}人｜1部 ${sum.part1}人・2部 ${sum.part2}人｜時間未定 ${sum.missingTime}人`;
-  $('ownerState').textContent=owner?`担当者：${owner}（本人認証ではありません）`:'名前を確認して「この名前で使う」を押してください';
+  $('ownerState').textContent=owner?`入力担当：${owner} ▾ 変更`:'入力担当者を設定（閲覧だけなら不要）';
+  $('quickHint').textContent=owner?`スポンサーは「${owner}」。名前だけで続けて追加できます。`:'一覧の閲覧は担当者設定なしでできます。入力前に担当者を設定してください。';
   $('actions').hidden=tab!=='list';
   document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));
   $('history').innerHTML=db.history.map(h=>`<li>${esc(new Date(h.at).toLocaleString('ja-JP'))} ${esc(h.actor)}：${esc(h.label)}</li>`).join('');
@@ -57,10 +59,20 @@
    $('content').innerHTML='<p class="muted">全体目標は独立した目標値です。グループの合計とは自動連動しません。</p><button id="targets">目標を設定</button><h3>グループ別</h3>'+table(groups,'group')+'<h3>スポンサー別</h3>'+table(sponsors,'sponsor');
   }else{
    const list=entries().filter(match);
-   $('content').innerHTML=list.map(e=>`<article class="card" data-entry="${esc(e.id)}"><h3>${esc(e.name)}<span class="badge">${e.kind==='prospect'?'プロスペ':'メンバー'}</span></h3><div class="muted">スポンサー：${esc(e.sponsor||'未設定')} ／ ${esc(e.group||'所属未設定')}</div><div class="status">${[['yes','○ 参加確定'],['pending','△ 未確定'],['no','× 不参加']].map(([key,label])=>`<button data-status="${key}" aria-pressed="${e.status===key}">${label}</button>`).join('')}</div><div class="checks">${[['A','A 17:30〜18:30'],['B','B 18:30〜20:30'],['C','C 21:00〜22:00']].map(([key,label])=>`<label><input type="checkbox" data-slot="${key}" ${e.slots.includes(key)?'checked':''}>${label}</label>`).join('')}</div><label>今回の備考<input data-note maxlength="300" value="${esc(e.note)}" placeholder="遅刻・紹介時の補足など"></label><div class="row"><label class="checks"><input type="checkbox" data-arrived ${e.arrived?'checked':''}>来場チェック</label><button data-remove>今回の登録を外す</button></div>${e.status==='yes'&&!e.slots.length?'<p class="muted warn">入場時間を選択してください</p>':''}</article>`).join('')||'<p class="empty">まだ参加者がいません。<br>マップ・手入力・過去参加者から追加できます。</p>';
+   $('content').innerHTML=list.map(e=>`<article class="card compact-card" data-entry="${esc(e.id)}"><div class="person-row"><div class="person-name"><h3>${esc(e.name)}<span class="badge">${e.kind==='prospect'?'プ':'メ'}</span></h3><div class="muted">${esc(e.sponsor||'担当未設定')} · ${esc(e.group||'所属未設定')}</div></div><div class="status">${[['yes','○','参加確定'],['pending','△','未確定'],['no','×','不参加']].map(([key,label,title])=>`<button data-status="${key}" aria-label="${esc(e.name)} ${title}" title="${title}" aria-pressed="${e.status===key}">${label}</button>`).join('')}</div></div><div class="checks time-chips">${[['A','A 17:30'],['B','B 18:30'],['C','C 21:00']].map(([key,label])=>`<label><input type="checkbox" data-slot="${key}" ${e.slots.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}<label class="arrival-chip"><input type="checkbox" data-arrived ${e.arrived?'checked':''}><span>来場</span></label></div><details class="entry-more"><summary>備考${e.note?'あり':''}・詳細${e.status==='yes'&&!e.slots.length?' ／ 時間未定':''}</summary><p class="muted">A：1部17:30〜18:30 ／ B：1部18:30〜20:30 ／ C：2部21:00〜22:00（複数選択可）</p><label>今回の備考<input data-note maxlength="300" value="${esc(e.note)}" placeholder="遅刻など"></label><button data-remove>今回の登録を外す</button></details></article>`).join('')||'<p class="empty">まだ参加者がいません。<br>名前を入力するか、マップからまとめて選択してください。</p>';
   }
  }
- $('remember').onclick=()=>guard(()=>{const name=$('owner').value.trim();if(!name)throw Error('名前を入力してください');localStorage.setItem(OWNER,name);owner=name;render();});
+ $('remember').onclick=()=>guard(()=>{const name=$('owner').value.trim();if(!name)throw Error('名前を入力してください');localStorage.setItem(OWNER,name);owner=name;$('identityPanel').open=false;render();});
+ $('quickAdd').onsubmit=e=>{e.preventDefault();guard(()=>{
+  needEvent();const name=$('quickName').value.trim(),kind=$('quickKind').value;
+  if(!name)throw Error('名前を入力してください');
+  const same=db.people.find(p=>p.name===name&&p.sponsor===owner);
+  if(same&&entries().some(e=>e.personId===same.id))throw Error('同じ名前・スポンサーが今回登録済みです。別人の場合は「スポンサーを指定して追加」から登録してください');
+  if(same&&!confirm('以前の同じ名前・スポンサーの人として追加しますか？ 別人なら詳細入力を使ってください。'))return;
+  const group=mapPeople.find(p=>p.name===owner)?.group||'';
+  commit('参加者を追加',d=>{const p=same?d.people.find(p=>p.id===same.id):M.person(d,{name,kind,sponsor:owner,group});M.add(d,selected,p.id);d.entries.at(-1).kind=kind;});
+  $('quickName').value='';$('quickName').focus();
+ });};
  $('event').onchange=()=>{selected=$('event').value;render();};$('scope').onchange=render;$('search').oninput=render;
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
  $('close').onclick=()=>$('dialog').close();
