@@ -22,7 +22,7 @@
   if(!text(owner))throw Error('担当者を設定してください');
   return {date:ev.date,owner:text(owner).slice(0,80),entries:db.entries.filter(e=>e.eventId===eventId&&text(e.name)).map(e=>({
    personId:text(e.personId),name:text(e.name).slice(0,80),sponsor:text(e.sponsor).slice(0,80),group:text(e.group).slice(0,80),kind:e.kind==='prospect'?'prospect':'member',
-   status:['yes','pending','no'].includes(e.status)?e.status:'pending',slots:['A','B','C'].filter(s=>e.slots?.includes(s)),arrived:!!e.arrived
+   status:['yes','pending','no'].includes(e.status)?e.status:'pending',slots:['A','B','C','D'].filter(s=>e.slots?.includes(s)),arrived:!!e.arrived
   })).sort((a,b)=>a.personId.localeCompare(b.personId))};
  }
  function parse(data){
@@ -60,7 +60,7 @@
      const personId=text(raw?.personId);if(!personId||!text(raw.name)||seen.has(personId))continue;seen.add(personId);
      const id=String(row.user_id)+':'+personId;
      const p={id,name:text(raw.name).slice(0,80),sponsor:text(raw.sponsor).slice(0,80),group:text(raw.group).slice(0,80),kind:raw.kind==='prospect'?'prospect':'member',source:'bar:'+id};people.set(id,p);
-     db.entries.push({...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:['A','B','C'].filter(s=>raw.slots?.includes(s)),arrived:raw.arrived===true,note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id});
+     db.entries.push({...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:['A','B','C','D'].filter(s=>raw.slots?.includes(s)),arrived:raw.arrived===true,note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id});
     }
    }
   }

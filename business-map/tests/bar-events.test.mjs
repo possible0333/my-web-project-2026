@@ -5,6 +5,23 @@ import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
 const ctx={crypto:webcrypto};vm.createContext(ctx);vm.runInContext(await readFile(new URL('../bar-events/model.js',import.meta.url),'utf8'),ctx);const M=ctx.BarModel;
 function setup(){const db=M.empty();M.pair(db,'2026-11-07');return db;}
+test('self attendance reuses existing map member, clears absence slots, and resets next event',()=>{
+ const db=setup(),map={name:'Me',kind:'member',sponsor:'Sponsor',source:'map:local:self'};
+ const p=M.person(db,map);M.add(db,db.events[0].id,p.id);
+ M.setSelf(db,db.events[0].id,'Me',map,{status:'yes',slots:['C','D']});
+ assert.equal(db.entries.length,1);assert.equal(db.entries[0].sponsor,'Sponsor');
+ assert.equal(M.summary(db.entries).part2,1);assert.equal(M.summary(db.entries).slots.D,1);
+ M.setSelf(db,db.events[0].id,'Me',map,{status:'no'});assert.equal(db.entries[0].slots.length,0);
+ M.setSelf(db,db.events[1].id,'Me',map,{status:'yes'});
+ assert.equal(db.people.length,1);assert.equal(db.entries[1].slots.length,0);
+});
+test('self attendance reuses unique manual member but never a same-name prospect',()=>{
+ const db=setup();M.person(db,{name:'Me',kind:'prospect',sponsor:'Other'});
+ const p=M.person(db,{name:'Me',kind:'member',sponsor:'Me'});
+ M.setSelf(db,db.events[0].id,'Me',null,{status:'yes',slots:['D']});
+ assert.equal(db.people.length,2);assert.equal(db.entries[0].personId,p.id);
+ assert.throws(()=>M.setSelf(db,db.events[0].id,'',null,{status:'yes'}));
+});
 test('automatic schedule works with no uploads and crosses midnight/month/year',()=>{
  assert.equal(M.nextEvent([],'2026-11-02').date,'2026-11-07');
  assert.equal(M.nextEvent([],'2026-11-07').date,'2026-11-07');

@@ -46,18 +46,27 @@
  function match(p){const q=$('search').value.trim().toLowerCase();return (!q||[p.name,p.sponsor,p.group].some(x=>String(x).toLowerCase().includes(q)))&&($('scope').value==='all'||p.sponsor===owner);}
  function modal(title,html,fn){$('dialogTitle').textContent=title;$('fields').innerHTML=html;submit=fn;$('dialog').showModal();}
  function needEvent(){if(!event())throw Error('開催回を先に作成してください');}
+ function selfMap(){return mapPeople.find(p=>p.name===owner&&p.source==='map:local:self')||null;}
+ function selfEntry(){const p=M.selfPerson(db,owner,selfMap());return p?entries().find(e=>e.personId===p.id):null;}
+ function renderSelf(){
+  const e=selfEntry();
+  $('selfDate').textContent=`${Number(event().date.slice(5,7))}月${Number(event().date.slice(8,10))}日（土）`;
+  $('selfControls').innerHTML=`<div class="status self-status">${[['yes','参加'],['no','不参加']].map(([key,label])=>`<button data-self-status="${key}" aria-pressed="${e?.status===key}">${label}</button>`).join('')}</div><fieldset class="self-times" ${e?.status==='no'?'disabled':''}><legend>参加時間（複数選択可）</legend><div class="checks time-chips">${[['A','17:30〜18:30'],['B','18:30〜20:30'],['C','21:00〜22:00'],['D','22:00〜23:00']].map(([key,time])=>`<label><input type="checkbox" data-self-slot="${key}" ${e?.slots.includes(key)?'checked':''}><span><b>${key}</b><small>${time}</small></span></label>`).join('')}</div></fieldset>`;
+  $('selfSaveState').textContent=!owner?'初回だけ、自分の名前を設定してください。':!e?'参加／不参加、または参加時間を選んでください。':`${e.status==='yes'?'参加'+(e.slots.length?'：'+e.slots.join('・'):'（時間を選択してください）'):e.status==='no'?'不参加':'未確定'}を端末に保存済み。${$('uploadState').textContent}。アップロードは他の入力分も含みます。`;
+ }
  function render(){
   const next=M.nextEvent(db.events,today());
   if(!db.events.some(e=>e.id===next.id))db.events.push(next);
   selected=next.id;
   uploadStatus();
+  renderSelf();
   $('scope').options[0].textContent=tab==='past'?'全体プロスペ（共有分）':'この端末の登録分';
   $('eventDate').textContent=next?`${Number(next.date.slice(5,7))}月${Number(next.date.slice(8,10))}日（土）`:'次回の開催日を登録してください';
   $('eventDate').dataset.date=next?.date||'';
   window.dispatchEvent(new CustomEvent('bar-active-date',{detail:next.date}));
   const ev=event(),sum=M.summary(entries(),ev?.goal,ev?.prospectGoal);
   $('totals').innerHTML=[['参加確定',sum.confirmed,`目標 ${ev?.goal||0} ／ あと ${sum.remaining}`],['うちプロスペ',sum.prospects,`目標 ${ev?.prospectGoal||0} ／ あと ${sum.prospectRemaining}`],['未確定',sum.pending,`うちプロスペ ${sum.pendingProspects}`],['実際の来場',sum.arrived,'来場チェック済み']].map(([label,note,sub])=>`<div class="stat">${label}<b>${note}<small>人</small></b><small>${sub}</small></div>`).join('');
-  $('times').textContent=`確定者の入場枠：A ${sum.slots.A}人 ／ B ${sum.slots.B}人 ／ C ${sum.slots.C}人｜1部 ${sum.part1}人・2部 ${sum.part2}人｜時間未定 ${sum.missingTime}人`;
+  $('times').textContent=`確定者の入場枠：A ${sum.slots.A}人 ／ B ${sum.slots.B}人 ／ C ${sum.slots.C}人 ／ D ${sum.slots.D}人｜1部 ${sum.part1}人・2部 ${sum.part2}人｜時間未定 ${sum.missingTime}人`;
   $('ownerState').textContent=owner?`入力担当：${owner} ▾ 変更`:'入力担当者を設定（閲覧だけなら不要）';
   $('quickHint').textContent=owner?`スポンサーは「${owner}」。名前だけで続けて追加できます。`:'一覧の閲覧は担当者設定なしでできます。入力前に担当者を設定してください。';
   $('actions').hidden=tab!=='list';
@@ -75,9 +84,12 @@
    $('content').innerHTML='<p class="muted">全体目標は独立した目標値です。グループの合計とは自動連動しません。</p><button id="targets">目標を設定</button><h3>グループ別</h3>'+table(groups,'group')+'<h3>スポンサー別</h3>'+table(sponsors,'sponsor');
   }else{
    const list=entries().filter(match);
-   $('content').innerHTML=list.map(e=>`<article class="card compact-card" data-entry="${esc(e.id)}"><div class="person-row"><div class="person-name"><h3>${esc(e.name)}<span class="badge">${e.kind==='prospect'?'プ':'メ'}</span></h3><div class="muted">${esc(e.sponsor||'担当未設定')} · ${esc(e.group||'所属未設定')}</div></div><div class="status">${[['yes','○','参加確定'],['pending','△','未確定'],['no','×','不参加']].map(([key,label,title])=>`<button data-status="${key}" aria-label="${esc(e.name)} ${title}" title="${title}" aria-pressed="${e.status===key}">${label}</button>`).join('')}</div></div><div class="checks time-chips">${[['A','A 17:30'],['B','B 18:30'],['C','C 21:00']].map(([key,label])=>`<label><input type="checkbox" data-slot="${key}" ${e.slots.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}<label class="arrival-chip"><input type="checkbox" data-arrived ${e.arrived?'checked':''}><span>来場</span></label></div><details class="entry-more"><summary>備考${e.note?'あり':''}・詳細${e.status==='yes'&&!e.slots.length?' ／ 時間未定':''}</summary><p class="muted">A：1部17:30〜18:30 ／ B：1部18:30〜20:30 ／ C：2部21:00〜22:00（複数選択可）</p><label>今回の備考<input data-note maxlength="300" value="${esc(e.note)}" placeholder="遅刻など"></label><button data-remove>今回の登録を外す</button></details></article>`).join('')||'<p class="empty">まだ参加者がいません。<br>名前を入力するか、マップからまとめて選択してください。</p>';
+   $('content').innerHTML=list.map(e=>`<article class="card compact-card" data-entry="${esc(e.id)}"><div class="person-row"><div class="person-name"><h3>${esc(e.name)}<span class="badge">${e.kind==='prospect'?'プ':'メ'}</span></h3><div class="muted">${esc(e.sponsor||'担当未設定')} · ${esc(e.group||'所属未設定')}</div></div><div class="status">${[['yes','○','参加確定'],['pending','△','未確定'],['no','×','不参加']].map(([key,label,title])=>`<button data-status="${key}" aria-label="${esc(e.name)} ${title}" title="${title}" aria-pressed="${e.status===key}">${label}</button>`).join('')}</div></div><div class="checks time-chips">${[['A','A 17:30'],['B','B 18:30'],['C','C 21:00'],['D','D 22:00']].map(([key,label])=>`<label><input type="checkbox" data-slot="${key}" ${e.slots.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}<label class="arrival-chip"><input type="checkbox" data-arrived ${e.arrived?'checked':''}><span>来場</span></label></div><details class="entry-more"><summary>備考${e.note?'あり':''}・詳細${e.status==='yes'&&!e.slots.length?' ／ 時間未定':''}</summary><p class="muted">A：1部17:30〜18:30 ／ B：1部18:30〜20:30 ／ C：2部21:00〜22:00 ／ D：2部22:00〜23:00（複数選択可）</p><label>今回の備考<input data-note maxlength="300" value="${esc(e.note)}" placeholder="遅刻など"></label><button data-remove>今回の登録を外す</button></details></article>`).join('')||'<p class="empty">まだ参加者がいません。<br>名前を入力するか、マップからまとめて選択してください。</p>';
   }
  }
+ $('selfControls').onclick=e=>guard(()=>{const b=e.target.closest('[data-self-status]');if(b)commit('自分の出欠を保存',d=>M.setSelf(d,selected,owner,selfMap(),{status:b.dataset.selfStatus}));});
+ $('selfControls').onchange=e=>guard(()=>{if(!e.target.hasAttribute('data-self-slot'))return;const slots=[...$('selfControls').querySelectorAll('[data-self-slot]:checked')].map(x=>x.dataset.selfSlot);commit('自分の参加時間を保存',d=>M.setSelf(d,selected,owner,selfMap(),{status:'yes',slots}));});
+ $('selfUpload').onclick=()=>$('uploadBar').click();
  $('remember').onclick=()=>guard(()=>{const name=$('owner').value.trim();if(!name)throw Error('名前を入力してください');localStorage.setItem(OWNER,name);owner=name;$('identityPanel').open=false;render();});
  $('quickAdd').onsubmit=e=>{e.preventDefault();guard(()=>{
   needEvent();const name=$('quickName').value.trim(),kind=$('quickKind').value;
@@ -161,13 +173,13 @@
   try{
    needEvent();if(!owner)throw Error('入力担当者を設定してください');
    if(!confirm(`${event().date}の参加予定を共有します。名前・スポンサー・所属・出欠・時間帯・来場記録が他の利用者に表示されます。備考は送信しません。同じ端末の同じ開催回は今回の内容に更新されます。よろしいですか？`))return;
-   uploadBusy=true;$('uploadBar').disabled=true;$('uploadState').textContent='アップロード中…';
+   uploadBusy=true;$('uploadBar').disabled=true;$('selfUpload').disabled=true;$('uploadState').textContent='アップロード中…';$('selfSaveState').textContent='アップロード中…';
    const connection=await BarCloud.connect(),receipts=JSON.parse(localStorage.getItem(RECEIPTS)||'{}');
    if(Object.values(receipts).some(r=>r.userId&&r.userId!==connection.userId))throw Error('端末の共有IDが変わっています。二重登録防止のため、旧データの確認を管理者に依頼してください');
    const result=await BarCloud.upload(M.clone(db),selected,owner);receipts[result.date]=result;
    localStorage.setItem(RECEIPTS,JSON.stringify(receipts));uploadStatus();message('参加予定をアップロードしました');await refreshShared();
   }catch(e){$('uploadState').textContent='アップロードできませんでした：'+e.message;}
-  finally{uploadBusy=false;$('uploadBar').disabled=false;}
+  finally{uploadBusy=false;$('uploadBar').disabled=false;$('selfUpload').disabled=false;renderSelf();}
  };
  try{
   raw=localStorage.getItem(KEY);if(raw){const stored=JSON.parse(raw);if(stored.schema!==1||!['people','events','entries','history'].every(k=>Array.isArray(stored[k])))throw Error('形式不明のイベントデータがあります');db=stored;}

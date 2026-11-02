@@ -40,10 +40,32 @@
   if(db.entries.some(e=>e.eventId===eventId&&e.personId===personId))throw Error('この人は今回すでに登録されています');
   db.entries.push({id:id(),eventId,personId,name:p.name,kind:p.kind,sponsor:p.sponsor,group:p.group,status:'pending',slots:[],note:'',arrived:false});
  }
+ function selfPerson(db,owner,mapPerson,create=false){
+  if(!owner)return null;
+  const saved=db.people.find(p=>p.id===db.selfPeople?.[owner]);
+  const mapped=mapPerson?.source&&db.people.find(p=>p.source===mapPerson.source);
+  const candidates=db.people.filter(p=>p.name===owner&&p.kind==='member'&&p.sponsor===owner);
+  let p=saved||mapped||(candidates.length===1?candidates[0]:null);
+  if(!p&&create){
+   if(candidates.length>1)throw Error('自分と同名の登録が複数あります。参加者一覧で重複を確認してください');
+   p=person(db,{...(mapPerson||{}),name:owner,kind:'member',sponsor:mapPerson?.sponsor||owner});
+  }
+  if(p&&create){db.selfPeople=db.selfPeople||{};db.selfPeople[owner]=p.id;}
+  return p||null;
+ }
+ function setSelf(db,eventId,owner,mapPerson,values){
+  if(!String(owner||'').trim())throw Error('自分の名前を設定してください');
+  const p=selfPerson(db,owner,mapPerson,true);
+  let entry=db.entries.find(e=>e.eventId===eventId&&e.personId===p.id);
+  if(!entry){add(db,eventId,p.id);entry=db.entries.at(-1);}
+  change(db,entry.id,values.status==='no'?{...values,slots:[],arrived:false}:values);
+  entry.kind='member';
+  return entry;
+ }
  function change(db,entryId,values){
   const entry=db.entries.find(e=>e.id===entryId);if(!entry)throw Error('参加者が見つかりません');
   if(values.status!==undefined){if(!['yes','pending','no'].includes(values.status))throw Error('出欠が不正です');entry.status=values.status;}
-  if(values.slots!==undefined)entry.slots=['A','B','C'].filter(s=>values.slots.includes(s));
+  if(values.slots!==undefined)entry.slots=['A','B','C','D'].filter(s=>values.slots.includes(s));
   if(values.note!==undefined)entry.note=String(values.note).slice(0,300);
   if(values.arrived!==undefined)entry.arrived=!!values.arrived;
  }
@@ -54,8 +76,8 @@
    pendingProspects:active.filter(e=>e.status==='pending'&&e.kind==='prospect').length,
    remaining:Math.max(0,goal-yes.length),prospectRemaining:Math.max(0,prospectGoal-prospects.length),
    arrived:active.filter(e=>e.arrived).length,
-   slots:Object.fromEntries(['A','B','C'].map(s=>[s,yes.filter(e=>e.slots.includes(s)).length])),
-   part1:yes.filter(e=>e.slots.some(s=>s==='A'||s==='B')).length,part2:yes.filter(e=>e.slots.includes('C')).length,
+   slots:Object.fromEntries(['A','B','C','D'].map(s=>[s,yes.filter(e=>e.slots.includes(s)).length])),
+   part1:yes.filter(e=>e.slots.some(s=>s==='A'||s==='B')).length,part2:yes.filter(e=>e.slots.some(s=>s==='C'||s==='D')).length,
    missingTime:yes.filter(e=>!e.slots.length).length};
  }
  function past(db,before,owner,all=false){
@@ -69,5 +91,5 @@
   }
   return [...people.values()].sort((a,b)=>b.last.localeCompare(a.last));
  }
- root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming,nextEvent};
+ root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming,nextEvent,selfPerson,setSelf};
 })(globalThis);

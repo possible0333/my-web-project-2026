@@ -9,6 +9,14 @@ vm.runInContext(await readFile(new URL('bar-events/cloud.js',base),'utf8'),ctx);
 const M=ctx.BarModel,C=ctx.BarCloud;
 const row=(uid,events)=>({user_id:uid,map_data:{schema:C.schema},schedule_data:{barEvents:{schema:C.schema,events}}});
 const event=(date,name='同名')=>({date,owner:'担当者',uploadedAt:'2026-11-02T00:00:00Z',entries:[{personId:'p',name,sponsor:'Sponsor',kind:'prospect',status:'yes',slots:['A','C'],arrived:true}]});
+test('D survives upload snapshot and shared aggregation',()=>{
+ const db=M.empty();M.pair(db,'2026-11-07');
+ M.setSelf(db,db.events[0].id,'Me',null,{status:'yes',slots:['C','D']});
+ const snap=C.snapshot(db,db.events[0].id,'Me');
+ const result=C.aggregate([row('device',[snap])]);
+ assert.equal(result.db.entries[0].slots.join(','),'C,D');
+ assert.equal(M.summary(result.db.entries).part2,1);
+});
 test('snapshot excludes notes and personal map fields, and is stable',()=>{
  const db=M.empty();M.pair(db,'2026-11-07');const p=M.person(db,{name:'Test'});M.add(db,db.events[0].id,p.id);db.entries[0].note='PRIVATE';db.entries[0].target=30000;
  const snap=C.snapshot(db,db.events[0].id,'Owner');assert.ok(!JSON.stringify(snap).includes('PRIVATE'));assert.ok(!JSON.stringify(snap).includes('target'));

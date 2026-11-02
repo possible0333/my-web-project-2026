@@ -5,7 +5,7 @@
  let activeDate=integrated?$('eventDate')?.dataset.date:'';
  let data=BarModel.empty(),uploads=[],busy=false,lastLoaded='',loadError='';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const labels={A:'A｜1部 17:30〜18:30',B:'B｜1部 18:30〜20:30',C:'C｜2部 21:00〜22:00'};
+ const labels={A:'A｜1部 17:30〜18:30',B:'B｜1部 18:30〜20:30',C:'C｜2部 21:00〜22:00',D:'D｜2部 22:00〜23:00'};
  function render(){
   $('viewRows').innerHTML='';$('viewCount').textContent='';
   try{
@@ -18,7 +18,7 @@
    const rows=confirmed.filter(e=>[e.name,e.sponsor].some(v=>String(v||'').toLocaleLowerCase('ja-JP').includes(query))).sort((a,b)=>String(a.sponsor||'').localeCompare(String(b.sponsor||''),'ja')||String(a.name).localeCompare(String(b.name),'ja'));
    $('viewCount').textContent=query?`${rows.length}人／確定${confirmed.length}人`:`参加確定 ${confirmed.length}人`;
    $('viewRows').innerHTML=rows.map(e=>{
-    const slots=['A','B','C'].filter(s=>Array.isArray(e.slots)&&e.slots.includes(s));
+    const slots=['A','B','C','D'].filter(s=>Array.isArray(e.slots)&&e.slots.includes(s));
     return `<tr><td>${esc(e.name)}${e.duplicate?'<small class="time-label warn">重複候補</small>':''}</td><td>${esc(e.sponsor||'未設定')}</td><td>${slots.length?slots.map(s=>`<span class="time-label">${labels[s]}</span>`).join(''):'<span class="time-label warn">時間未定</span>'}</td></tr>`;
    }).join('');
    const current=data.entries.filter(e=>e.eventId===event?.id),sum=BarModel.summary(current);
