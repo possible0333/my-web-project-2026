@@ -169,19 +169,8 @@
  }
  $('refreshShared').onclick=refreshShared;
  window.addEventListener('bar-refresh-request',refreshShared);
- $('uploadBar').onclick=async()=>{
-  if(uploadBusy)return;
-  try{
-   needEvent();if(!owner)throw Error('入力担当者を設定してください');
-   if(!confirm(`${event().date}の参加予定を共有します。名前・スポンサー・所属・出欠・時間帯・来場記録が他の利用者に表示されます。備考は送信しません。同じ端末の同じ開催回は今回の内容に更新されます。よろしいですか？`))return;
-   uploadBusy=true;$('uploadBar').disabled=true;$('selfUpload').disabled=true;$('uploadState').textContent='アップロード中…';$('selfSaveState').textContent='アップロード中…';
-   const connection=await BarCloud.connect(),receipts=JSON.parse(localStorage.getItem(RECEIPTS)||'{}');
-   if(Object.values(receipts).some(r=>r.userId&&r.userId!==connection.userId))throw Error('端末の共有IDが変わっています。二重登録防止のため、旧データの確認を管理者に依頼してください');
-   const result=await BarCloud.upload(M.clone(db),selected,owner);receipts[result.date]=result;
-   localStorage.setItem(RECEIPTS,JSON.stringify(receipts));uploadStatus();message('参加予定をアップロードしました');await refreshShared();
-  }catch(e){$('uploadState').textContent='アップロードできませんでした：'+e.message;}
-  finally{uploadBusy=false;$('uploadBar').disabled=false;$('selfUpload').disabled=false;renderSelf();}
- };
+ $('uploadBar').onclick=()=>{location.href='../index.html?uploadFrom=bar';};
+
  try{
   raw=localStorage.getItem(KEY);if(raw){const stored=JSON.parse(raw);if(stored.schema!==1||!['people','events','entries','history'].every(k=>Array.isArray(stored[k])))throw Error('形式不明のイベントデータがあります');db=stored;}
   owner=localStorage.getItem(OWNER)||'';$('owner').value=owner;loadMap();

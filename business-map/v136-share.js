@@ -491,8 +491,8 @@
         <div class="v136-share-body"><div id="v136GalleryNotice"></div><div class="v159-adminbar"><button class="btn" id="v159AdminBtn">🔒 管理者モード</button><span id="v159AdminState">通常モード</span></div><div class="v156-group-tabs"><button class="active" data-v156-gallery="maps">マップ一覧</button><button data-v156-gallery="schedule">みんなのスケジュール</button></div><div id="v136MapListPanel"><div class="v136-share-toolbar"><input class="v136-share-search" id="v136Search" placeholder="名前で検索"><button class="btn" id="v136Reload">更新</button><button class="btn" id="v136DownloadJson">全員JSON保存</button><button class="btn danger v136-delete-selected" id="v136DeleteSelected" disabled>選択削除（0）</button><span class="v136-share-state" id="v136GalleryState"></span></div><div class="v136-delete-guide">自分がアップロードしたマップのみ選択して削除できます。</div><div class="v136-map-grid" id="v136MapGrid"></div></div><div id="v156GroupSchedule" hidden></div></div>
       </div></div>
       <div class="v136-share-modal" id="v136UploadModal"><div class="v136-share-sheet" style="width:min(760px,100%)">
-        <div class="v136-share-head"><div><div class="v136-share-title">マップとスケジュールをアップロード</div><div class="v136-share-sub">現在のMAP画像・MAP JSON・スケジュールをまとめて共有</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
-        <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">MAPとスケジュールをアップロード</button></div></div></div>
+        <div class="v136-share-head"><div><div class="v136-share-title">すべてまとめてアップロード</div><div class="v136-share-sub">このブラウザのマップ・スケジュール・次回Bar動員を共有します。Barの備考は送信しません。</div></div><button class="btn ghost" data-v136-close="upload">閉じる</button></div>
+        <div class="v136-share-body"><div id="v136UploadNotice"></div><div class="v136-upload-box"><div class="v136-upload-grid"><div class="v136-field"><label>名前</label><input id="v136UploadName"></div><div class="v136-field"><label>更新日</label><input id="v136UploadDate" disabled></div><div class="v136-field full"><label>コメント</label><textarea id="v136UploadComment" maxlength="120" placeholder="例：8/13時点 / 今月の重点系列を更新"></textarea></div></div><div class="v136-upload-preview" id="v136UploadPreview"><span class="v136-share-state">プレビューを作成します</span></div><div class="v136-upload-actions"><button class="btn" id="v136Recreate">プレビュー再作成</button><button class="btn primary" id="v136DoUpload">すべてまとめてアップロード</button></div></div></div>
       </div></div>
       <div class="v136-viewer" id="v136Viewer"><div class="v167-viewer-stage" id="v167ViewerStage"><img id="v136ViewerImg" alt="共有マップ" draggable="false"></div><div class="v167-viewer-toolbar" role="toolbar" aria-label="マップの拡大縮小"><button class="btn ghost v180-view-page" id="v180ViewPrev" type="button">‹ 前</button><span class="v180-view-page-label" id="v180ViewPageLabel">1/1</span><button class="btn ghost v180-view-page" id="v180ViewNext" type="button">次 ›</button><button class="btn ghost v167-zoom-button" id="v167ZoomOut" type="button" aria-label="縮小">−</button><span class="v167-zoom-value" id="v167ZoomValue" aria-live="polite">100%</span><button class="btn ghost v167-zoom-button" id="v167ZoomIn" type="button" aria-label="拡大">＋</button><button class="btn ghost v167-fit-button" id="v167ZoomFit" type="button">全体</button><button class="btn ghost v136-viewer-close" id="v136ViewerClose" type="button">閉じる</button></div></div>`);
   }
@@ -507,6 +507,8 @@
   function closeModal(id){ $(id)?.classList.remove('is-open'); }
 
   async function createPreview(){
+    const wasSchedule=document.body.classList.contains('v159-schedule-active');
+    document.body.classList.remove('v159-schedule-active');
     const box=$('#v136UploadPreview');
     box.innerHTML='<div class="v136-spinner"></div>';
     const originalPage=typeof window.v180GetMapPage==='function'?window.v180GetMapPage():'all';
@@ -532,6 +534,7 @@
       throw e;
     }finally{
       window.v180SetMapPage?.(originalPage);
+      if(wasSchedule)document.body.classList.add('v159-schedule-active');
     }
   }
 
@@ -628,31 +631,29 @@
   async function openGallery(){ injectUi(); openModal('#v136GalleryModal'); await refreshGallery(); }
 
   async function doUpload(){
-    const btn=$('#v136DoUpload');
-    const name=$('#v136UploadName').value.trim();
-    const comment=$('#v136UploadComment').value.trim();
-    if(!name){ alert('名前を入力してください'); return; }
-    if(!uploadBlob) await createPreview();
-    const old=btn.textContent; btn.disabled=true; btn.textContent='2ページ画像を作成中…';
+    const btn=$('#v136DoUpload');if(btn.disabled)return;
+    const name=$('#v136UploadName').value.trim(),comment=$('#v136UploadComment').value.trim();
+    if(!name){alert('名前を入力してください');return;}
+    const old=btn.textContent;btn.disabled=true;
     try{
-      uploadPages=await createAllPageAssets();
-      uploadBlob=uploadPages[0]?.png||uploadBlob;
-      uploadSvgBlob=uploadPages[0]?.svg||uploadSvgBlob;
-      btn.textContent='2ページをアップロード中…';
-      const mapData=buildOperationalMapData();
-      const scheduleData=typeof window.v156BuildScheduleData==='function'?window.v156BuildScheduleData():{};
-      const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,mapData,scheduleData,uploadPages);
-      localStorage.setItem('businessMapShareName',name);
-      alert(result.mode==='cloud'?'MAPとスケジュールを共有しました！':'この端末にMAPとスケジュールを保存しました。\nSupabase設定完了後は全員共有になります。');
+      const results=await BusinessUploadAll.run(async()=>{
+        // Always rebuild so edits since opening the preview are included.
+        await createPreview();
+        uploadPages=await createAllPageAssets();uploadBlob=uploadPages[0]?.png||uploadBlob;uploadSvgBlob=uploadPages[0]?.svg||uploadSvgBlob;
+        if(typeof window.v156BuildScheduleData!=='function')throw Error('スケジュール機能を読み込めません。再読み込みしてください');
+        const result=await saveMap({id:ownerKey(),name,comment,clientUpdatedAt:Date.now(),when:new Date()},uploadBlob,uploadSvgBlob,buildOperationalMapData(),window.v156BuildScheduleData(),uploadPages);
+        localStorage.setItem('businessMapShareName',name);
+        return result.mode==='cloud'?{status:'success',message:'共有済み'}:{status:'failed',message:'端末保存のみ。共有に接続できませんでした'};
+      },label=>{btn.textContent=label+'をアップロード中…';});
+      const message=results.map(r=>r.label+'：'+r.message).join('\n');
+      $('#v136UploadNotice').textContent=message;$('#v136UploadNotice').style.whiteSpace='pre-line';
+      alert(message);
+      if(results.some(r=>r.status==='failed'))return;
       closeModal('#v136UploadModal');
+      if(new URLSearchParams(location.search).get('uploadFrom')==='bar'){location.href='bar-events/index.html?v='+encodeURIComponent(APP_VERSION.replace(/^v/,''));return;}
       await openGallery();
-    }catch(e){
-      console.error(e);
-      alert(`アップロードに失敗しました。\n${e.message||e}`);
-    }finally{
-      btn.disabled=false; btn.textContent=old;
-      uploadPages=[];
-    }
+    }catch(e){alert('アップロードを完了できませんでした。\n'+(e.message||e));}
+    finally{btn.disabled=false;btn.textContent=old;uploadPages=[];}
   }
 
   async function createAllPageAssets(){
@@ -665,6 +666,8 @@
     // biggest duplicate canvas/SVG allocation on 40–50 person mobile maps.
     const first=pages[0]||{id:'all',label:'1枚目 全体マップ'};
     const results=[{...first,png:uploadBlob,svg:uploadSvgBlob}];
+    const wasSchedule=document.body.classList.contains('v159-schedule-active');
+    document.body.classList.remove('v159-schedule-active');
     try{
       for(const page of pages.slice(1)){
         try{
@@ -683,6 +686,7 @@
       return results;
     }finally{
       window.v180SetMapPage?.(original);
+      if(wasSchedule)document.body.classList.add('v159-schedule-active');
     }
   }
 
@@ -909,6 +913,11 @@
       if(showSchedule) window.v156RenderGroupSchedules?.(currentItems);
     });
     bindViewerControls();
+    window.businessMapOpenUpload=openUpload;
+    if(new URLSearchParams(location.search).get('uploadFrom')==='bar'){
+      window.addEventListener('load',()=>openUpload(),{once:true});
+      const back=document.createElement('a');back.className='btn';back.href='bar-events/index.html';back.textContent='Bar動員へ戻る';$('#v136UploadModal .v136-share-head').appendChild(back);
+    }
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true}); else bind();
