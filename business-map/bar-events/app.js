@@ -157,7 +157,7 @@
  });
  $('backup').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download='bar-events-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
  async function refreshShared(){
-  if(sharedBusy)return;sharedBusy=true;$('refreshShared').disabled=true;
+  if(sharedBusy)return;sharedBusy=true;$('refreshShared').disabled=true;$('viewRefresh').disabled=true;
   try{
    const result=await BarCloud.load();sharedDb=result.db;
    const missing=sharedDb.events.filter(e=>e.date>=today()&&!db.events.some(x=>x.date===e.date));
@@ -165,7 +165,7 @@
    $('sharedState').textContent=`共有データ取得済み：${result.uploads.length}件の開催回別アップロード`;render();
    window.dispatchEvent(new CustomEvent('bar-shared-ready',{detail:result}));
   }catch(e){$('sharedState').textContent='共有データを取得できませんでした：'+e.message;window.dispatchEvent(new CustomEvent('bar-shared-error',{detail:e.message}));}
-  finally{sharedBusy=false;$('refreshShared').disabled=false;}
+  finally{sharedBusy=false;$('refreshShared').disabled=false;$('viewRefresh').disabled=false;}
  }
  $('refreshShared').onclick=refreshShared;
  window.addEventListener('bar-refresh-request',refreshShared);
