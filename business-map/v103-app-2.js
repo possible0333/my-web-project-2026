@@ -319,7 +319,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
       seen.add(parent);parent=String(incoming.get(parent).parentId||'self');
     }
   }
-  // Keep the map owner as the front; import only active statuses and their reachable subtree.
+  // Keep the map owner as the front; restrict prospect statuses only; preserve sponsor relationships.
   // Do not reparent excluded children to another sponsor.
   const allowedStatuses=new Set(['ordered','forecast','appointment-set','prospecting']);
   const excluded=new Set();
@@ -328,7 +328,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
     let cursor=key;
     while(cursor!=='self'){
       const person=incoming.get(cursor);
-      if(!allowedStatuses.has(person.status)){excluded.add(key);break;}
+      if(person.type==='プロスペ'&&!allowedStatuses.has(person.status)){excluded.add(key);break;}
       cursor=String(person.parentId||'self');
     }
   }

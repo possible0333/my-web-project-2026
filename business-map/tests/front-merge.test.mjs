@@ -56,11 +56,11 @@ test('backup failure does not partially mutate the map',()=>{
 test('unreachable members and all descendants are excluded without changing sponsors',()=>{
  const ctx=setup();
  const data={people:[...incoming.people,
-  {id:'blocked',parentId:'self',status:'appointment-open'},
+  {id:'blocked',type:'プロスペ',parentId:'self',status:'appointment-open'},
   {id:'child',parentId:'blocked',status:'ordered'},
   {id:'grandchild',parentId:'child',status:'appointment-set'},
-  {id:'later',parentId:'self',status:'next-month'},
-  {id:'friend',parentId:'self',status:'befriend'}]};
+  {id:'later',type:'プロスペ',parentId:'self',status:'next-month'},
+  {id:'friend',type:'プロスペ',parentId:'self',status:'befriend'}]};
  for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',data);
  const list=ctx.api.get().members;
  assert.equal(list.length,3);
@@ -70,7 +70,7 @@ test('unreachable members and all descendants are excluded without changing spon
 test('updates remove existing excluded copies and their subtree, with a backup',()=>{
  const initial=[member('existing','blocked'),member('duplicate','blocked'),member('child','child','existing'),{id:'local-child',parentId:'child'},member('other','blocked','self',{sharedSourceUserId:'other-source'}),{id:'unrelated',parentId:'self'}];
  const ctx=setup(initial);
- const data={people:[...incoming.people,{id:'blocked',parentId:'self',status:'appointment-open'},{id:'child',parentId:'blocked',status:'ordered'}]};
+ const data={people:[...incoming.people,{id:'blocked',type:'プロスペ',parentId:'self',status:'appointment-open'},{id:'child',parentId:'blocked',status:'ordered'}]};
  ctx.v179MergeSharedFront('source-a',data);
  assert.equal(JSON.parse(ctx.storage.get('business_map_before_front_merge')).state.members.length,initial.length);
  for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',data);
@@ -86,7 +86,7 @@ test('updates remove existing excluded copies and their subtree, with a backup',
 });
 test('latest source parent rescues a person moved out of an excluded subtree',()=>{
  const ctx=setup([member('blocked-local','blocked'),member('customer-local','customer','blocked-local')]);
- ctx.v179MergeSharedFront('source-a',{people:[...incoming.people,{id:'blocked',parentId:'self',status:'appointment-open'}]});
+ ctx.v179MergeSharedFront('source-a',{people:[...incoming.people,{id:'blocked',type:'プロスペ',parentId:'self',status:'appointment-open'}]});
  const list=ctx.api.get().members;
  assert.ok(!list.some(p=>p.id==='blocked-local'));
  assert.equal(list.find(p=>p.id==='customer-local').parentId,list.find(p=>p.sharedSourcePersonId==='abo').id);
@@ -96,17 +96,42 @@ test('legacy appointment-open status displays the new label',()=>{
  assert.equal(vm.runInContext("currentStatusLabel({status:'appointment-open'})",ctx),'連絡不通');
 });
 
-test('only the four supported statuses import, and updates remove every newly excluded status',()=>{
+test('only prospects with the four supported statuses import, and updates remove every newly excluded status',()=>{
  const allowed=['ordered','forecast','appointment-set','prospecting'];
  const rejected=['appointment-open','befriend','next-month','custom','',undefined,'unknown'];
  for(const status of rejected){
   const ctx=setup();
-  const data={people:[{id:'self',name:'Front',type:'ABO'},...allowed.map((status,i)=>({id:'p'+i,name:'P'+i,parentId:'self',status}))]};
+  const data={people:[{id:'self',name:'Front',type:'ABO'},...allowed.map((status,i)=>({id:'p'+i,name:'P'+i,type:'プロスペ',parentId:'self',status}))]};
   ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,5);
   data.people[1].status=status;
   ctx.v179MergeSharedFront('source-a',data);
   assert.equal(ctx.api.get().members.length,4);
   assert.ok(!ctx.api.get().members.some(p=>p.sharedSourcePersonId==='p0'));
   const fresh=setup();fresh.v179MergeSharedFront('source-a',data);assert.equal(fresh.api.get().members.length,4);
+ }
+});
+
+test('front customers stay under their original sponsor after update and storage reload',()=>{
+ const ctx=setup([{id:'my-customer',name:'Mine',type:'カスタマー',parentId:'self',status:'ordered'}]);
+ const data={people:[...incoming.people,{id:'direct-customer',name:'Front customer',type:'カスタマー',parentId:'self',status:'forecast'}]};
+ for(let i=0;i<3;i++){
+  ctx.v179MergeSharedFront('source-a',data);
+  ctx.api.set(ctx.api.migrate(JSON.parse(JSON.stringify(ctx.api.get()))));
+  const members=ctx.api.get().members;
+  const find=id=>members.find(p=>p.sharedSourceUserId==='source-a'&&p.sharedSourcePersonId===id);
+  assert.equal(find('direct-customer').parentId,find('self').id);
+  assert.equal(find('customer').parentId,find('abo').id);
+  assert.equal(members.filter(p=>p.type==='カスタマー'&&p.parentId==='self').map(p=>p.id).join(','),'my-customer');
+  assert.equal(members.length,5);
+ }
+});
+
+test('ABO, customers and retail import regardless of status and return after the old filter removed them',()=>{
+ const statuses=['ordered','forecast','appointment-set','prospecting','appointment-open','befriend','next-month','custom','',undefined,'unknown'];
+ for(const type of ['ABO','カスタマー','小売']){
+  const ctx=setup();const data={people:[{id:'self',name:'Front',type:'ABO'},...statuses.map((status,i)=>({id:'m'+i,name:'Member'+i,parentId:'self',type,status}))]};
+  for(let i=0;i<2;i++){ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,statuses.length+1);}
+  data.people[1].type='プロスペ';data.people[1].status='next-month';ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,statuses.length);
+  data.people[1].type=type;ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,statuses.length+1);
  }
 });
