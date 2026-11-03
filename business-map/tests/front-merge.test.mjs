@@ -63,8 +63,8 @@ test('unreachable members and all descendants are excluded without changing spon
   {id:'friend',parentId:'self',status:'befriend'}]};
  for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',data);
  const list=ctx.api.get().members;
- assert.equal(list.length,5);
- for(const id of ['blocked','child','grandchild'])assert.ok(!list.some(p=>p.sharedSourcePersonId===id));
+ assert.equal(list.length,3);
+ for(const id of ['blocked','child','grandchild','later','friend'])assert.ok(!list.some(p=>p.sharedSourcePersonId===id));
  assert.equal(list.find(p=>p.sharedSourcePersonId==='customer').parentId,list.find(p=>p.sharedSourcePersonId==='abo').id);
 });
 test('updates remove existing excluded copies and their subtree, with a backup',()=>{
@@ -94,4 +94,19 @@ test('latest source parent rescues a person moved out of an excluded subtree',()
 test('legacy appointment-open status displays the new label',()=>{
  const ctx=setup();
  assert.equal(vm.runInContext("currentStatusLabel({status:'appointment-open'})",ctx),'連絡不通');
+});
+
+test('only the four supported statuses import, and updates remove every newly excluded status',()=>{
+ const allowed=['ordered','forecast','appointment-set','prospecting'];
+ const rejected=['appointment-open','befriend','next-month','custom','',undefined,'unknown'];
+ for(const status of rejected){
+  const ctx=setup();
+  const data={people:[{id:'self',name:'Front',type:'ABO'},...allowed.map((status,i)=>({id:'p'+i,name:'P'+i,parentId:'self',status}))]};
+  ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,5);
+  data.people[1].status=status;
+  ctx.v179MergeSharedFront('source-a',data);
+  assert.equal(ctx.api.get().members.length,4);
+  assert.ok(!ctx.api.get().members.some(p=>p.sharedSourcePersonId==='p0'));
+  const fresh=setup();fresh.v179MergeSharedFront('source-a',data);assert.equal(fresh.api.get().members.length,4);
+ }
 });

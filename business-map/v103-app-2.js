@@ -319,15 +319,16 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
       seen.add(parent);parent=String(incoming.get(parent).parentId||'self');
     }
   }
-  // Keep the map owner as the front; exclude unreachable members and their subtree.
+  // Keep the map owner as the front; import only active statuses and their reachable subtree.
   // Do not reparent excluded children to another sponsor.
+  const allowedStatuses=new Set(['ordered','forecast','appointment-set','prospecting']);
   const excluded=new Set();
   for(const key of incoming.keys()){
     if(key==='self')continue;
     let cursor=key;
     while(cursor!=='self'){
       const person=incoming.get(cursor);
-      if(person.status==='appointment-open'){excluded.add(key);break;}
+      if(!allowedStatuses.has(person.status)){excluded.add(key);break;}
       cursor=String(person.parentId||'self');
     }
   }
