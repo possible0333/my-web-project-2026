@@ -357,10 +357,17 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});
   const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
   const branch=importMembers.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
-  // Preserve unrelated/local cards, including children attached to a duplicate.
-  // Unrelated people absent from this upload are not silently deleted.
-  const retained=state.members.filter(p=>!replacedIds.has(p.id)&&!excludedLocalIds.has(p.id)).map(p=>
-    redirects.has(p.parentId)?{...p,parentId:redirects.get(p.parentId)}:p);
+  // This upload is a full snapshot. Only its own missing source identities are stale.
+  const staleParents=new Map(state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&
+    p.sharedSourcePersonId&&!incoming.has(String(p.sharedSourcePersonId))).map(p=>[p.id,p.parentId]));
+  const retained=state.members.filter(p=>!replacedIds.has(p.id)&&!excludedLocalIds.has(p.id)&&!staleParents.has(p.id)).map(p=>{
+    let parent=p.parentId;
+    const visited=new Set();
+    while(staleParents.has(parent)&&!visited.has(parent)){visited.add(parent);parent=staleParents.get(parent);}
+    if(visited.size&&(visited.has(parent)||parent==='self'||!parent))parent=rootId;
+    parent=redirects.get(parent)||parent;
+    return parent===p.parentId?p:{...p,parentId:parent};
+  });
   const backup={schema:'business-map-before-front-merge',createdAt:new Date().toISOString(),state};
   localStorage.setItem('business_map_before_front_merge',JSON.stringify(backup));
   state.members=[...retained,root,...branch];

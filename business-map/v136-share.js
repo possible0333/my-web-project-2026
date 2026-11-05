@@ -291,11 +291,13 @@
     }));
   }
 
-  async function loadMapsRest(){
+  async function loadMapsRest(id){
     const cfg=window.BUSINESS_MAP_SUPABASE_CONFIG;
     const columns='user_id,name,comment,image_path,image_url,client_updated_at,updated_at,version,map_data,data_schema_version,reminder_summary,schedule_data';
+    const filter=id==null?'&order=client_updated_at.desc':'&user_id=eq.'+encodeURIComponent(id);
     let session=await restAuthSession();
-    const request=()=>fetch(`${cfg.url}/rest/v1/${TABLE}?select=${encodeURIComponent(columns)}&order=client_updated_at.desc`,{
+    const request=()=>fetch(`${cfg.url}/rest/v1/${TABLE}?select=${encodeURIComponent(columns)}${filter}`,{
+      cache:'no-store',
       headers:{apikey:cfg.publishableKey,Authorization:`Bearer ${session.access_token}`}
     });
     let response=await request();
@@ -703,7 +705,23 @@
     }catch(error){ console.error(error); alert(`JSONを読み込めませんでした。\n${error.message||error}`); }
   }
 
-  function addSharedFront(id){
+  async function latestFront(id,mode){
+    if(mode==='local'){
+      if(hasSupabaseConfig())throw Error('共有マップに接続して一覧を更新してください');
+      const db=await openDb();
+      try{return await new Promise((resolve,reject)=>{
+        const req=db.transaction(LOCAL_STORE).objectStore(LOCAL_STORE).get(id);
+        req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+      });}finally{db.close();}
+    }
+    if(!supa)return (await loadMapsRest(id)).items.find(x=>String(x.id)===String(id));
+    const {data,error}=await supa.client.from(TABLE).select('user_id,name,map_data,updated_at').eq('user_id',id).maybeSingle();
+    if(error)throw error;
+    return rowsToItems(data?[data]:[])[0];
+  }
+  let frontBusy=false;
+  async function addSharedFront(id){
+    if(frontBusy)return;
     const item=currentItems.find(x=>String(x.id)===String(id));
     if(!item?.mapData?.people?.length){ alert('このマップには追加できるJSONデータがありません。'); return; }
     const mode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(item.id):'add';
@@ -711,12 +729,15 @@
       ? `${item.name||'選択したメンバー'}の追加済み系列を、共有MAPの最新データへ更新します。\nスケジュールは変更しません。実行しますか？`
       : `${item.name||'選択したメンバー'}を自分の直フロントABOとして追加し、配下の全マップデータも取り込みます。\nスケジュールは追加しません。実行しますか？`;
     if(!confirm(message)) return;
+    frontBusy=true;
     try{
       if(typeof window.v179MergeSharedFront!=='function') throw new Error('フロント追加機能が読み込まれていません');
-      const result=window.v179MergeSharedFront(item.id,item.mapData);
+      const latest=await latestFront(id,currentMode);
+      if(!latest?.mapData?.people?.length)throw Error('最新の共有マップを取得できません。一覧を更新してください');
+      const result=window.v179MergeSharedFront(latest.id,latest.mapData);
       closeModal('#v136GalleryModal');
       alert(`${result.rootName}の系列（${result.peopleCount}人）を${result.mode==='update'?'更新':'追加'}しました。`);
-    }catch(error){ console.error(error); alert(`系列を追加できませんでした。\n${error.message||error}`); }
+    }catch(error){ console.error(error); alert(`系列を取り込めませんでした。\n${error.message||error}`); }finally{frontBusy=false;}
   }
 
 

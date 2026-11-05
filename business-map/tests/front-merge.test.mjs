@@ -17,13 +17,13 @@ function setup(members=[]){
 const member=(id,person,parentId='self',extra={})=>({id,name:person,type:'カスタマー',parentId,sharedSourceUserId:'source-a',sharedSourcePersonId:person,...extra});
 const incoming={people:[{id:'self',name:'Front',type:'ABO'},{id:'abo',name:'ABO',type:'ABO',parentId:'self',status:'appointment-set'},{id:'customer',name:'Customer',type:'カスタマー',parentId:'abo',targetPv:10000,status:'ordered'}]};
 test('reimports consolidate detached duplicates, preserve branch IDs and sponsors',()=>{
- const initial=[member('front','self','self',{type:'ABO'}),member('abo-old','abo','front',{type:'ABO'}),member('detached','customer'),member('correct','customer','abo-old'),{id:'local',name:'Local',type:'カスタマー',parentId:'detached'},member('absent','absent','front'),member('other','customer','self',{sharedSourceUserId:'other-source'})];
+ const initial=[member('front','self','self',{type:'ABO'}),member('abo-old','abo','front',{type:'ABO'}),member('detached','customer'),member('correct','customer','abo-old'),{id:'local',name:'Local',type:'カスタマー',parentId:'detached'},member('absent','absent','front'),{id:'manual-child',parentId:'absent'},member('other','customer','self',{sharedSourceUserId:'other-source'})];
  const ctx=setup(initial);ctx.v179MergeSharedFront('source-a',incoming);
  let list=ctx.api.get().members;
  assert.equal(list.filter(p=>p.sharedSourceUserId==='source-a'&&p.sharedSourcePersonId==='customer').length,1);
  assert.equal(list.find(p=>p.id==='correct').parentId,'abo-old');
  assert.equal(list.find(p=>p.id==='local').parentId,'correct');
- assert.ok(list.some(p=>p.id==='absent'));assert.ok(list.some(p=>p.id==='other'));
+ assert.ok(!list.some(p=>p.id==='absent'));assert.equal(list.find(p=>p.id==='manual-child').parentId,'front');assert.ok(list.some(p=>p.id==='other'));
  assert.equal(JSON.parse(ctx.storage.get('business_map_before_front_merge')).state.members.length,initial.length);
  const ids=list.map(p=>p.id).sort();
  for(let i=0;i<3;i++)ctx.v179MergeSharedFront('source-a',incoming);
