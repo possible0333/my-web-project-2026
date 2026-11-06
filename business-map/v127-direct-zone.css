@@ -384,3 +384,6 @@
   font-weight:850;
 }
 .v127-mini-card .v127-mini-action.is-urgent{background:#fff1f2;color:#b91c1c}
+
+.compact-sponsor-row{display:flex;align-items:flex-start;justify-content:center;gap:10px}.compact-sponsor-row>.member-card{flex-shrink:0}.compact-customer-names{width:140px;max-width:140px;text-align:left;padding:6px 0;color:#166534}.compact-customer-names small{display:block;font-size:11px;margin-bottom:5px}.compact-customer-names button{display:block;width:100%;border:0;background:transparent;padding:3px 0;text-align:left;font:inherit;font-size:13px;line-height:1.4;color:#166534;overflow-wrap:anywhere;cursor:pointer}.compact-customer-names button:hover{text-decoration:underline}.front-customer-option{display:flex;align-items:center;gap:6px;font-size:12px;width:100%}.front-customer-option input{width:auto}
+.front-customer-option{grid-column:1/-1;flex-basis:100%}

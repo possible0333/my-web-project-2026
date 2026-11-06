@@ -232,6 +232,7 @@ function operationalMapToState(mapData){
       reasons:Array.from({length:3},(_,reasonIndex)=>String(Array.isArray(p?.favoriteProducts?.[index]?.reasons)?p.favoriteProducts[index].reasons[reasonIndex]||'':''))
     })):[],
     sharedSourceUserId:String(p?.sharedSourceUserId||''),
+    compactCustomers:p?.compactCustomers===true,
     sharedSourcePersonId:String(p?.sharedSourcePersonId||'')
   });
   return {
@@ -295,11 +296,12 @@ window.v178RestoreCloudMap=function(mapData,scheduleData){
   return {peopleCount:1+(state.members?.length||0),ownerName:state.self?.name||'自分'};
 };
 
+window.v179CompactCustomers=sourceUserId=>state.members.find(p=>String(p.sharedSourceUserId||'')===String(sourceUserId)&&p.sharedSourcePersonId==='self')?.compactCustomers===true;
 window.v179SharedFrontMode=function(sourceUserId){
   return state.members.some(p=>String(p.sharedSourceUserId||'')===String(sourceUserId)&&String(p.sharedSourcePersonId||'')==='self')?'update':'add';
 };
 
-window.v179MergeSharedFront=function(sourceUserId,mapData){
+window.v179MergeSharedFront=function(sourceUserId,mapData,options={}){
   const normalized=normalizeImportedState(mapData);
   if(!normalized) throw new Error('追加できるMAP JSONがありません');
   const sourceKey=String(sourceUserId||mapData?.owner?.name||'shared-map');
@@ -355,7 +357,8 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   }
   const rootId=idMap.get('self');
   const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});
-  const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
+  const compactCustomers=options.compactCustomers??existingRoot?.compactCustomers??false;
+  const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self',compactCustomers},'self');
   const branch=importMembers.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
   // This upload is a full snapshot. Only its own missing source identities are stale.
   const staleParents=new Map(state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&

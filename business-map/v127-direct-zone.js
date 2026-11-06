@@ -47,9 +47,25 @@
     return (state.members||[]).filter(p=>isCurrent(p) && isDirectManaged(p));
   }
 
+  function compactCustomer(p){
+    if(p.type!=='カスタマー'||!isCurrent(p))return false;
+    if((state.members||[]).some(child=>child.parentId===p.id))return false;
+    let parent=getPerson(p.parentId);
+    const seen=new Set();
+    while(parent&&parent.id!=='self'&&!seen.has(parent.id)){
+      if(parent.compactCustomers)return true;
+      seen.add(parent.id);parent=getPerson(parent.parentId);
+    }
+    return false;
+  }
+  function sponsorCard(p,card){
+    const customers=(state.members||[]).filter(child=>child.parentId===p.id&&compactCustomer(child));
+    if(!customers.length)return card;
+    return `<div class="compact-sponsor-row">${card}<aside class="compact-customer-names" aria-label="カスタマー"><small>カスタマー ${customers.length}人</small>${customers.map(child=>`<button type="button" data-v127-id="${escapeHtml(child.id)}">${escapeHtml(child.name||'名称未設定')}</button>`).join('')}</aside></div>`;
+  }
   function treeChildren(id){
     return (state.members||[]).filter(p=>{
-      if(!isCurrent(p) || p.parentId!==id) return false;
+      if(!isCurrent(p) || p.parentId!==id || compactCustomer(p)) return false;
       if(id==='self' && isDirectManaged(p)) return false;
       return true;
     });
@@ -159,7 +175,7 @@
     const p=id==='self' ? state.self : getPerson(id);
     if(!p || (id!=='self' && !isCurrent(p))) return '';
     const kids=treeChildren(id);
-    const card=id==='self' ? selfCardHtml() : renderCard(p);
+    const card=id==='self' ? selfCardHtml() : sponsorCard(p,renderCard(p));
     const attrs=nodeAttributes(p,depth);
     return `<div class="${attrs.className}" data-node-id="${escapeHtml(id)}"${attrs.style}>
       ${attrs.label}

@@ -139,6 +139,7 @@ function migrate(raw){
       reasons:Array.from({length:3},(_,reasonIndex)=>String(Array.isArray(p.favoriteProducts?.[index]?.reasons)?p.favoriteProducts[index].reasons[reasonIndex]||'':''))
     })):[],
     sharedSourceUserId: String(p.sharedSourceUserId||''),
+    compactCustomers:p.compactCustomers===true,
     sharedSourcePersonId: String(p.sharedSourcePersonId||'')
   }));
   const self = {...DEFAULT_SELF, ...(migrated.find(x=>x.id==='self') || migrated[0] || DEFAULT_SELF), id:'self', type:'ABO', parentId:null};
