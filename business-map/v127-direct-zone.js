@@ -59,10 +59,20 @@
     }
     return false;
   }
+  function compactCustomerRow(person){
+    return `<button type="button" class="compact-customer-row" data-v127-id="${escapeHtml(person.id)}">
+      <img class="compact-customer-avatar" src="${ICONS[person.avatar||0]}" alt="">
+      <span class="compact-customer-info">
+        <span class="compact-customer-heading"><strong>${escapeHtml(person.name||'名称未設定')}</strong>${window.BonusUI?.badge(person)||''}</span>
+        <span class="compact-customer-status" style="--customer-status:${currentStatusColor(person)}">${escapeHtml(currentStatusLabel(person))}</span>
+        <span class="compact-customer-pv"><span>目標PV <b>${fmt(person.target||0)}</b></span><span>実績PV <b>${fmt(person.actual||0)}</b></span></span>
+      </span>
+    </button>`;
+  }
   function sponsorCard(p,card){
     const customers=(state.members||[]).filter(child=>child.parentId===p.id&&compactCustomer(child));
     if(!customers.length)return card;
-    return `<div class="compact-sponsor-row">${card}<aside class="compact-customer-names" aria-label="カスタマー"><small>カスタマー ${customers.length}人</small>${customers.map(child=>`<button type="button" data-v127-id="${escapeHtml(child.id)}">${escapeHtml(child.name||'名称未設定')}</button>`).join('')}</aside></div>`;
+    return `<div class="compact-sponsor-row">${card}<aside class="compact-customer-names" aria-label="カスタマー"><small>カスタマー ${customers.length}人</small>${customers.map(compactCustomerRow).join('')}</aside></div>`;
   }
   function treeChildren(id){
     return (state.members||[]).filter(p=>{

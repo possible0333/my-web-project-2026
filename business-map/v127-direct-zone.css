@@ -385,5 +385,20 @@
 }
 .v127-mini-card .v127-mini-action.is-urgent{background:#fff1f2;color:#b91c1c}
 
-.compact-sponsor-row{display:flex;align-items:flex-start;justify-content:center;gap:10px}.compact-sponsor-row>.member-card{flex-shrink:0}.compact-customer-names{width:140px;max-width:140px;text-align:left;padding:6px 0;color:#166534}.compact-customer-names small{display:block;font-size:11px;margin-bottom:5px}.compact-customer-names button{display:block;width:100%;border:0;background:transparent;padding:3px 0;text-align:left;font:inherit;font-size:13px;line-height:1.4;color:#166534;overflow-wrap:anywhere;cursor:pointer}.compact-customer-names button:hover{text-decoration:underline}.front-customer-option{display:flex;align-items:center;gap:6px;font-size:12px;width:100%}.front-customer-option input{width:auto}
-.front-customer-option{grid-column:1/-1;flex-basis:100%}
+
+.compact-sponsor-row{display:flex;align-items:flex-start;justify-content:center;gap:12px}
+.compact-sponsor-row>.member-card{flex-shrink:0}
+.compact-customer-names{width:250px;max-width:250px;text-align:left;padding:0;color:#264838;border:1px solid #cce4d6;border-radius:10px;background:#f6fbf8;overflow:hidden}
+.compact-customer-names>small{display:block;padding:8px 10px;font-size:11px;font-weight:700;color:#397456;border-bottom:1px solid #dcece2}
+.compact-customer-names .compact-customer-row{display:flex;align-items:center;gap:8px;width:100%;margin:0;border:0;border-radius:0;border-bottom:1px solid #e0eee5;background:#fff;padding:7px 9px;text-align:left;font:inherit;color:#243b30;cursor:pointer;box-sizing:border-box}
+.compact-customer-names .compact-customer-row:last-child{border-bottom:0}
+.compact-customer-names .compact-customer-row:hover{background:#edf8f1}
+.compact-customer-row:focus-visible{outline:2px solid #16834a;outline-offset:-2px}
+.compact-customer-avatar{width:34px;height:34px;object-fit:cover;border-radius:50%;flex-shrink:0;background:#f0f7f3}
+.compact-customer-info{display:block;min-width:0;flex:1;font-size:11px;line-height:1.3}
+.compact-customer-heading{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.compact-customer-heading strong{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.compact-customer-heading .bonus-bsi-badge{position:static;flex-shrink:0;margin:0;font-size:9px;padding:2px 4px}
+.compact-customer-status{display:inline-block;font-size:9px;font-weight:700;line-height:1.4;white-space:nowrap;border-radius:4px;padding:1px 5px;color:#fff;background:var(--customer-status,#64748b);max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+.compact-customer-pv{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;font-size:9px;color:#64748b;line-height:1.5}
+.compact-customer-pv b{font-size:11px;color:#215e3d;font-variant-numeric:tabular-nums;display:inline;margin-left:3px}
