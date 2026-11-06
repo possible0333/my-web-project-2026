@@ -54,7 +54,7 @@
     let parent=getPerson(p.parentId);
     const seen=new Set();
     while(parent&&parent.id!=='self'&&!seen.has(parent.id)){
-      if(parent.compactCustomers)return true;
+      if(parent.sharedSourceUserId&&parent.sharedSourcePersonId==='self')return true;
       seen.add(parent.id);parent=getPerson(parent.parentId);
     }
     return false;

@@ -557,7 +557,7 @@
     const grid=$('#v136MapGrid');
     updateDeleteButton();
     if(!filtered.length){ grid.innerHTML='<div class="v136-empty" style="grid-column:1/-1">共有されたマップはまだありません。</div>'; return; }
-    grid.innerHTML=filtered.map(x=>{const hasJson=Array.isArray(x.mapData?.people)&&x.mapData.people.length;const branchMode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(x.id):'add';const usePng=preferRaster()&&x.fallbackUrl;const displayUrl=usePng?x.fallbackUrl:x.imageUrl;const vector=x.isSvg&&!usePng;return `<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}"><img src="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}">マップを見る</button>${hasJson?`<label class="front-customer-option"><input type="checkbox" data-front-customers="${esc(x.id)}" ${window.v179CompactCustomers?.(x.id)?'checked':''}>カスタマーを名前だけで表示（マップ20人以上）</label><button class="btn dark" data-v179-add-front="${esc(x.id)}">${branchMode==='update'?'系列を更新':'フロント追加'}</button><button class="btn" data-v178-restore="${esc(x.id)}">全体読込</button>`:''}</div></div></article>`;}).join('');
+    grid.innerHTML=filtered.map(x=>{const hasJson=Array.isArray(x.mapData?.people)&&x.mapData.people.length;const branchMode=typeof window.v179SharedFrontMode==='function'?window.v179SharedFrontMode(x.id):'add';const usePng=preferRaster()&&x.fallbackUrl;const displayUrl=usePng?x.fallbackUrl:x.imageUrl;const vector=x.isSvg&&!usePng;return `<article class="v136-map-card${selectedIds.has(x.id)?' is-selected':''}" data-v136-map-id="${esc(x.id)}">${(x.owned||adminMode)?`<label class="v136-map-select"><input type="checkbox" data-v136-select="${esc(x.id)}" ${selectedIds.has(x.id)?'checked':''}><span>選択</span></label>`:''}<div class="v136-map-thumb" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}"><img src="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" alt="${esc(x.name)}のマップ"></div><div class="v136-map-meta"><div class="v136-map-name">${esc(x.name||'名前未設定')}</div><div class="v136-map-date">更新：${esc(fmtDate(x.when||x.clientUpdatedAt))}</div><div class="v136-map-comment">${esc(x.comment||'')}</div><div class="v136-map-actions"><button class="btn" data-v136-view="${esc(displayUrl)}" data-v136-fallback="${esc(x.fallbackUrl||'')}" data-v136-vector="${vector?'1':'0'}">マップを見る</button>${hasJson?`<button class="btn dark" data-v179-add-front="${esc(x.id)}">${branchMode==='update'?'系列を更新':'フロント追加'}</button><button class="btn" data-v178-restore="${esc(x.id)}">全体読込</button>`:''}</div></div></article>`;}).join('');
     grid.querySelectorAll('img[data-v136-fallback]').forEach(img=>img.addEventListener('error',()=>{const fallback=img.dataset.v136Fallback;if(fallback&&img.src!==fallback)img.src=fallback;},{once:true}));
   }
 
@@ -730,13 +730,12 @@
       ? `${item.name||'選択したメンバー'}の追加済み系列を、共有MAPの最新データへ更新します。\nスケジュールは変更しません。実行しますか？`
       : `${item.name||'選択したメンバー'}を自分の直フロントABOとして追加し、配下の全マップデータも取り込みます。\nスケジュールは追加しません。実行しますか？`;
     if(!confirm(message)) return;
-    const compactCustomers=[...document.querySelectorAll('[data-front-customers]')].find(el=>el.dataset.frontCustomers===String(id))?.checked===true;
     frontBusy=true;
     try{
       if(typeof window.v179MergeSharedFront!=='function') throw new Error('フロント追加機能が読み込まれていません');
       const latest=await latestFront(id,currentMode);
       if(!latest?.mapData?.people?.length)throw Error('最新の共有マップを取得できません。一覧を更新してください');
-      const result=window.v179MergeSharedFront(latest.id,latest.mapData,{compactCustomers});
+      const result=window.v179MergeSharedFront(latest.id,latest.mapData);
       closeModal('#v136GalleryModal');
       alert(`${result.rootName}の系列（${result.peopleCount}人）を${result.mode==='update'?'更新':'追加'}しました。`);
     }catch(error){ console.error(error); alert(`系列を取り込めませんでした。\n${error.message||error}`); }finally{frontBusy=false;}
