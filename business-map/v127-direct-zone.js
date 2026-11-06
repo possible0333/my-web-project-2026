@@ -48,6 +48,7 @@
   }
 
   function compactCustomer(p){
+    if(1+(state.members||[]).length<20)return false;
     if(p.type!=='カスタマー'||!isCurrent(p))return false;
     if((state.members||[]).some(child=>child.parentId===p.id))return false;
     let parent=getPerson(p.parentId);
