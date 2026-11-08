@@ -7,7 +7,7 @@
 
   function nextMonthPeople(){
     try{
-      return (state.members || []).filter(isNextMonth);
+      return (state.members || []).filter(p=>isNextMonth(p)&&visibleAtMapSize(p));
     }catch(e){
       return [];
     }

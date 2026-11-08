@@ -13,7 +13,7 @@
     const type=document.getElementById('typeFilter')?.value || 'all';
     return (state.members || []).filter(p=>{
       // 「来月以降」は通常マップには戻さず、右上の専用枠で管理する。
-      if(p.status==='next-month') return false;
+      if(p.status==='next-month'||!visibleAtMapSize(p)) return false;
       if(status!=='all' && p.status!==status) return false;
       if(type!=='all' && p.type!==type) return false;
       return true;

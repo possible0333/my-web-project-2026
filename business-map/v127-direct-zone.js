@@ -34,7 +34,7 @@
   }
 
   function isCurrent(p){
-    return Boolean(p) && p.status!=='next-month';
+    return Boolean(p) && p.status!=='next-month' && visibleAtMapSize(p);
   }
 
   function isDirectManaged(p){
@@ -244,7 +244,7 @@
   }
 
   function overduePageHtml(){
-    const people=(state.members||[]).filter(p=>deadlineOverdue(p.deadline)).sort((a,b)=>deadlineDate(a.deadline)-deadlineDate(b.deadline));
+    const people=(state.members||[]).filter(p=>visibleAtMapSize(p)&&deadlineOverdue(p.deadline)).sort((a,b)=>deadlineDate(a.deadline)-deadlineDate(b.deadline));
     if(!people.length) return `<section class="v190-overdue-page"><div class="v190-overdue-head"><div><span>期限切れメンバー</span><strong>0人</strong></div><p>期限が切れているメンバーはいません。</p></div><div class="v180-deep-empty">期限切れメンバーはいません</div></section>`;
     const groups=new Map();
     people.forEach(person=>{
