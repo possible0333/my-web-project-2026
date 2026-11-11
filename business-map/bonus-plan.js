@@ -8,6 +8,8 @@
   const yen=v=>Math.round(Math.max(0,v));
   const rate=pv=>pv>=1500000?21:pv>=1000000?18:pv>=600000?15:pv>=360000?12:pv>=180000?9:pv>=90000?6:pv>=30000?3:0;
   const eligibleType=p=>p?.type==='ABO'||p?.type==='カスタマー';
+  const pvStatuses=new Set(['ordered','forecast','appointment-set','prospecting','custom']);
+  const countsForGroupPv=p=>pvStatuses.has(p?.status);
   function fields(p={}){
     return {bsiEligible:p.bsiEligible===true&&eligibleType(p),bronze9Count:count(p.bronze9Count),bronze15Count:count(p.bronze15Count),
       repeatOrderEligible:p.repeatOrderEligible===true,repeatOrderMonth:count(p.repeatOrderMonth),
@@ -33,7 +35,7 @@
       if(cache.has(p.id)) return cache.get(p.id);
       visited.add(p.id);active.add(p.id);
       const kids=(children.get(p.id)||[]).map(child=>({p:child,result:visit(child)}));
-      const own=p.id==='self'||p.status!=='next-month'?number(p.target):0;
+      const own=countsForGroupPv(p)?number(p.target):0;
       // Non-ABO purchases accrue to the nearest ABO; no customer bonus deduction.
       const branches=kids.flatMap(({p:child,result:r})=>child.type==='ABO'?[r]:r.branches);
       const local=own+kids.filter(k=>k.p.type!=='ABO').reduce((s,k)=>s+k.result.local,0);
@@ -71,6 +73,6 @@
     const items={performance:tree.performance,bsi,bronze9,bronze15,leadership,monthlyQ,repeatOrder,other:f.otherMonthlyBonus};
     return {...tree,bsiCount,bronze9Legs,bronze15Legs,items,totalIncome:Object.values(items).reduce((s,n)=>s+n,0),warnings:[...new Set(warnings)],fields:f};
   }
-  root.BonusPlan={calculate,fields,rate,bronze,BV_PER_PV,TAX};
+  root.BonusPlan={countsForGroupPv,calculate,fields,rate,bronze,BV_PER_PV,TAX};
   if(typeof module!=='undefined'&&module.exports) module.exports=root.BonusPlan;
 })(typeof window!=='undefined'?window:globalThis);

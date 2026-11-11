@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const B=require('../bonus-plan.js');
-const person=(id,target,type='ABO',parentId='self',extra={})=>({id,target,type,parentId,...extra});
+const person=(id,target,type='ABO',parentId='self',extra={})=>({id,target,type,parentId,status:'ordered',...extra});
 const run=(self,members=[])=>B.calculate({self:person('self',self.target??10000,'ABO',null,self),members});
 for(const [pv,r] of [[0,0],[29999,0],[30000,3],[89999,3],[90000,6],[180000,9],[360000,12],[600000,15],[1000000,18],[1500000,21]])assert.equal(B.rate(pv),r);
 for(let n=0;n<=12;n++){

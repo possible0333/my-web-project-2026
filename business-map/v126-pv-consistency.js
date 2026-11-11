@@ -2,7 +2,7 @@
   const APP_VERSION=window.BUSINESS_MAP_CONFIG?.version||'v1.50';
 
   function eligibleForCurrentMonth(p){
-    return Boolean(p) && p.status!=='next-month';
+    return window.BonusPlan.countsForGroupPv(p);
   }
 
   // Current map GrPV:
@@ -15,7 +15,7 @@
     if(!person) return {target:0,actual:0};
     seen.add(id);
 
-    const ownCounts=id==='self' || eligibleForCurrentMonth(person);
+    const ownCounts=eligibleForCurrentMonth(person);
     let target=ownCounts ? Number(person.target||0) : 0;
     let actual=ownCounts ? Number(person.actual||0) : 0;
 
