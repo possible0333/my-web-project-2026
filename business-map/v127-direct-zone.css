@@ -55,6 +55,7 @@
   letter-spacing:.02em;
 }
 .v127-direct-head span{
+  white-space:nowrap;
   display:inline-flex;
   align-items:center;
   gap:5px;
@@ -405,7 +406,7 @@
 
 .v127-mini-card .v127-mini-avatar{grid-column:1;grid-row:1;align-self:start}
 .v127-mini-card .v127-mini-main{grid-column:2;grid-row:1;text-align:left;padding-right:5px}
-.v127-mini-card .v127-mini-main .v127-mini-type{display:table;margin-top:2px}
+.v127-mini-card .v127-mini-main .v127-mini-type{display:block;width:max-content;white-space:nowrap;line-height:1.25;margin-top:2px}
 .v127-mini-card .v127-mini-pv{
   grid-column:1/-1;
   display:flex;
