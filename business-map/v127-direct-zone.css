@@ -402,3 +402,18 @@
 .compact-customer-status{display:inline-block;font-size:9px;font-weight:700;line-height:1.4;white-space:nowrap;border-radius:4px;padding:1px 5px;color:#fff;background:var(--customer-status,#64748b);max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
 .compact-customer-pv{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;font-size:9px;color:#64748b;line-height:1.5}
 .compact-customer-pv b{font-size:11px;color:#215e3d;font-variant-numeric:tabular-nums;display:inline;margin-left:3px}
+
+.v127-mini-card .v127-mini-avatar{grid-column:1;grid-row:1;align-self:start}
+.v127-mini-card .v127-mini-main{grid-column:2;grid-row:1;text-align:left;padding-right:5px}
+.v127-mini-card .v127-mini-main .v127-mini-type{display:table;margin-top:2px}
+.v127-mini-card .v127-mini-pv{
+  grid-column:1/-1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:3px 8px;
+  margin:0;
+  overflow:visible;
+  text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+.v127-mini-card .v127-mini-action{grid-column:1/-1;margin-top:0}

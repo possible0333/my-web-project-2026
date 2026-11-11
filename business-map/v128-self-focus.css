@@ -421,3 +421,14 @@
 .focus-review-stamp.is-due{color:#b45309;background:#fff7ed;transform:rotate(-5deg)}
 .focus-review-stamp.is-done{color:#047857;background:#ecfdf5}
 .focus-review-result{display:block;margin-top:3px;font-size:10px;font-weight:600;color:#536681;line-height:1.4}
+
+.v128-self-card-content .v128-self-namewrap .card-name,
+#treeRows .v128-self-card-content .v128-self-namewrap .card-name{
+  display:block!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  max-height:none!important;
+  height:auto!important;
+}

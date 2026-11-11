@@ -131,9 +131,10 @@
       <span class="v127-mini-main">
         ${window.BonusUI?.badge(p)||''}
         <span class="v127-mini-name" title="${escapeHtml(p.name||'名称未設定')}">${escapeHtml(p.name||'名称未設定')}</span>
-        <span class="v127-mini-meta"><span class="v127-mini-type">${escapeHtml(p.type)}</span><span class="v127-mini-pv"><b>計 ${fmt(p.target||0)}</b><b>実 ${fmt(p.actual||0)}</b></span></span>
-        ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
+        <span class="v127-mini-type">${escapeHtml(p.type)}</span>
       </span>
+      <span class="v127-mini-meta v127-mini-pv"><b>計画 ${fmt(p.target||0)}</b><b>実績 ${fmt(p.actual||0)}</b></span>
+        ${actionText?`<span class="v127-mini-action ${deadlineUrgent(p.deadline)?'is-urgent':''}" title="${escapeHtml(actionText)}">${escapeHtml(actionText)}</span>`:''}
     </button>`;
   }
 
