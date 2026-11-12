@@ -15,9 +15,9 @@
     if(!person) return {target:0,actual:0};
     seen.add(id);
 
-    const ownCounts=eligibleForCurrentMonth(person);
-    let target=ownCounts ? Number(person.target||0) : 0;
-    let actual=ownCounts ? Number(person.actual||0) : 0;
+    const planCounts=eligibleForCurrentMonth(person);
+    let target=planCounts ? Number(person.target||0) : 0;
+    let actual=Number(person.actual||0);
 
     const children=(state.members||[]).filter(p=>p.parentId===id);
     children.forEach(child=>{
