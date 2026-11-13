@@ -176,7 +176,7 @@
  }
  $('refreshShared').onclick=refreshShared;
  window.addEventListener('bar-refresh-request',refreshShared);
- $('uploadBar').onclick=()=>guard(()=>{sessionStorage.setItem('barUploadRequested','1');location.href='../index.html?uploadFrom=bar';});
+ $('uploadBar').onclick=()=>guard(()=>{sessionStorage.setItem('barUploadRequested','1');const version=new URL(document.querySelector('script[src*="app.js"]').src).searchParams.get('v');location.href='../index.html?uploadFrom=bar&v='+encodeURIComponent(version);});
 
  try{
   raw=localStorage.getItem(KEY);if(raw){const stored=JSON.parse(raw);if(stored.schema!==1||!['people','events','entries','history'].every(k=>Array.isArray(stored[k])))throw Error('形式不明のイベントデータがあります');db=stored;for(const entry of db.entries)entry.slots=M.singleSlot(entry.slots);}

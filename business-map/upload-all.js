@@ -13,6 +13,12 @@
   const {userId}=await BarCloud.connect(),receipts=JSON.parse(localStorage.getItem(KEY+'_receipts')||'{}');
   if(Object.values(receipts).some(r=>r.userId&&r.userId!==userId))throw Error('Bar動員の共有IDが変わっています。旧データを確認してください');
   const result=await BarCloud.upload(db,ev.id,owner);
+  const selfId=db.selfPeople?.[owner];
+  if(selfId && db.entries.some(e=>e.eventId===ev.id && e.personId===selfId && e.status==='yes' && !e.cancelled)){
+   const shared=await BarCloud.load();
+   const visible=shared.db.entries.some(e=>e.uploaderId===userId && e.eventId===result.date && e.sourcePersonId===selfId && e.status==='yes' && !e.cancelled);
+   if(!visible)throw Error('送信済みですが、自分の参加は共有一覧に反映されていません。管理者に登録状況を確認してください');
+  }
   receipts[result.date]=result;
   try{localStorage.setItem(KEY+'_receipts',JSON.stringify(receipts));}catch(e){return {status:'success',message:'共有済み（端末への送信履歴保存は失敗）'};}
   return {status:'success',message:'共有済み'};
