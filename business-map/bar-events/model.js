@@ -62,10 +62,14 @@
   entry.kind='member';
   return entry;
  }
+ function singleSlot(slots){
+  const first=['A','B','C','D'].find(slot=>slots?.includes(slot));
+  return first?[first]:[];
+ }
  function change(db,entryId,values){
   const entry=db.entries.find(e=>e.id===entryId);if(!entry)throw Error('参加者が見つかりません');
   if(values.status!==undefined){if(!['yes','pending','no'].includes(values.status))throw Error('出欠が不正です');entry.status=values.status;}
-  if(values.slots!==undefined)entry.slots=['A','B','C','D'].filter(s=>values.slots.includes(s));
+  if(values.slots!==undefined)entry.slots=singleSlot(values.slots);
   if(values.cancelled!==undefined){entry.cancelled=values.cancelled===true;if(entry.cancelled)entry.arrived=false;}
   if(values.note!==undefined)entry.note=String(values.note).slice(0,300);
   if(values.arrived!==undefined)entry.arrived=!!values.arrived;
@@ -93,5 +97,5 @@
   }
   return [...people.values()].sort((a,b)=>b.last.localeCompare(a.last));
  }
- root.BarModel={clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming,nextEvent,selfPerson,setSelf};
+ root.BarModel={singleSlot,clone,id,empty,pair,person,add,change,summary,past,candidates,plus,upcoming,nextEvent,selfPerson,setSelf};
 })(globalThis);

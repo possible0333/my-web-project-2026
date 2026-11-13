@@ -10,7 +10,7 @@ test('self attendance reuses existing map member, clears absence slots, and rese
  const p=M.person(db,map);M.add(db,db.events[0].id,p.id);
  M.setSelf(db,db.events[0].id,'Me',map,{status:'yes',slots:['C','D']});
  assert.equal(db.entries.length,1);assert.equal(db.entries[0].sponsor,'Sponsor');
- assert.equal(M.summary(db.entries).part2,1);assert.equal(M.summary(db.entries).slots.D,1);
+ assert.equal(M.summary(db.entries).part2,1);assert.equal(M.summary(db.entries).slots.D,0);
  M.setSelf(db,db.events[0].id,'Me',map,{status:'no'});assert.equal(db.entries[0].slots.length,0);
  M.setSelf(db,db.events[1].id,'Me',map,{status:'yes'});
  assert.equal(db.people.length,1);assert.equal(db.entries[1].slots.length,0);
@@ -56,7 +56,7 @@ test('repeated map imports use identity; names alone are not merged',()=>{
 });
 test('only confirmed entries count in slots; overall and part1 counts are unique',()=>{
  const db=setup();for(const status of ['yes','pending','no']){const p=M.person(db,{name:status,kind:'prospect'});M.add(db,db.events[0].id,p.id);M.change(db,db.entries.at(-1).id,{status,slots:['A','B','C','A'],arrived:status==='yes'});}
- const s=M.summary(db.entries,3,2);assert.equal(s.confirmed,1);assert.equal(s.prospects,1);assert.equal(s.part1,1);assert.equal(s.part2,1);assert.equal(s.slots.A,1);assert.equal(s.pending,1);assert.equal(s.remaining,2);assert.equal(s.arrived,1);
+ const s=M.summary(db.entries,3,2);assert.equal(s.confirmed,1);assert.equal(s.prospects,1);assert.equal(s.part1,1);assert.equal(s.part2,0);assert.equal(s.slots.A,1);assert.equal(s.pending,1);assert.equal(s.remaining,2);assert.equal(s.arrived,1);
 });
 test('past prospects require actual arrival and honor owner/date filters',()=>{
  const db=setup();for(const [name,sponsor,arrived,kind] of [['one','Me',true,'prospect'],['two','Other',true,'prospect'],['three','Me',false,'prospect'],['four','Me',true,'member']]){const p=M.person(db,{name,sponsor,kind});M.add(db,db.events[0].id,p.id);M.change(db,db.entries.at(-1).id,{arrived});}

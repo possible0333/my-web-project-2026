@@ -541,14 +541,14 @@
     }
   }
 
-  async function openUpload(){
+  async function openUpload(preview=true){
     injectUi();
     $('#v136UploadName').value=selfName();
     $('#v136UploadDate').value=fmtDate(new Date());
     $('#v136UploadComment').value='';
     $('#v136UploadNotice').innerHTML=noticeHtml(hasSupabaseConfig()?'cloud':'local');
     openModal('#v136UploadModal');
-    await createPreview().catch(()=>{});
+    if(preview)await createPreview().catch(()=>{});
   }
 
   function renderCards(items){
@@ -937,7 +937,10 @@
     bindViewerControls();
     window.businessMapOpenUpload=openUpload;
     if(new URLSearchParams(location.search).get('uploadFrom')==='bar'){
-      window.addEventListener('load',()=>openUpload(),{once:true});
+      const requested=sessionStorage.getItem('barUploadRequested')==='1';
+      sessionStorage.removeItem('barUploadRequested');
+      const start=async()=>{await openUpload(false);if(requested)await doUpload();};
+      if(document.readyState==='complete')start();else window.addEventListener('load',start,{once:true});
       const back=document.createElement('a');back.className='btn';back.href='bar-events/index.html';back.textContent='Bar動員へ戻る';$('#v136UploadModal .v136-share-head').appendChild(back);
     }
   }
