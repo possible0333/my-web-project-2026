@@ -173,3 +173,9 @@ test('existing duplicate imported branches reconcile, stale cards disappear, and
  assert.equal(ctx.api.get().members.length,2);
  assert.equal(ctx.api.get().members[1].parentId,ctx.api.get().members[0].id);
 });
+test('a shared snapshot with a missing card ID leaves the existing branch intact',()=>{
+ const ctx=setup();ctx.v179MergeSharedFront('source-a',incoming);
+ const before=JSON.stringify(ctx.api.get());
+ assert.throws(()=>ctx.v179MergeSharedFront('source-a',{people:[...incoming.people,{name:'Unknown',parentId:'self'}]}),/ID/);
+ assert.equal(JSON.stringify(ctx.api.get()),before);
+});

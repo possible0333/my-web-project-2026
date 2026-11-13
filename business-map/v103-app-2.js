@@ -301,6 +301,9 @@ window.v179SharedFrontMode=function(sourceUserId){
 };
 
 window.v179MergeSharedFront=function(sourceUserId,mapData){
+  if(Array.isArray(mapData?.people)&&mapData.people.some(p=>!String(p?.id??'').trim())){
+    throw new Error('共有カードのIDがありません。元のマップから再アップロードしてください。');
+  }
   const normalized=normalizeImportedState(mapData);
   if(!normalized) throw new Error('追加できるMAP JSONがありません');
   const sourceKey=String(sourceUserId||mapData?.owner?.name||'shared-map');
@@ -355,10 +358,32 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   for(const p of state.members){
     if(!belongs(p)||!excluded.has(String(p.sharedSourcePersonId||'')))continue;
     excludedLocalIds.add(p.id);
-    for(const child of descendants(p.id))excludedLocalIds.add(child.id);
+
   }
   for(const key of excluded)incoming.delete(key);
-  const oldBranch=new Set(existingRoot?[existingRoot.id,...descendants(existingRoot.id).map(p=>p.id)]:[]);
+  const localChildren=new Map(), bySourceId=new Map(), manualByName=new Map();
+  function append(index,key,person){
+    if(!index.has(key))index.set(key,[]);
+    index.get(key).push(person);
+  }
+  for(const p of state.members){
+    append(localChildren,p.parentId,p);
+    if(belongs(p))append(bySourceId,String(p.sharedSourcePersonId||''),p);
+    if(!p.sharedSourceUserId&&!p.sharedSourcePersonId)append(manualByName,nameKey(p.name),p);
+  }
+  function includeDescendants(ids){
+    const pending=[...ids];
+    for(let i=0;i<pending.length;i++){
+      for(const p of localChildren.get(pending[i])||[]){
+        if(ids.has(p.id))continue;
+        ids.add(p.id);
+        pending.push(p.id);
+      }
+    }
+  }
+  includeDescendants(excludedLocalIds);
+  const oldBranch=new Set(existingRoot?[existingRoot.id]:[]);
+  includeDescendants(oldBranch);
   const usedIds=new Set(['self',...state.members.map(p=>p.id)]);
   const freshId=()=>{let id;do{id=uid();}while(usedIds.has(id));usedIds.add(id);return id;};
   const idMap=new Map(),replacedIds=new Set(),redirects=new Map();
@@ -374,9 +399,9 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
     const key=queue[i],person=incoming.get(key);
     for(const child of children.get(key)||[])queue.push(child);
     const parentKey=String(person.parentId||'self'),parentId=key==='self'?'self':idMap.get(parentKey);
-    const matches=state.members.filter(p=>belongs(p)&&String(p.sharedSourcePersonId||'')===key);
+    const matches=bySourceId.get(key)||[];
     const preferred=matches.find(p=>oldBranch.has(p.id))||matches[0];
-    const manual=state.members.filter(p=>!p.sharedSourceUserId&&!p.sharedSourcePersonId&&!replacedIds.has(p.id)&&
+    const manual=(manualByName.get(nameKey(person.name))||[]).filter(p=>!replacedIds.has(p.id)&&
       (redirects.get(p.parentId)||p.parentId)===parentId&&p.type===person.type&&nameKey(p.name)&&nameKey(p.name)===nameKey(person.name));
     let reuse;
     if(manual.length===1&&typeof window.confirm==='function'){
