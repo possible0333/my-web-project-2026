@@ -10,7 +10,7 @@
   function normalize(value){
     return {period:typeof value?.period==='string'?value.period:'',items:Array.from({length:3},(_,i)=>{
       const item=value?.items?.[i];
-      return {text:clean(item?.text),answer:['yes','no'].includes(item?.answer)?item.answer:''};
+      return {text:clean(item?.text),answer:item?.answer==='yes'?'5':item?.answer==='no'?'1':/^[1-5]$/.test(String(item?.answer))?String(item.answer):''};
     })};
   }
   function assess(person,now=new Date()){

@@ -432,3 +432,9 @@
   max-height:none!important;
   height:auto!important;
 }
+.focus-score{border:0;padding:0;margin:12px 0;min-width:0}.focus-score legend{font-weight:700}.focus-score legend span{font-weight:400;overflow-wrap:anywhere}
+.focus-score>div{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.focus-score label{position:relative;cursor:pointer}.focus-score input{position:absolute;opacity:0;width:1px;height:1px}
+.focus-score label span{display:grid;place-items:center;min-height:44px;border:1px solid #b5c9e4;border-radius:8px;background:white;color:#294666}
+.focus-score input:checked+span{background:#175cbd;border-color:#175cbd;color:white;font-weight:bold}
+.focus-score input:focus-visible+span{outline:2px solid #152d49;outline-offset:1px}.focus-score:disabled label{opacity:.5}

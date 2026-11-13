@@ -63,8 +63,8 @@
       </div>
       <div class="focus-review-edit">
         <strong>週1回の自己採点 <span id="focusReviewWeek"></span></strong>
-        <p>月曜〜日曜（日本時間）。「まだできていない」も採点済みです。保存ボタンで確定します。</p>
-        ${[1,2,3].map(i=>`<label for="fFocusReview${i}">意識すること ${i}<select id="fFocusReview${i}" class="text-input"><option value="">未採点</option><option value="yes">できている</option><option value="no">まだできていない</option></select></label>`).join('')}
+        <p>1点（できていない）〜5点（できている）。点数を選んで保存してください。</p>
+        ${[1,2,3].map(i=>`<fieldset class="focus-score" id="fFocusReview${i}"><legend>意識すること ${i}<span></span></legend><div>${[1,2,3,4,5].map(n=>`<label><input type="radio" name="focusScore${i}" value="${n}"><span>${n}点</span></label>`).join('')}</div></fieldset>`).join('')}
       </div>
       <div class="v194-prospect-edit">
         <div class="v194-prospect-edit-head">
@@ -101,7 +101,7 @@
     anchor.insertAdjacentElement('afterend',field);
     for(const i of [1,2,3])document.getElementById(`fFocus${i}`).addEventListener('input',()=>{
       const select=document.getElementById(`fFocusReview${i}`);
-      select.value='';select.disabled=!safe(document.getElementById(`fFocus${i}`).value);
+      setScore(select,document.getElementById(`fFocus${i}`).value,'');
     });
   }
 
@@ -164,13 +164,19 @@
     migrate=wrapped;
   }
 
+  function setScore(group,text,answer){
+    group.disabled=!safe(text);
+    group.querySelector('legend span').textContent=text?'　'+text:'（目標を入力すると採点できます）';
+    for(const radio of group.querySelectorAll('input'))radio.checked=radio.value===answer;
+  }
+
   function fillSelfFields(p){
     const review=window.FocusReview.assess(p);
     const week=document.getElementById('focusReviewWeek');
     if(week){week.textContent=review.label;week.dataset.period=review.key;}
     review.items.forEach((item,i)=>{
       const select=document.getElementById(`fFocusReview${i+1}`);
-      if(select){select.value=item.answer;select.disabled=!item.text;}
+      if(select)setScore(select,item.text,item.answer);
     });
     const values={
       fMonthlyTargetPv:Number(p?.monthlyTargetPv||0)||'',
@@ -236,7 +242,7 @@
         const period=window.FocusReview.period();
         const current=document.getElementById('focusReviewWeek')?.dataset.period===period.key;
         data.focusReview=window.FocusReview.normalize({period:period.key,items:[1,2,3].map(i=>({
-          text:data[`focus${i}`],answer:current&&data[`focus${i}`]?document.getElementById(`fFocusReview${i}`)?.value:''
+          text:data[`focus${i}`],answer:current&&data[`focus${i}`]?document.querySelector(`#fFocusReview${i} input:checked`)?.value:''
         }))});
         data.prospectPlans=Array.from({length:3},(_,index)=>{
           const number=index+1;
@@ -302,7 +308,7 @@
       ${empty?'<span class="v194-empty-stamp">未記入</span>':''}
       <div class="v194-side-title">今月意識すること</div>
       ${empty?'':`<div class="focus-review-summary"><span>${escapeHtml(review.label)} ${review.count}/${review.total}採点</span><strong class="focus-review-stamp ${review.needed?'is-due':'is-done'}">${review.needed?'要採点':'採点済み'}</strong></div>`}
-      <div class="v128-focus-items">${focus.map((v,i)=>`<div class="${v?'':'is-empty'}"><b>${i+1}</b><span>${escapeHtml(v||'未入力')}${v?`<small class="focus-review-result">${review.items[i].answer==='yes'?'○ できている':review.items[i].answer==='no'?'△ まだできていない':'未採点'}</small>`:''}</span></div>`).join('')}</div>
+      <div class="v128-focus-items">${focus.map((v,i)=>`<div class="${v?'':'is-empty'}"><b>${i+1}</b><span>${escapeHtml(v||'未入力')}${v?`<small class="focus-review-result">${review.items[i].answer?review.items[i].answer+' / 5点':'未採点'}</small>`:''}</span></div>`).join('')}</div>
     </aside>`;
   }
 

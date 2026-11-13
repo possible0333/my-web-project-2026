@@ -42,5 +42,7 @@ test('migration and shared JSON conversion preserve review data',async()=>{
  const exported=ctx.sharedPerson(migrated.self);
  const restored=ctx.operationalMapToState({people:[exported]});
  assert.equal(api.assess(restored.self,now).needed,false);
- assert.equal(restored.self.focusReview.items[0].answer,'no');
+ assert.equal(restored.self.focusReview.items[0].answer,'1');
 });
+
+test('five scores and legacy answers survive normalization',()=>{for(const [value,expected] of [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],['yes','5'],['no','1'],[6,'']])assert.equal(api.normalize({items:[{answer:value}]}).items[0].answer,expected);});
