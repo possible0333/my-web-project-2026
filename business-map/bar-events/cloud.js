@@ -21,6 +21,7 @@
   const ev=db.events.find(e=>e.id===eventId);if(!ev||!validDate(ev.date))throw Error('開催日を登録してください');
   if(!text(owner))throw Error('担当者を設定してください');
   return {date:ev.date,owner:text(owner).slice(0,80),entries:db.entries.filter(e=>e.eventId===eventId&&text(e.name)).map(e=>({
+   ...(e.personId===db.selfPeople?.[owner]&&e.selfConfirmedAt?{selfConfirmedAt:e.selfConfirmedAt}:{}),
    personId:text(e.personId),name:text(e.name).slice(0,80),sponsor:text(e.sponsor).slice(0,80),group:text(e.group).slice(0,80),kind:e.kind==='prospect'?'prospect':'member',
    status:['yes','pending','no'].includes(e.status)?e.status:'pending',slots:BarModel.singleSlot(e.slots),arrived:!!e.arrived,...('cancelled' in e?{cancelled:e.cancelled===true}:{})
   })).sort((a,b)=>a.personId.localeCompare(b.personId))};
@@ -62,10 +63,12 @@
     for(const original of event.entries){
      const personId=text(original?.personId);if(!personId||!text(original.name)||seen.has(personId))continue;seen.add(personId);
      const correction=corrections.get(overrideKey(row.user_id,date,personId));
+     const rejoined=correction?.deleted && Date.parse(original.selfConfirmedAt)>Date.parse(correction.updated_at);
      const raw={...original,...correction?.patch};
+     if(rejoined)Object.assign(raw,{status:original.status,slots:original.slots,cancelled:original.cancelled});
      const id=String(row.user_id)+':'+personId;
      const p={id,name:text(raw.name).slice(0,80),sponsor:text(raw.sponsor).slice(0,80),group:text(raw.group).slice(0,80),kind:raw.kind==='prospect'?'prospect':'member',source:'bar:'+id};people.set(id,p);
-     const entry={...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:BarModel.singleSlot(raw.slots),arrived:raw.arrived===true,...('cancelled' in raw?{cancelled:raw.cancelled===true}:{}),note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id,sourcePersonId:personId,sourceUpdatedAt:row.updated_at,adminRevision:correction?.revision||0,adminDeleted:!!correction?.deleted};
+     const entry={...p,id:date+':'+id,personId:id,eventId:date,status:['yes','pending','no'].includes(raw.status)?raw.status:'pending',slots:BarModel.singleSlot(raw.slots),arrived:raw.arrived===true,...('cancelled' in raw?{cancelled:raw.cancelled===true}:{}),note:'',uploadedBy:text(event.owner),uploadedAt:text(event.uploadedAt),uploaderId:row.user_id,sourcePersonId:personId,sourceUpdatedAt:row.updated_at,adminRevision:correction?.revision||0,adminDeleted:!!correction?.deleted&&!rejoined};
      if(entry.adminDeleted)deletedEntries.push(entry);else db.entries.push(entry);
     }
    }
@@ -83,7 +86,7 @@
   }
   const overrides=[];
   for(let offset=0;;offset+=500){
-   const result=await client.from('bar_attendance_overrides').select('uploader_id,event_date,person_id,patch,deleted,revision').order('uploader_id').order('event_date').order('person_id').range(offset,offset+499);
+   const result=await client.from('bar_attendance_overrides').select('uploader_id,event_date,person_id,patch,deleted,revision,updated_at').order('uploader_id').order('event_date').order('person_id').range(offset,offset+499);
    if(result.error)throw result.error;overrides.push(...result.data);if(result.data.length<500)break;
   }
   return aggregate(rows,overrides);

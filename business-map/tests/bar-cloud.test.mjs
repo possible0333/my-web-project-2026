@@ -67,3 +67,20 @@ test('same-day cancellation round-trips without losing slots or reinterpreting l
  const patch={uploader_id:'device',event_date:'2026-11-07',person_id:p.id,patch:{name:'Admin renamed',status:'yes',arrived:false}};
  M.change(db,e.id,{cancelled:true});assert.equal(C.aggregate([row('device',[C.snapshot(db,e.eventId,'Owner')])],[patch]).db.entries[0].cancelled,true);
 });
+
+test('only an explicit self confirmation after deletion restores the attendance',()=>{
+ const db=M.empty();M.pair(db,'2026-11-07');const eventId=db.events[0].id;
+ const entry=M.setSelf(db,eventId,'Owner',null,{status:'yes',slots:['A']});
+ const correction={uploader_id:'device',event_date:db.events[0].date,person_id:entry.personId,deleted:true,
+  updated_at:new Date(Date.now()-10000).toISOString(),patch:{status:'no',slots:[],cancelled:true}};
+ const shared=()=>C.aggregate([row('device',[C.snapshot(db,eventId,'Owner')])],[correction]);
+ delete entry.selfConfirmedAt;
+ assert.equal(shared().deletedEntries.length,1);
+ M.setSelf(db,eventId,'Owner',null,{status:'yes',slots:['D']});
+ const result=shared();
+ assert.equal(result.deletedEntries.length,0);assert.equal(result.db.entries.length,1);
+ assert.equal(result.db.entries[0].status,'yes');assert.equal(result.db.entries[0].slots.join(','),'D');
+ assert.equal(M.summary(result.db.entries).confirmed,1);
+ correction.updated_at=new Date(Date.parse(entry.selfConfirmedAt)+1000).toISOString();
+ assert.equal(shared().deletedEntries.length,1);
+});

@@ -59,6 +59,10 @@
   let entry=db.entries.find(e=>e.eventId===eventId&&e.personId===p.id);
   if(!entry){add(db,eventId,p.id);entry=db.entries.at(-1);}
   change(db,entry.id,values.status==='no'?{...values,slots:[],arrived:false,cancelled:false}:values);
+  if(values.status==='yes'){
+   entry.selfConfirmedAt=new Date().toISOString();
+   entry.cancelled=false;
+  }
   entry.kind='member';
   return entry;
  }
