@@ -348,11 +348,29 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const usedIds=new Set(['self',...state.members.map(p=>p.id)]);
   const freshId=()=>{let id;do{id=uid();}while(usedIds.has(id));usedIds.add(id);return id;};
   const idMap=new Map(),replacedIds=new Set(),redirects=new Map();
-  for(const key of incoming.keys()){
+  const children=new Map();
+  for(const [key,p] of incoming){
+    if(key==='self')continue;
+    const parent=String(p.parentId||'self');
+    if(!children.has(parent))children.set(parent,[]);
+    children.get(parent).push(key);
+  }
+  const queue=['self'],nameKey=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+  for(let i=0;i<queue.length;i++){
+    const key=queue[i],person=incoming.get(key);
+    for(const child of children.get(key)||[])queue.push(child);
+    const parentKey=String(person.parentId||'self'),parentId=key==='self'?'self':idMap.get(parentKey);
     const matches=state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')===key);
     const preferred=matches.find(p=>oldBranch.has(p.id))||matches[0];
-    const id=preferred?.id||freshId();idMap.set(key,id);
-    for(const p of matches){replacedIds.add(p.id);redirects.set(p.id,id);}
+    const manual=state.members.filter(p=>!p.sharedSourceUserId&&!p.sharedSourcePersonId&&!replacedIds.has(p.id)&&
+      (redirects.get(p.parentId)||p.parentId)===parentId&&p.type===person.type&&nameKey(p.name)&&nameKey(p.name)===nameKey(person.name));
+    let reuse;
+    if(manual.length===1&&typeof window.confirm==='function'){
+      const sponsor=key==='self'?(state.self.name||'自分'):incoming.get(parentKey).name;
+      if(window.confirm(sponsor+' の直下に手入力の「'+manual[0].name+'」（'+person.type+'）があります。同じ人として共有カードの内容に更新しますか？ 別人の場合はキャンセルしてください。'))reuse=manual[0];
+    }
+    const id=preferred?.id||reuse?.id||freshId();idMap.set(key,id);
+    for(const p of reuse?[...matches,reuse]:matches){replacedIds.add(p.id);redirects.set(p.id,id);}
   }
   const rootId=idMap.get('self');
   const stamp=(p,sourceId)=>({...p,sharedSourceUserId:sourceKey,sharedSourcePersonId:String(sourceId)});

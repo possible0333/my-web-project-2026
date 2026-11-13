@@ -135,3 +135,22 @@ test('ABO, customers and retail import regardless of status and return after the
   data.people[1].type=type;ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,statuses.length+1);
  }
 });
+test('manual front and children can be linked once without changing their local IDs',()=>{
+ const ctx=setup([{id:'root0',name:'Front',parentId:'self',type:'ABO'},{id:'child0',name:'ABO',parentId:'root0',type:'ABO'},{id:'else',name:'Customer',type:'カスタマー',parentId:'self'}]);
+ let prompts=0;ctx.confirm=()=>{prompts++;return true};
+ const reversed={people:[incoming.people[0],incoming.people[2],incoming.people[1]]};
+ for(let i=0;i<2;i++)ctx.v179MergeSharedFront('source-a',reversed);
+ const list=ctx.api.get().members;
+ assert.equal(prompts,2);assert.equal(list.length,4);
+ assert.equal(list.find(p=>p.sharedSourcePersonId==='customer').parentId,'child0');
+ assert.equal(list.find(p=>p.id==='child0').parentId,'root0');
+ assert.equal(list.find(p=>p.id==='else').parentId,'self');
+});
+test('declining a manual match preserves both people; confirming later also preserves local descendants',()=>{
+ const ctx=setup([{id:'manual',name:'Front',type:'ABO',parentId:'self'},{id:'local',name:'Local',type:'ABO',parentId:'manual'}]);
+ ctx.confirm=()=>false;ctx.v179MergeSharedFront('a',incoming);
+ assert.equal(ctx.api.get().members.length,5);
+ ctx.confirm=()=>true;ctx.v179MergeSharedFront('a',incoming);
+ const list=ctx.api.get().members;assert.equal(list.length,4);
+ assert.equal(list.find(p=>p.id==='local').parentId,list.find(p=>p.sharedSourcePersonId==='self').id);
+});
