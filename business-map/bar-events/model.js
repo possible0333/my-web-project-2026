@@ -60,6 +60,7 @@
   if(!entry){add(db,eventId,p.id);entry=db.entries.at(-1);}
   change(db,entry.id,values.status==='no'?{...values,slots:[],arrived:false,cancelled:false}:values);
   if(values.status==='yes'){
+   delete entry.selfRejoinRevision;
    entry.selfConfirmedAt=new Date().toISOString();
    entry.cancelled=false;
   }

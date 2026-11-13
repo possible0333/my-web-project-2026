@@ -54,6 +54,16 @@
  function needEvent(){if(!event())throw Error('開催回を先に作成してください');}
  function selfMap(){return mapPeople.find(p=>p.name===owner&&p.source==='map:local:self')||null;}
  function selfEntry(){const p=M.selfPerson(db,owner,selfMap());return p?entries().find(e=>e.personId===p.id):null;}
+ function saveSelf(d,values){
+  const entry=M.setSelf(d,selected,owner,selfMap(),values);
+  if(values.status==='yes'){
+   const date=event().date;
+   const receipt=JSON.parse(localStorage.getItem(RECEIPTS)||'{}')[date];
+   const deleted=window.BarSharedSnapshot?.deletedEntries?.find(e=>
+    e.uploaderId===receipt?.userId && e.eventId===date && e.sourcePersonId===entry.personId);
+   if(deleted)entry.selfRejoinRevision=deleted.adminRevision;
+  }
+ }
  function renderSelf(){
   const e=selfEntry();
   $('selfDate').textContent=`${Number(event().date.slice(5,7))}月${Number(event().date.slice(8,10))}日（土）`;
@@ -93,8 +103,8 @@
    $('content').innerHTML=list.map(e=>`<article class="card compact-card" data-entry="${esc(e.id)}"><div class="person-row"><div class="person-name"><h3><span class="${e.cancelled?'cancelled-name':''}">${esc(e.name)}</span>${e.cancelled?'<span class="cancelled-badge">当キャン</span>':''}<span class="badge">${e.kind==='prospect'?'プ':'メ'}</span></h3><div class="muted">${esc(e.sponsor||'担当未設定')} · ${esc(e.group||'所属未設定')}</div></div><div class="status">${[['yes','○','参加確定'],['pending','△','未確定'],['no','×','不参加']].map(([key,label,title])=>`<button data-status="${key}" aria-label="${esc(e.name)} ${title}" title="${title}" aria-pressed="${e.status===key}">${label}</button>`).join('')}</div></div><div class="checks time-chips">${[['A','A 17:30'],['B','B 18:30'],['C','C 21:00'],['D','D 22:00']].map(([key,label])=>`<label><input type="radio" name="slot-${esc(e.id)}" data-slot="${key}" ${e.slots.includes(key)?'checked':''}><span>${label}</span></label>`).join('')}<label class="arrival-chip"><input type="checkbox" data-cancelled ${e.cancelled?'checked':''}><span>当キャン</span></label></div><details class="entry-more"><summary>備考${e.note?'あり':''}・詳細${e.status==='yes'&&!e.slots.length?' ／ 時間未定':''}</summary><p class="muted">A：1部17:30〜18:30 ／ B：1部18:30〜20:30 ／ C：2部21:00〜22:00 ／ D：2部22:00〜23:00（1つ選択）</p><label>今回の備考<input data-note maxlength="300" value="${esc(e.note)}" placeholder="遅刻など"></label><button data-remove>今回の登録を外す</button></details></article>`).join('')||'<p class="empty">まだ参加者がいません。<br>名前を入力するか、マップからまとめて選択してください。</p>';
   }
  }
- $('selfControls').onclick=e=>guard(()=>{const b=e.target.closest('[data-self-status]');if(b)commit('自分の出欠を保存',d=>M.setSelf(d,selected,owner,selfMap(),{status:b.dataset.selfStatus}));});
- $('selfControls').onchange=e=>guard(()=>{if(!e.target.hasAttribute('data-self-slot'))return;const slots=[...$('selfControls').querySelectorAll('[data-self-slot]:checked')].map(x=>x.dataset.selfSlot);commit('自分の参加時間を保存',d=>M.setSelf(d,selected,owner,selfMap(),{status:'yes',slots}));});
+ $('selfControls').onclick=e=>guard(()=>{const b=e.target.closest('[data-self-status]');if(b)commit('自分の出欠を保存',d=>saveSelf(d,{status:b.dataset.selfStatus}));});
+ $('selfControls').onchange=e=>guard(()=>{if(!e.target.hasAttribute('data-self-slot'))return;const slots=[...$('selfControls').querySelectorAll('[data-self-slot]:checked')].map(x=>x.dataset.selfSlot);commit('自分の参加時間を保存',d=>saveSelf(d,{status:'yes',slots}));});
  $('selfUpload').onclick=()=>$('uploadBar').click();
  $('remember').onclick=()=>guard(()=>{const name=$('owner').value.trim();if(!name)throw Error('名前を入力してください');localStorage.setItem(OWNER,name);owner=name;$('identityPanel').open=false;render();});
  $('quickAdd').onsubmit=e=>{e.preventDefault();guard(()=>{
@@ -145,7 +155,10 @@
    });return;
   }
   const card=b.closest('[data-entry]');if(!card)return;const id=card.dataset.entry;
-  if(b.dataset.status)commit('出欠を変更',d=>M.change(d,id,{status:b.dataset.status}));
+  if(b.dataset.status)commit('出欠を変更',d=>{
+   if(id===selfEntry()?.id && b.dataset.status==='yes')saveSelf(d,{status:'yes'});
+   else M.change(d,id,{status:b.dataset.status});
+  });
   if(b.hasAttribute('data-remove')&&confirm('今回の登録だけを外します。過去の記録は残ります。よろしいですか？'))commit('今回の登録を解除',d=>{d.entries=d.entries.filter(e=>e.id!==id);});
  });
  $('content').onchange=e=>guard(()=>{
