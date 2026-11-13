@@ -154,3 +154,22 @@ test('declining a manual match preserves both people; confirming later also pres
  const list=ctx.api.get().members;assert.equal(list.length,4);
  assert.equal(list.find(p=>p.id==='local').parentId,list.find(p=>p.sharedSourcePersonId==='self').id);
 });
+test('repeated imports from a replacement upload account preserve one branch after confirmation and reload',()=>{
+ const ctx=setup();ctx.v179MergeSharedFront('old',incoming);
+ const ids=ctx.api.get().members.map(p=>p.id);
+ ctx.confirm=()=>true;
+ for(let i=0;i<4;i++){
+   ctx.api.set(ctx.api.migrate(JSON.parse(JSON.stringify(ctx.api.get()))));
+   ctx.v179MergeSharedFront('new',incoming);
+   assert.deepEqual(ctx.api.get().members.map(p=>p.id),ids);
+   assert.ok(ctx.api.get().members.every(p=>p.sharedSourceUserId==='new'));
+ }
+});
+test('existing duplicate imported branches reconcile, stale cards disappear, and declined namesakes remain separate',()=>{
+ const ctx=setup();ctx.confirm=()=>false;
+ ctx.v179MergeSharedFront('a',incoming);ctx.v179MergeSharedFront('b',incoming);
+ assert.equal(ctx.api.get().members.length,6);
+ ctx.confirm=()=>true;ctx.v179MergeSharedFront('b',{people:incoming.people.slice(0,2)});
+ assert.equal(ctx.api.get().members.length,2);
+ assert.equal(ctx.api.get().members[1].parentId,ctx.api.get().members[0].id);
+});

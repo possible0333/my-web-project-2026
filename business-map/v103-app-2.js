@@ -304,7 +304,6 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const normalized=normalizeImportedState(mapData);
   if(!normalized) throw new Error('追加できるMAP JSONがありません');
   const sourceKey=String(sourceUserId||mapData?.owner?.name||'shared-map');
-  const existingRoot=state.members.find(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')==='self');
   // Identity is the source map + source person, never the name or current parent.
   const incoming=new Map([['self',normalized.self]]);
   for(const p of normalized.members){
@@ -320,6 +319,21 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
       seen.add(parent);parent=String(incoming.get(parent).parentId||'self');
     }
   }
+  const nameKey=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+  const sourceKeys=new Set([sourceKey]);
+  const isRoot=p=>p.sharedSourcePersonId==='self'&&p.parentId==='self';
+  const currentRoot=state.members.find(p=>isRoot(p)&&p.sharedSourceUserId===sourceKey);
+  const otherRoots=state.members.filter(p=>isRoot(p)&&p.sharedSourceUserId&&p.sharedSourceUserId!==sourceKey&&
+    nameKey(p.name)&&nameKey(p.name)===nameKey(normalized.self.name));
+  // A new anonymous upload account has a different ID. Only switch sources on explicit identification.
+  if(otherRoots.length===1&&typeof window.confirm==='function'){
+    const other=otherRoots[0];
+    if(window.confirm('別の共有元から取り込んだ同名のフロント「'+other.name+'」があります。同じ人ですか？ OKでその系列を今回の共有内容に更新します。別人ならキャンセルしてください。')){
+      sourceKeys.add(other.sharedSourceUserId);
+    }
+  }
+  const belongs=p=>sourceKeys.has(String(p.sharedSourceUserId||''));
+  const existingRoot=currentRoot||state.members.find(p=>belongs(p)&&p.sharedSourcePersonId==='self');
   // Keep the map owner as the front; restrict prospect statuses only; preserve sponsor relationships.
   // Do not reparent excluded children to another sponsor.
   const allowedStatuses=new Set(['ordered','forecast','appointment-set','prospecting']);
@@ -339,7 +353,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   // Included people are rebuilt below using the latest source relationships.
   const excludedLocalIds=new Set();
   for(const p of state.members){
-    if(String(p.sharedSourceUserId||'')!==sourceKey||!excluded.has(String(p.sharedSourcePersonId||'')))continue;
+    if(!belongs(p)||!excluded.has(String(p.sharedSourcePersonId||'')))continue;
     excludedLocalIds.add(p.id);
     for(const child of descendants(p.id))excludedLocalIds.add(child.id);
   }
@@ -355,12 +369,12 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
     if(!children.has(parent))children.set(parent,[]);
     children.get(parent).push(key);
   }
-  const queue=['self'],nameKey=s=>String(s||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+  const queue=['self'];
   for(let i=0;i<queue.length;i++){
     const key=queue[i],person=incoming.get(key);
     for(const child of children.get(key)||[])queue.push(child);
     const parentKey=String(person.parentId||'self'),parentId=key==='self'?'self':idMap.get(parentKey);
-    const matches=state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&String(p.sharedSourcePersonId||'')===key);
+    const matches=state.members.filter(p=>belongs(p)&&String(p.sharedSourcePersonId||'')===key);
     const preferred=matches.find(p=>oldBranch.has(p.id))||matches[0];
     const manual=state.members.filter(p=>!p.sharedSourceUserId&&!p.sharedSourcePersonId&&!replacedIds.has(p.id)&&
       (redirects.get(p.parentId)||p.parentId)===parentId&&p.type===person.type&&nameKey(p.name)&&nameKey(p.name)===nameKey(person.name));
@@ -377,7 +391,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const root=stamp({...normalized.self,id:rootId,type:'ABO',parentId:'self'},'self');
   const branch=importMembers.map(p=>stamp({...p,id:idMap.get(String(p.id)),parentId:idMap.get(String(p.parentId||'self'))||rootId},p.id));
   // This upload is a full snapshot. Only its own missing source identities are stale.
-  const staleParents=new Map(state.members.filter(p=>String(p.sharedSourceUserId||'')===sourceKey&&
+  const staleParents=new Map(state.members.filter(p=>belongs(p)&&
     p.sharedSourcePersonId&&!incoming.has(String(p.sharedSourcePersonId))).map(p=>[p.id,p.parentId]));
   const retained=state.members.filter(p=>!replacedIds.has(p.id)&&!excludedLocalIds.has(p.id)&&!staleParents.has(p.id)).map(p=>{
     let parent=p.parentId;
