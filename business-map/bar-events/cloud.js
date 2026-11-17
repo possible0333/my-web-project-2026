@@ -38,7 +38,25 @@
    const old=read.data;
    if(old&&old.map_data?.schema!==SCHEMA)throw Error('保存先がBar専用ではないため、上書きを中止しました');
    const updatedAt=new Date(Math.max(Date.now(),Date.parse(old?.updated_at||0)+1||0)).toISOString();
-   const event={...snap,uploadedAt:updatedAt};
+   const previousEvent=parse(old?.schedule_data?.barEvents).find(e=>e.date===snap.date);
+   const previousEntries=new Map((previousEvent?.entries||[]).map(e=>[e.personId,e]));
+   const entries=[];
+   for(const entry of snap.entries){
+    const previous=previousEntries.get(entry.personId);
+    const next={...entry};
+    if(entry.selfConfirmedAt&&entry.selfConfirmedAt===previous?.selfConfirmedAt){
+     // Preserve the acknowledgement on retries and later uploads from the same device.
+     if(previous.selfRejoinRevision)next.selfRejoinRevision=previous.selfRejoinRevision;
+    }else if(entry.status==='yes'&&Date.parse(entry.selfConfirmedAt)>(Date.parse(previous?.selfConfirmedAt)||0)){
+     const correction=await client.from('bar_attendance_overrides')
+      .select('deleted,revision').eq('uploader_id',userId)
+      .eq('event_date',snap.date).eq('person_id',entry.personId).maybeSingle();
+     if(correction.error)throw correction.error;
+     if(correction.data?.deleted)next.selfRejoinRevision=correction.data.revision;
+    }
+    entries.push(next);
+   }
+   const event={...snap,entries,uploadedAt:updatedAt};
    const events=parse(old?.schedule_data?.barEvents).filter(e=>e.date!==snap.date);events.push(event);events.sort((a,b)=>a.date.localeCompare(b.date));
    const row={user_id:userId,name:text(owner).slice(0,80),comment:'Barイベント専用',image_url:'',image_path:'',client_updated_at:Date.now(),updated_at:updatedAt,version:'bar-v1',map_data:{schema:SCHEMA},schedule_data:{barEvents:{schema:SCHEMA,events}}};
    if(JSON.stringify(row).length>1500000)throw Error('共有データ量が上限を超えています。管理者に確認してください');

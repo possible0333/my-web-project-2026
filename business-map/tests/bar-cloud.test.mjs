@@ -83,4 +83,42 @@ test('only an explicit self confirmation after deletion restores the attendance'
  assert.equal(M.summary(result.db.entries).confirmed,1);
  correction.updated_at=new Date(Date.parse(entry.selfConfirmedAt)+1000).toISOString();
  assert.equal(shared().deletedEntries.length,1);
+});test('upload acknowledges a deletion without a loaded roster, survives retries and respects subsequent deletion',async()=>{
+ let stored, revision=3, fail=false;
+ const local={crypto:webcrypto,navigator:{}};local.window=local;
+ local.client={from(table){
+   let write;
+   return {
+     select(){if(write){stored=write;return Promise.resolve({data:[{user_id:'device'}]});}return this},
+     eq(){return this},
+     update(value){write=value;return this},
+     insert(value){write=value;return this},
+     async maybeSingle(){
+       if(table==='bar_attendance_overrides')return fail?{error:Error('offline')}:{data:{deleted:true,revision}};
+       return {data:stored};
+     }
+   };
+ }};
+ vm.createContext(local);
+ vm.runInContext(await readFile(new URL('bar-events/model.js',base),'utf8'),local);
+ const source=await readFile(new URL('bar-events/cloud.js',base),'utf8');
+ vm.runInContext(source.replace('async function connect(){','async function connect(){return {client:window.client,userId:"device"};'),local);
+ const model=local.BarModel,cloud=local.BarCloud,db=model.empty();
+ model.pair(db,'2026-11-07');
+ model.setSelf(db,db.events[0].id,'Test',null,{status:'yes',slots:['A']});
+ const entry=db.entries[0];entry.selfConfirmedAt='2026-11-18T00:00:00Z';
+ await cloud.upload(db,db.events[0].id,'Test');
+ const correction=()=>({uploader_id:'device',event_date:db.events[0].date,person_id:entry.personId,deleted:true,revision,updated_at:'2099-01-01T00:00:00Z'});
+ assert.equal(cloud.aggregate([stored],[correction()]).db.entries.length,1);
+ await cloud.upload(db,db.events[0].id,'Test');
+ assert.equal(cloud.aggregate([stored],[correction()]).db.entries.length,1);
+ revision=4;
+ await cloud.upload(db,db.events[0].id,'Test');
+ assert.equal(cloud.aggregate([stored],[correction()]).db.entries.length,0);
+ entry.selfConfirmedAt='2026-11-18T01:00:00Z';entry.selfRejoinRevision=3;
+ fail=true;const before=JSON.stringify(stored);
+ await assert.rejects(cloud.upload(db,db.events[0].id,'Test'),/offline/);
+ assert.equal(JSON.stringify(stored),before);
+ fail=false;await cloud.upload(db,db.events[0].id,'Test');
+ assert.equal(cloud.aggregate([stored],[correction()]).db.entries.length,1);
 });
