@@ -24,7 +24,7 @@
    const all=[{...map.self,id:'self'},...map.members],byId=new Map(all.map(p=>[p.id,p]));
    mapPeople=all.filter(p=>String(p.name||'').trim()).map(p=>{
     let front=p,seen=new Set();while(front.parentId&&front.parentId!=='self'&&byId.has(front.parentId)&&!seen.has(front.id)){seen.add(front.id);front=byId.get(front.parentId);}
-    return {isFront:p.id!=='self'&&p.parentId==='self',mapType:p.type||'',name:p.name,kind:p.type==='プロスペ'?'prospect':'member',sponsor:p.id==='self'?p.name:byId.get(p.parentId)?.name||map.self.name||'',group:p.id==='self'||p.parentId==='self'&&p.type!=='ABO'?`${map.self.name}パーソナル`:`${front.name}Gr`,source:`map:${p.sharedSourceUserId||'local'}:${p.sharedSourcePersonId||p.id}`};
+    return {isFront:p.id!=='self'&&p.parentId==='self',isSecond:p.id!=='self'&&p.parentId!=='self'&&byId.get(p.parentId)?.parentId==='self',mapType:p.type||'',name:p.name,kind:p.type==='プロスペ'?'prospect':'member',sponsor:p.id==='self'?p.name:byId.get(p.parentId)?.name||map.self.name||'',group:p.id==='self'||p.parentId==='self'&&p.type!=='ABO'?`${map.self.name}パーソナル`:`${front.name}Gr`,source:`map:${p.sharedSourceUserId||'local'}:${p.sharedSourcePersonId||p.id}`};
    });
    if(!owner)$('owner').value=map.self.name||'';break;
   }
@@ -128,8 +128,8 @@
  };
  $('fromMap').onclick=()=>guard(()=>{
   needEvent();loadMap();ensureOwner();
-  const candidates=mapPeople.filter(p=>p.isFront);
-  modal('マップからまとめて参加','<div class="batch-times"><strong>参加時間（1つ選択）</strong><p class="muted">選んだ人を参加確定にします。時間を選ばない場合は登録済みの時間を保ちます。</p><div class="checks time-chips">'+[['A','17:30〜18:30'],['B','18:30〜20:30'],['C','21:00〜22:00'],['D','22:00〜23:00']].map(([key,time])=>`<label><input type="radio" name="batchSlot" value="${key}"><span><b>${key}</b><small>${time}</small></span></label>`).join('')+'</div></div><p class="muted">自分に直接つながる人だけを表示します。分類はマップから自動設定します。</p>'+(candidates.length?candidates.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)}<span class="badge">${esc(p.mapType||'メンバー')}</span></label><p class="muted">${esc(p.sponsor)} ／ イベント：${p.kind==='prospect'?'プロスペ':'メンバー'}</p></div>`).join(''):'<p class="empty">追加できるフロントラインがありません。同じブラウザの自分のマップを確認してください。</p>'),()=>{
+  const candidates=mapPeople.filter(p=>p.isFront||p.isSecond);
+  modal('マップからまとめて参加','<div class="batch-times"><strong>参加時間（1つ選択）</strong><p class="muted">選んだ人を参加確定にします。時間を選ばない場合は登録済みの時間を保ちます。</p><div class="checks time-chips">'+[['A','17:30〜18:30'],['B','18:30〜20:30'],['C','21:00〜22:00'],['D','22:00〜23:00']].map(([key,time])=>`<label><input type="radio" name="batchSlot" value="${key}"><span><b>${key}</b><small>${time}</small></span></label>`).join('')+'</div></div><p class="muted">フロント・セカンドまで表示します。分類とスポンサーはマップから自動設定します。</p>'+(candidates.length?candidates.map((p,i)=>`<div class="card"><label class="candidate"><input type="checkbox" name="mapPick" value="${i}">${esc(p.name)}<span class="badge">${esc(p.mapType||'メンバー')}</span></label><p class="muted">${esc(p.sponsor)} ／ イベント：${p.kind==='prospect'?'プロスペ':'メンバー'}</p></div>`).join(''):'<p class="empty">追加できるフロント・セカンドがありません。同じブラウザの自分のマップを確認してください。</p>'),()=>{
    const picked=[...document.querySelectorAll('[name=mapPick]:checked')].map(el=>Number(el.value));if(!picked.length)throw Error('追加する人を選んでください');
    const slots=[...$('fields').querySelectorAll('[name=batchSlot]:checked')].map(el=>el.value);
    commit('マップから参加を登録',d=>{for(const i of picked){const candidate=candidates[i],p=M.person(d,candidate);p.kind=candidate.kind;let entry=d.entries.find(e=>e.eventId===selected&&e.personId===p.id);if(!entry){M.add(d,selected,p.id);entry=d.entries.at(-1);}entry.kind=candidate.kind;M.change(d,entry.id,{status:'yes',...(slots.length?{slots}:{})});}});
