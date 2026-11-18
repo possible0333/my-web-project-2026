@@ -13,11 +13,12 @@
   const {userId}=await BarCloud.connect(),receipts=JSON.parse(localStorage.getItem(KEY+'_receipts')||'{}');
   if(Object.values(receipts).some(r=>r.userId&&r.userId!==userId))throw Error('Bar動員の共有IDが変わっています。旧データを確認してください');
   const result=await BarCloud.upload(db,ev.id,owner);
-  const selfId=db.selfPeople?.[owner];
-  if(selfId && db.entries.some(e=>e.eventId===ev.id && e.personId===selfId && e.status==='yes' && !e.cancelled)){
-   const shared=await BarCloud.load();
-   const visible=shared.db.entries.some(e=>e.uploaderId===userId && e.eventId===result.date && e.sourcePersonId===selfId && e.status==='yes' && !e.cancelled);
-   if(!visible)throw Error('送信済みですが、自分の参加は共有一覧に反映されていません。管理者に登録状況を確認してください');
+  const expected=db.entries.filter(e=>e.eventId===ev.id&&e.status==='yes'&&!e.cancelled);
+  if(expected.length){
+   const shared=await BarCloud.loadUpload(userId,result.date);
+   const visible=new Set(shared.db.entries.filter(e=>e.uploaderId===userId&&e.eventId===result.date&&e.status==='yes'&&!e.cancelled).map(e=>e.sourcePersonId));
+   const missing=expected.filter(e=>!visible.has(e.personId));
+   if(missing.length)throw Error('送信済みですが、参加者一覧に反映されていない登録があります：'+missing.map(e=>e.name).join('、')+'。削除済み・出欠の変更を確認してください');
   }
   receipts[result.date]=result;
   try{localStorage.setItem(KEY+'_receipts',JSON.stringify(receipts));}catch(e){return {status:'success',message:'共有済み（端末への送信履歴保存は失敗）'};}
@@ -25,7 +26,7 @@
  }
  async function run(mapTask,progress=()=>{}){
   const results=[];
-  for(const [label,task] of [['マップ・スケジュール',mapTask],['Bar動員',uploadBar]]){
+  for(const [label,task] of [['Bar動員',uploadBar],['マップ・スケジュール',mapTask]]){
    progress(label);
    try{const result=await task();results.push({label,...result});}
    catch(e){results.push({label,status:'failed',message:e.message||String(e)});}

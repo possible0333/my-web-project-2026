@@ -99,6 +99,16 @@
   for(const e of db.entries){const k=[e.eventId,e.name.normalize('NFKC').toLowerCase(),e.sponsor.normalize('NFKC').toLowerCase()].join('|');e.duplicate=counts.get(k)>1;}
   return {db,uploads,deletedEntries};
  }
+ async function loadUpload(userId,date){
+  const {client}=await connect();
+  const read=await client.from(TABLE).select('user_id,map_data,schedule_data,updated_at').eq('user_id',userId).maybeSingle();
+  if(read.error)throw read.error;
+  const overrides=await client.from('bar_attendance_overrides')
+   .select('uploader_id,event_date,person_id,patch,deleted,revision,updated_at')
+   .eq('uploader_id',userId).eq('event_date',date);
+  if(overrides.error)throw overrides.error;
+  return aggregate(read.data?[read.data]:[],overrides.data||[]);
+ }
  async function load(){
   const {client}=await connect(),rows=[];
   for(let offset=0;;offset+=500){
@@ -117,5 +127,5 @@
   const {client}=await connect();const r=await client.rpc('bar_admin_moderate',{p_password:password,p_uploader_id:entry.uploaderId,p_event_date:entry.eventId,p_person_id:entry.sourcePersonId,p_expected_updated_at:entry.sourceUpdatedAt,p_revision:entry.adminRevision||0,p_action:action,p_patch:patch});
   if(r.error)throw r.error;if(!r.data?.ok)throw Error(r.data?.error||'管理者操作に失敗しました');return r.data;
  }
- window.BarCloud={connect,snapshot,upload,load,aggregate,verifyAdmin,moderate,schema:SCHEMA};
+ window.BarCloud={connect,snapshot,upload,load,loadUpload,aggregate,verifyAdmin,moderate,schema:SCHEMA};
 })();
