@@ -12,7 +12,7 @@ const STATUS_OPTIONS = [
   {id:'next-month', label:'来月以降', color:'#ef4444'},
   {id:'custom', label:'自由入力', color:'#334155'}
 ];
-const LARGE_MAP_PROSPECT_STATUSES = new Set(['ordered','forecast','appointment-set']);
+const LARGE_MAP_PROSPECT_STATUSES = new Set(['ordered','forecast','appointment-set','prospecting']);
 function visibleAtMapSize(person){
   return person.type!=='プロスペ' || 1+state.members.length<30 || LARGE_MAP_PROSPECT_STATUSES.has(person.status);
 }
