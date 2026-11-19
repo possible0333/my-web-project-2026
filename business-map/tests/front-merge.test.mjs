@@ -96,18 +96,18 @@ test('legacy appointment-open status displays the new label',()=>{
  assert.equal(vm.runInContext("currentStatusLabel({status:'appointment-open'})",ctx),'連絡不通');
 });
 
-test('only prospects with the four supported statuses import, and updates remove every newly excluded status',()=>{
- const allowed=['ordered','forecast','appointment-set','prospecting'];
- const rejected=['appointment-open','befriend','next-month','custom','',undefined,'unknown'];
+test('only prospects with the three supported statuses import, and updates remove every newly excluded status',()=>{
+ const allowed=['ordered','forecast','appointment-set'];
+ const rejected=['prospecting','appointment-open','befriend','next-month','custom','',undefined,'unknown'];
  for(const status of rejected){
   const ctx=setup();
   const data={people:[{id:'self',name:'Front',type:'ABO'},...allowed.map((status,i)=>({id:'p'+i,name:'P'+i,type:'プロスペ',parentId:'self',status}))]};
-  ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,5);
+  ctx.v179MergeSharedFront('source-a',data);assert.equal(ctx.api.get().members.length,4);
   data.people[1].status=status;
   ctx.v179MergeSharedFront('source-a',data);
-  assert.equal(ctx.api.get().members.length,4);
+  assert.equal(ctx.api.get().members.length,3);
   assert.ok(!ctx.api.get().members.some(p=>p.sharedSourcePersonId==='p0'));
-  const fresh=setup();fresh.v179MergeSharedFront('source-a',data);assert.equal(fresh.api.get().members.length,4);
+  const fresh=setup();fresh.v179MergeSharedFront('source-a',data);assert.equal(fresh.api.get().members.length,3);
  }
 });
 

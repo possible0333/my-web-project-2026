@@ -339,7 +339,7 @@ window.v179MergeSharedFront=function(sourceUserId,mapData){
   const existingRoot=currentRoot||state.members.find(p=>belongs(p)&&p.sharedSourcePersonId==='self');
   // Keep the map owner as the front; restrict prospect statuses only; preserve sponsor relationships.
   // Do not reparent excluded children to another sponsor.
-  const allowedStatuses=new Set(['ordered','forecast','appointment-set','prospecting']);
+  const allowedStatuses=new Set(['ordered','forecast','appointment-set']);
   const excluded=new Set();
   for(const key of incoming.keys()){
     if(key==='self')continue;
